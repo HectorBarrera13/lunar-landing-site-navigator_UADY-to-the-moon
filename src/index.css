@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-space-950: #050510;
+  --color-space-900: #0a0a1a;
+  --color-space-800: #12122b;
+  --color-star-100: #e8ecff;
+  --color-accent-400: #4cc9f0;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-space-950);
+  color: var(--color-star-100);
+  font-family: var(--font-sans);
+}
