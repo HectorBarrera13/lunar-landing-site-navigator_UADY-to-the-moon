@@ -3,7 +3,9 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.evaluate import router as evaluate_router
 from app.api.health import router as health_router
+from app.api.sites import router as sites_router
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -25,6 +27,8 @@ app.add_middleware(
 )
 
 app.include_router(health_router, prefix="/api")
+app.include_router(sites_router, prefix="/api")
+app.include_router(evaluate_router, prefix="/api")
 
 
 if __name__ == "__main__":

@@ -23,10 +23,19 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:5173"
     debug_mode: bool = False
     data_dir: Path = Path("data/processed")
+    catalog_file: Path = Path("data/catalog/sites.json")
+
+    # Traffic-light thresholds on the Suitability Index (REQUIREMENTS 5.1, Agreed).
+    traffic_light_green_min: int = 70
+    traffic_light_orange_min: int = 40
 
     @property
     def resolved_data_dir(self) -> Path:
         return self.data_dir if self.data_dir.is_absolute() else REPO_ROOT / self.data_dir
+
+    @property
+    def resolved_catalog_file(self) -> Path:
+        return self.catalog_file if self.catalog_file.is_absolute() else REPO_ROOT / self.catalog_file
 
 
 @lru_cache
