@@ -196,6 +196,19 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
   - `python -m compileall lunar_pipeline` OK; `python -m lunar_pipeline` runs (no steps yet). Python 3.14.7, rasterio 1.5.2 (GDAL 3.12.2), pyproj 3.8.0, numpy 2.5.4.
 - **Risks or pending items:** QA must map Peak near Cabeus B, Mons Mouton, Mons Mouton Plateau, de Gerlache Rim 2 (and the rest) to PGDA 78 files; Malapert coordinate still unverified (PD-01); horizon radius PD-07; PGDA server flakiness could slow round 2 (fallback: download to `data/raw/`). Licenses are not stated on the PGDA pages.
 
+### 2026-11-14 — Malapert Massif coordinate verified (PD-01)
+
+- **Agent:** Claude Code (Opus 5.5), research by the `data-curator` subagent plus the team's verification notes
+- **Requested task:** Verify the Malapert Massif coordinate for `data/catalog/sites.json` (runbook QA task, prerequisite for Compu 1 round 2).
+- **Change description:** `malapert-massif` now has `lat -86.0`, `lon 0.3` with a full source string; first stored with `"verified": false`, then set to `"verified": true` by user/QA decision (two independent sources within the 8 km region tolerance).
+- **Files created/modified:** `data/catalog/sites.json`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:**
+  - No NASA page publishes numeric centers for the Artemis III regions (checked: NASA releases 2022 and 2024, NTRS 20250011660 full text, NASA SVS 5013, NASA Science). The closest official numeric value is the LROC NAC_ROI_MALAPERTLO1 region mosaic center (Henriksen et al. 2023), confirmed on https://data.lroc.im-ldi.com/lroc/view_rdr/NAC_ROI_MALAPERTLO1: center -86.0, 0.3; bounds lat -86.33..-85.63, lon -5.66..5.15; absolute accuracy 5–20 m. It is a region mosaic center (0.1° precision), not a landing point.
+  - Not used as the primary value: IAU/USGS Gazetteer "Mons Malapert" (-85.98, -1.67) is the 67 km mountain center; LROC post 1294 "86°S, 0°E" is rounded to whole degrees.
+  - Kept the existing catalog schema (string `source`); the richer schema proposed in the team notes (`coord_type`, `cross_checks`, ...) would change the catalog format and needs a team decision.
+- **Verification performed:** WebFetch of the LROC page (values above). With the pipeline reader: the point projects to x=635.3 m, y=121341.0 m in the PGDA 78 Site23 CRS and is inside `Site23_final_adj_5mpp_surf.tif` (9.4 km from the edge); 100 m window around it has no NaN (elevation 4810–4848 m). Haversine distances (R = 1737.4 km): 4.22 km to the Gazetteer center, 1.14 km to the Site23 tile center, 0.63 km to LROC post 1294. `sites.json` parses as valid JSON.
+- **Risks or pending items:** The LROC page does not state the reference frame or longitude convention for the mosaic center (negative bounds imply -180..180 east). Marked verified, so round 2 (terrain and ephemeris for Malapert) is unblocked; the value is a region center, so round 2 results describe that point, not an official landing site. Better landing points may come from Wueller et al. 2026 (Table A1, MMA01), not yet extracted.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
