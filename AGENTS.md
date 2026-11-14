@@ -4,7 +4,7 @@ Guidelines for every AI agent (and human) working in this repository. Read this 
 
 ## Project in one paragraph
 
-NASA Space Apps 2026 challenge "Lunar Landing Site Navigator", built by a 6-person team in a 26-hour hackathon. A desktop web tool where mission planners compare lunar **south pole** landing sites and dates: for a site and a mission window `[t0, tf]` it shows the Sun and the Earth relative to the local horizon, evaluates solar power and direct-to-Earth communication, and summarizes the result as a **Suitability Index** (0–100) with a traffic-light color and explained vetoes. Full requirements: `REQUIREMENTS.md`.
+NASA Space Apps 2026 challenge "Lunar Landing Site Navigator". A desktop web tool where mission planners compare lunar **south pole** landing sites and dates: for a site and a mission window `[t0, tf]` it shows the Sun and the Earth relative to the local horizon, evaluates solar power and direct-to-Earth communication, and summarizes the result as a **Suitability Index** (0–100) with a traffic-light color and explained vetoes. Full requirements: `REQUIREMENTS.md`.
 
 ## Before any task
 
