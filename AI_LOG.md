@@ -87,6 +87,23 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
   - `.github/CODEOWNERS` not created: needs the team's GitHub usernames.
   - Hosting for the backend is undecided.
 
+### 2026-11-14 — Subagent roster update
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Create and update the role-scoped subagents in `.claude/agents/`. Approved options: fix `qa-validator`, add a contracts steward, add a lead/PO agent; models inherit from the session.
+- **Change description:**
+  - `qa-validator`: now strictly read-only (its description previously claimed edit rights on `data/` that its tool list did not grant); added data checks (verified sites, registered datasets) and the rule that no producer/consumer is built before the contract is `Approved`.
+  - New `data-curator`: edits only `data/catalog/` and `data/README.md`; verifies site coordinates (PD-01) and dataset rows from official sources with WebFetch/WebSearch, never from memory.
+  - New `contracts-steward`: edits only `docs/contracts/`; proposes changes, waits for user approval, then reports the producer → consumer follow-up order.
+  - New `product-lead`: edits only `REQUIREMENTS.md` and `README.md`; records user decisions and keeps the open items summary in sync.
+- **Files created/modified:** `.claude/agents/qa-validator.md` (modified); `.claude/agents/data-curator.md`, `.claude/agents/contracts-steward.md`, `.claude/agents/product-lead.md` (created); `AI_LOG.md`.
+- **Technical decisions / trade-offs:**
+  - Review and data editing are split into two agents so the reviewer can never modify what it reviews.
+  - No `model` field: all agents inherit the session model.
+  - Every ownership-map row now has an owning subagent.
+- **Verification performed:** Manually checked that each agent's scope matches the Ownership map in `AGENTS.md` and that the frontmatter is valid (`name`, `description`, `tools`). No code changed, so the workspace build commands do not apply.
+- **Risks or pending items:** `data-curator` relies on web access; if the network is restricted, PD-01 verification must be done by a human.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
