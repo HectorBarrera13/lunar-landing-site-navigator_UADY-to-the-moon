@@ -114,6 +114,25 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `npm run typecheck` and `npm run build` pass. Browser check is pending for the user.
 - **Risks or pending items:** Visual check pending; texture is not oriented to MOON_ME yet; lighting intensities are provisional.
 
+### 2026-11-14 — Mock `/api/sites` and `/api/evaluate` endpoints
+
+- **Agent:** Claude Code (Opus 5.5), following `.claude/agents/api-engineer.md` rules inline
+- **Requested task:** Runbook Compu 1 · Round 1 · Session A: `GET /api/sites` reading `data/catalog/sites.json` (id, name, group, lat, lon) and `POST /api/evaluate` validating the request and returning a mock response with the exact shape of `docs/contracts/README.md` §2.1, clearly marked as test data.
+- **Change description:**
+  - `GET /api/sites` returns the real catalog; lat/lon are `null` until QA verifies them (PD-01).
+  - `POST /api/evaluate` validates: `site_id` xor both `lat_deg`/`lon_deg`, lat ∈ [-90, 90], lon ∈ [-180, 180], timezone-aware `start_utc`/`end_utc` with `end_utc > start_utc` (422 otherwise); unknown `site_id` → 404. Returns placeholder values: index 50 (two mock criteria, weight 0.5 each), `precision` `date_specific` for sites and `average` for free points, no vetoes, and a `MOCK DATA` string in `warnings`.
+  - `traffic_light` is derived with the Agreed REQUIREMENTS 5.1 rule; thresholds (70/40) live in settings.
+  - New setting `CATALOG_FILE` (default `data/catalog/sites.json`), resolved like `DATA_DIR`.
+- **Files created/modified:** `apps/backend/app/api/sites.py`, `app/api/evaluate.py`, `app/services/sites.py`, `app/services/evaluate.py`, `app/models/site.py`, `app/models/evaluate.py` (created); `app/main.py`, `app/core/config.py`, `.env.example`, `AI_LOG.md` (modified).
+- **Technical decisions / trade-offs:**
+  - Mock marker goes in the existing `warnings` field rather than a new field, so the response keeps the exact contract shape; code uses `MOCK_` constants and a module docstring, and `/docs` summaries say "MOCK".
+  - Mock criteria weights are explicitly not the REQUIREMENTS 5.2 weights (still Pending); no veto thresholds are used.
+  - The contract is still `DRAFT` (D6); it is used for mocks only, per the runbook's Leader decision. No contract or requirements changes.
+  - FR-03's 2025–2035 window bound is not enforced (Proposed, not Agreed).
+  - The catalog is re-read on every request (13 entries, negligible cost, picks up QA edits without a restart).
+- **Verification performed:** `python -m compileall app` OK. With `uvicorn app.main:app --port 8000`: `/api/health` 200; `/api/sites` 200 with 13 sites; `/api/evaluate` by site 200 (`date_specific`, orange, MOCK warning) and by point 200 (`average`); neither/both targets, `end < start`, `lat 100`, naive datetimes → 422; unknown site → 404; OpenAPI lists `/api/health`, `/api/sites`, `/api/evaluate`. Python 3.14.7 locally.
+- **Risks or pending items:** Replace the mock with real windowed aggregation in round 3 once pipeline artifacts and weights/vetoes (5.2, PD-04) are Agreed. `GET /api/sites/{site_id}/series` and `/api/layers/{region_id}` are not implemented yet.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
