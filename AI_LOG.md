@@ -174,6 +174,28 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
   - Panel temporarily calls `setMissionWindow` with `MOCK_WINDOW` when the window is null, until a real calendar exists.
   - Browser check pending.
 
+### 2026-11-14 — PGDA data sources and remote window reader
+
+- **Agent:** Claude Code (Opus 5.5), following `.claude/agents/terrain-engineer.md` rules inline
+- **Requested task:** Runbook Compu 1 · Round 1 · Session B: (1) "Data sources" section in `pipeline/AGENTS.md` from the team's data-architecture notes with the runbook corrections (20 m mosaic = PGDA 90, no AstroPy, JSON/PNG outputs only, PGDA 78 site mappings pending QA, horizon radius PD-07); (2) register PGDA 78 and PGDA 90 in `data/README.md`; (3) a pure function that reads a window around lat/lon by URL using the file's own projection, adding pyproj; (4) a test command that reads a small window of `LDEM_80S_20MPP_ADJ` and prints shape, min, max without saving anything. Extra: check whether a PGDA 78 `_surf.tif` is a COG.
+- **Change description:**
+  - `pipeline/AGENTS.md`: new "Data sources" section (libraries per task, GeoTIFF per zone, remote reads and precompute).
+  - `data/README.md`: PGDA 78 and PGDA 90 rows (URLs, DOIs, resolution, frame, projection, units, license note) plus format notes from the files themselves. URLs and metadata come from the official product pages https://pgda.gsfc.nasa.gov/products/78 and https://pgda.gsfc.nasa.gov/products/90 and `LOLA_5mpp/README`.
+  - `lunar_pipeline/terrain/sources.py`: URL constants. `remote_window.py`: `lonlat_to_xy` (pyproj, file's own geodetic → projected CRS) and `read_window` (rasterio window read over HTTPS, nodata → NaN, error if outside coverage). `probe_remote.py`: test command `python -m lunar_pipeline.terrain.probe_remote`.
+  - Test point: **lat -88.0, lon 0.0, 2 km × 2 km — "test point, not a landing site"**, given by the user; not written to `data/catalog/sites.json`. To be repeated with Malapert Massif once QA verifies it.
+- **Files created/modified:** `pipeline/lunar_pipeline/terrain/sources.py`, `remote_window.py`, `probe_remote.py` (created); `pipeline/AGENTS.md`, `pipeline/requirements.txt`, `data/README.md`, `AI_LOG.md` (modified).
+- **Technical decisions / trade-offs:**
+  - New dependency `pyproj==3.8.0`: rasterio has no public lat/lon → arbitrary-CRS point transform; pyproj (PROJ, already used by GDAL) uses each file's own CRS, so no Moon radius or projection constants are hard-coded. Native alternative (hand-written polar stereographic math) would need a recalled radius, which the rules forbid.
+  - The PGDA server answers multi-range requests with the full 2.6 GB file and intermittently returns 403/503 on valid range requests. GDAL is configured with serial single-range requests, retries on 403/429/5xx, and a 60 s timeout.
+  - The probe is not registered in `python -m lunar_pipeline` because it writes nothing.
+  - No AstroPy; time handling will use SPICE.
+- **Verification performed:**
+  - `python -m lunar_pipeline.terrain.probe_remote` (3 runs): shape (100, 100), pixel 20 m, min -3958.03 m, max -3409.40 m, 0 NaN cells, **0.71–1.29 s** per read. CRS from the file: "Moon (2015) - Sphere / Ocentric / South Polar" (`+lat_ts=-90 +R=1737400`). Center y = 60652.9 m, consistent with 2R·tan(1°) for lat -88°.
+  - Out-of-coverage point (lat -70) → clear `ValueError`.
+  - `LDEM_80S_20MPP_ADJ.TIF` confirmed COG (`LAYOUT=COG`, 512 tiles, overviews 2–64). PGDA 78 `Site23_final_adj_5mpp_surf.tif` is **not** a COG (1-row strips, no overviews, 70.6 MB) → download site tiles to `data/raw/` instead of remote reads.
+  - `python -m compileall lunar_pipeline` OK; `python -m lunar_pipeline` runs (no steps yet). Python 3.14.7, rasterio 1.5.2 (GDAL 3.12.2), pyproj 3.8.0, numpy 2.5.4.
+- **Risks or pending items:** QA must map Peak near Cabeus B, Mons Mouton, Mons Mouton Plateau, de Gerlache Rim 2 (and the rest) to PGDA 78 files; Malapert coordinate still unverified (PD-01); horizon radius PD-07; PGDA server flakiness could slow round 2 (fallback: download to `data/raw/`). Licenses are not stated on the PGDA pages.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
