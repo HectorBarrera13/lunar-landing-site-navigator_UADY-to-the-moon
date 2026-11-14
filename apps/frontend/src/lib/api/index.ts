@@ -1,2 +1,2 @@
-export { evaluate, getSites } from './client'
-export { MOCK_NOTICE } from './mockData'
+export { evaluate, getSites, getSiteSeries } from './client'
+export { MOCK_NOTICE, MOCK_WINDOW } from './mockData'
