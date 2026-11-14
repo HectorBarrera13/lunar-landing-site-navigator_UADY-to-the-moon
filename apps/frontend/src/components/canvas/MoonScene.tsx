@@ -1,0 +1,28 @@
+import { Suspense } from 'react'
+import { Canvas } from '@react-three/fiber'
+import { OrbitControls } from '@react-three/drei'
+import MoonGlobe from './MoonGlobe'
+import SceneFallback from './SceneFallback'
+
+const CAMERA = { position: [0, 0, 3.5] as [number, number, number], fov: 45, near: 0.1, far: 100 }
+const SUN_POSITION: [number, number, number] = [5, 2, 4]
+
+export default function MoonScene() {
+  return (
+    <Canvas dpr={[1, 2]} camera={CAMERA} gl={{ antialias: true }}>
+      <ambientLight intensity={0.08} />
+      <directionalLight position={SUN_POSITION} intensity={3} />
+      <Suspense fallback={<SceneFallback />}>
+        <MoonGlobe />
+      </Suspense>
+      <OrbitControls
+        enablePan={false}
+        enableDamping
+        minDistance={1.6}
+        maxDistance={8}
+        rotateSpeed={0.6}
+        zoomSpeed={0.6}
+      />
+    </Canvas>
+  )
+}
