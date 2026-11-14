@@ -1,6 +1,6 @@
 # AI Activity Log
 
-Chronological log of changes made by AI agents in this repository. Every completed task must be logged here before it is considered finished.
+Chronological log of changes made by AI agents in this repository (Lunar Landing Site Navigator monorepo). Every completed task must be logged here before it is considered finished.
 
 ## Log
 
@@ -59,6 +59,33 @@ Chronological log of changes made by AI agents in this repository. Every complet
   - Spanish scan across tracked files: no remaining Spanish content outside intentional proper nouns.
 - **Risks or pending items:**
   - Future contributions must follow the English-only rule; reviewers should reject non-English additions unless explicitly requested.
+
+### 2026-11-14 — Monorepo restructure and agent orchestration base
+
+- **Agent:** Claude (Opus 5.5)
+- **Requested task:** Turn the frontend-only repository into the full-project monorepo `space-app-26` for the Lunar Landing Site Navigator, keep it Agent-Ready, add a requirements document, and prepare role-scoped agents. Approved decisions: offline `pipeline/` for heavy libraries (option A), keep Tailwind v4, no tests/CI for now, requirements as Markdown only.
+- **Change description:**
+  - Moved the existing frontend into `apps/frontend/` with `git mv` (history preserved); renamed the product from "Solar System 3D" to "Lunar Landing Site Navigator" in `index.html`, `App.tsx`, and frontend docs; typed `VITE_API_URL`.
+  - Created `apps/backend/`: FastAPI app with CORS from `FRONTEND_URL`, Pydantic Settings (root and backend `.env`), `/api/health`, modular `api/`, `services/`, `models/`, `core/` folders, pinned `requirements.txt`, `.env.example`.
+  - Created `pipeline/` (SpiceyPy, NumPy, Rasterio, SciPy) with `ephemeris/`, `terrain/`, `layers/` modules and a `python -m lunar_pipeline` entry point.
+  - Created `data/` (`catalog/sites.json` with the 13 proposed sites and null coordinates pending QA verification, `raw/` ignored, `processed/`, `README.md` source registry).
+  - Meta docs: new root `AGENTS.md` (ownership map, boundaries, contract protocol, scientific integrity, git workflow), workspace `AGENTS.md` files, `CLAUDE.md` importing them, root `ARCHITECTURE.md`, `REQUIREMENTS.md`, `docs/contracts/README.md` (draft), `README.md`, PR template, `.claude/settings.json`, six subagents in `.claude/agents/`.
+- **Files created/modified:** see the description; previous root `AGENTS.md` and `ARCHITECTURE.md` moved to `apps/frontend/` and adapted.
+- **Technical decisions / trade-offs:**
+  - Heavy scientific work is offline in `pipeline/`; the backend stays stdlib + Pydantic, satisfying the "no NumPy in backend" rule and avoiding live heavy computation during the demo (REQUIREMENTS D3, NFR-07).
+  - No root `package.json` workspaces: each app installs independently to keep setup simple; can be added later.
+  - 2D drawings (traffic-light map, horizon panel) live in `components/ui/` as Canvas 2D/DOM components, keeping `components/canvas/` for R3F only.
+  - Chat replies may follow the user's language; all repository content stays English.
+  - Contracts are drafts (D6 pending); weights, vetoes, landing radius, and site coordinates are not final.
+- **Verification performed:**
+  - Frontend: `npm ci`, `npm run typecheck` (no errors), `npm run build` (JS 219.72 kB, 68.69 kB gzip).
+  - Backend: `pip install -r requirements.txt`, `python -m compileall app` OK, `GET /api/health` → `{"status":"ok","data_dir_available":true}`, CORS header present for `http://localhost:5173`.
+  - Pipeline: `python -m lunar_pipeline` runs (no steps yet).
+- **Risks or pending items:**
+  - Repository rename to `space-app-26` must be done by the GitHub owner.
+  - Approve `docs/contracts/` (D6), weights (REQUIREMENTS 5.2), vetoes (PD-04), site coordinates (PD-01).
+  - `.github/CODEOWNERS` not created: needs the team's GitHub usernames.
+  - Hosting for the backend is undecided.
 
 ## Template for future entries
 
