@@ -1,0 +1,19 @@
+{
+  "status": "draft",
+  "note": "PD-01. Coordinates are intentionally null until QA verifies them against official NASA sources. Do not fill them from memory or AI output.",
+  "sites": [
+    { "id": "peak-near-cabeus-b", "name": "Peak near Cabeus B", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "haworth", "name": "Haworth", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "malapert-massif", "name": "Malapert Massif", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "mons-mouton-plateau", "name": "Mons Mouton Plateau", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "mons-mouton", "name": "Mons Mouton", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "nobile-rim-1", "name": "Nobile Rim 1", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "nobile-rim-2", "name": "Nobile Rim 2", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "de-gerlache-rim-2", "name": "de Gerlache Rim 2", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "slater-plain", "name": "Slater Plain", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "apollo-11", "name": "Apollo 11", "group": "historical-landing", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "apollo-17", "name": "Apollo 17", "group": "historical-landing", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "change-3", "name": "Chang'e 3", "group": "historical-landing", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "chandrayaan-3", "name": "Chandrayaan-3", "group": "historical-landing", "lat": null, "lon": null, "verified": false, "source": null }
+  ]
+}

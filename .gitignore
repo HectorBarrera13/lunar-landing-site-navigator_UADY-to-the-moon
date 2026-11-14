@@ -1,15 +1,38 @@
+# Node / frontend
 node_modules
 dist
 dist-ssr
 *.local
-.DS_Store
+.vite
+coverage
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environment
 .env
 .env.*
 !.env.example
-*.log
-npm-debug.log*
-.vite
-coverage
+
+# Data: raw NASA downloads and SPICE kernels are large and never committed
+data/raw/*
+!data/raw/.gitkeep
+pipeline/kernels/
+*.tif
+*.tiff
+*.bsp
+*.bpc
+
+# Editors / OS
+.DS_Store
 .idea
 .vscode/*
 !.vscode/extensions.json
+*.log

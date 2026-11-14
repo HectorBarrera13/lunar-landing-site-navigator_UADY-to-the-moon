@@ -1,118 +1,87 @@
-# Architecture — Solar System 3D
+# Architecture — Lunar Landing Site Navigator
 
 ## Overview
 
-Interactive web application that renders a 3D Solar System with an overlaid 2D interface layer. The architecture strictly separates DOM/Tailwind presentation from the WebGL scene to preserve performance, clarity, and independent evolution of each layer.
-
-## Layers
+A monorepo with three workspaces and one data folder. Heavy scientific computation happens **offline** in the pipeline; at runtime a lightweight API serves the precomputed results to a desktop web app. Nothing heavy runs live during the demo.
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│  2D UI — src/components/ui/ (React + Tailwind)          │
-│  Controls, panels, HUD, legends, forms                  │
-└──────────────────────────┬──────────────────────────────┘
-                           │ actions / selectors
-┌──────────────────────────▼──────────────────────────────┐
-│  Shared state — src/store/ (Zustand)                    │
-│  Selection, time, scale, camera, preferences            │
-└──────────────────────────┬──────────────────────────────┘
-                           │ selectors / subscriptions
-┌──────────────────────────▼──────────────────────────────┐
-│  3D Scene — src/components/canvas/ (R3F + Three.js)     │
-│  Canvas, Sun, planets, orbits, lights, camera           │
-└─────────────────────────────────────────────────────────┘
-
-Shared domain: src/types/ · src/data/ · src/lib/
-Assets: public/models/ · public/textures/
+                OFFLINE (before the demo)                       RUNTIME
+┌───────────────────────────────┐            ┌──────────────────────────┐        ┌──────────────────────────┐
+│ pipeline/  (Python)           │   writes   │ apps/backend/  (FastAPI) │  HTTP  │ apps/frontend/ (React)   │
+│ SpiceyPy · NumPy · Rasterio   │──────────► │ stdlib + Pydantic only   │◄──────►│ Vite · Tailwind · R3F    │
+│ ephemeris · terrain · layers  │ data/      │ load · aggregate · score │  JSON  │ 3D globe · 2D decision UI│
+└───────────────┬───────────────┘ processed/ └──────────────────────────┘        └──────────────────────────┘
+                │ reads
+     data/raw/ · pipeline/kernels/ (never committed)   data/catalog/sites.json (verified sites)
 ```
 
-## UI ↔ Canvas communication flow
-
-1. The 2D UI never imports Three.js or R3F. It only invokes store actions.
-2. The Zustand store is the single source of shared truth.
-3. The 3D Canvas subscribes to granular selectors and translates state into Three.js props/refs.
-4. For high-frequency changes (simulation time, camera position, planet tracking), use refs and `useFrame`, or `store.subscribe` with direct Three.js object updates, avoiding React re-renders.
-5. The UI may read state derived from the store (for example, the selected planet) without touching the scene.
-6. No component in `ui/` imports components from `canvas/`, and vice versa.
-
-### Dependency rule
+## Repository map
 
 ```text
-ui/ ──────► store/ ◄────── canvas/
-   └────────► types/ ◄───────┘
-              data/
-              lib/
+space-app-26/
+├── AGENTS.md · CLAUDE.md          # Agent rules (CLAUDE.md imports AGENTS.md)
+├── ARCHITECTURE.md                # This file
+├── REQUIREMENTS.md                # Scope, requirements, decisions, pending items
+├── AI_LOG.md                      # Mandatory log of agent work
+├── README.md                      # How to run everything
+├── .env.example                   # Shared runtime variables
+├── .claude/agents/                # Role-scoped subagents for orchestration
+├── .github/pull_request_template.md
+├── docs/contracts/                # Data contracts between workspaces (source of truth)
+├── data/
+│   ├── catalog/sites.json         # 13 curated sites (QA-verified coordinates)
+│   ├── raw/                       # NASA downloads (git-ignored)
+│   └── processed/                 # Pipeline outputs served by the backend
+├── pipeline/                      # Offline precomputation (heavy libraries allowed)
+│   ├── AGENTS.md · requirements.txt
+│   └── lunar_pipeline/{ephemeris,terrain,layers}/
+└── apps/
+    ├── backend/                   # FastAPI (stdlib + Pydantic only)
+    │   ├── AGENTS.md · requirements.txt · .env.example
+    │   └── app/{main.py,api/,services/,models/,core/}
+    └── frontend/                  # React + Vite + Tailwind v4 + R3F + Zustand
+        ├── AGENTS.md · ARCHITECTURE.md (internal layering)
+        └── src/components/{ui,canvas}/ · store/ · types/ · lib/ · data/
 ```
 
-Arrows indicate the allowed dependency direction. `ui/` and `canvas/` do not reference each other.
+## Responsibilities and the dependency rule
 
-## Folder structure
-
-```text
-src/
-├── App.tsx                  # Root composition (shell)
-├── main.tsx                 # React entry point
-├── index.css                # Tailwind v4 + @theme tokens
-├── components/
-│   ├── ui/                  # 2D layer: Tailwind, DOM, accessibility
-│   │   ├── controls/        # Buttons, sliders, toggles
-│   │   ├── panels/          # Side panels, planet info
-│   │   └── hud/             # Overlays, legends, indicators
-│   └── canvas/              # 3D layer: R3F, Three.js
-│       ├── scene/           # Canvas, lights, camera, loop
-│       ├── bodies/          # Sun, planets, moons, belts
-│       └── effects/         # Post-processing, particles, atmospheres
-├── store/                   # Zustand: typed state and actions
-├── data/                    # Static solar system data
-├── lib/                     # Pure utilities (scales, orbits, formatting)
-└── types/                   # Types shared across layers
-```
-
-> Subfolders under `ui/`, `canvas/`, and the rest will be created as tasks require them.
-
-## Responsibilities per folder
-
-| Folder | Responsibility | May import |
+| Workspace | Does | Never does |
 |---|---|---|
-| `components/ui/` | 2D interface, Tailwind, accessibility | `store/`, `types/`, `lib/` |
-| `components/canvas/` | 3D scene, R3F, Three.js | `store/`, `types/`, `lib/`, `data/` |
-| `store/` | Shared state, actions | `types/`, `data/`, `lib/` |
-| `data/` | Astronomical constants and data | `types/` |
-| `lib/` | Pure functions without React | `types/` |
-| `types/` | Type contracts | — |
+| `pipeline/` | Reads NASA data, computes time series, horizons, slope, layers; writes artifacts | Runs at request time; serves HTTP |
+| `apps/backend/` | Loads artifacts, slices them to the mission window, applies weights and vetoes, returns typed JSON | Imports NumPy/SciPy/SpiceyPy; reads raw rasters |
+| `apps/frontend/` | Renders the 3D globe and 2D decision UI; calls the API | Computes ephemerides; reads raw data; changes contracts |
 
-## Shared state
+Direction of dependencies: `pipeline → data/processed → backend → frontend`. The only coupling is `docs/contracts/`.
 
-The store is organized by domain, not by component:
+## Frontend ↔ backend communication
 
-- `simulation`: time, speed, pause, simulated date.
-- `selection`: selected body, hover, camera focus.
-- `view`: scale, visible layers (orbits, labels, belts).
-- `preferences`: graphics quality, units, accessibility.
+1. The frontend reads `VITE_API_URL` (default `http://localhost:8000/api`) and calls the backend only through `apps/frontend/src/lib/api/`.
+2. The backend allows the frontend origin through CORS using `FRONTEND_URL`.
+3. Requests and responses are JSON. Their shapes are defined in `docs/contracts/` and mirrored by Pydantic models (`apps/backend/app/models/`) and TypeScript types (`apps/frontend/src/types/`).
+4. Typical flow for the core use case:
+   1. The UI writes the selected site and mission window `[t0, tf]` to the Zustand store.
+   2. An API call requests the evaluation for that site and window.
+   3. The backend loads the site's precomputed series and horizon, aggregates over `[t0, tf]`, computes the criteria, weights, and vetoes, and returns the Suitability Index with its breakdown.
+   4. The store receives the result; the 2D UI renders the breakdown, horizon panel, and vetoes; the 3D canvas reads the Sun/Earth direction for the timeline cursor.
+5. Large static artifacts (layer images) may be served as static files by the backend; their metadata (grid, bounds, projection) comes from a JSON endpoint.
 
-Each domain exposes typed state and actions. Three.js objects are not stored in the store; only serializable data is.
+## Precision levels
 
-## Performance
+- **13 curated sites:** full date-specific evaluation from precomputed SPICE series and LOLA horizons.
+- **Free click / manual coordinates:** standard precision using NASA long-term average layers.
+- Site Finder (optional module, decided at H12) reuses the regional layers.
 
-- `Canvas` with `dpr={[1, 2]}` and `gl={{ antialias: true }}` by default.
-- `frameloop="demand"` for static views; animation only when necessary.
-- Shared geometries and materials; explicit `dispose`.
-- `InstancedMesh` for particles, stars, and asteroids.
-- Lazy asset loading with `Suspense`.
-- Draw call and triangle budget documented before adding effects.
+## Environment
 
-## Assets
+| Variable | Used by | Default |
+|---|---|---|
+| `PORT` | backend | `8000` |
+| `FRONTEND_URL` | backend (CORS) | `http://localhost:5173` |
+| `DEBUG_MODE` | backend | `False` |
+| `DATA_DIR` | backend | `data/processed` |
+| `VITE_API_URL` | frontend | `http://localhost:8000/api` |
 
-- `public/textures/`: surface, normal, and emissive maps.
-- `public/models/`: GLTF/GLB models.
-- Names in `kebab-case` and versioned per body (e.g., `earth-albedo-2k.jpg`).
-- Optimize textures (power-of-two dimensions, compression where applicable).
+## Deployment (to decide)
 
-## Conventions
-
-- Components: `PascalCase.tsx`.
-- Hooks: `useCamelCase.ts`.
-- Utilities: `camelCase.ts`.
-- Types: `PascalCase` without the `I` prefix.
-- `@/` alias for `src/`.
-- No cross-imports between `ui/` and `canvas/`.
+The frontend builds to static files. The backend needs a Python host. Hosting choice is pending (see `REQUIREMENTS.md`).

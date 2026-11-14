@@ -1,149 +1,90 @@
-# AGENTS.md
+# AGENTS.md — Lunar Landing Site Navigator (monorepo)
 
-## Agent role
+Guidelines for every AI agent (and human) working in this repository. Read this file first, then the `AGENTS.md` of the workspace you are touching.
 
-You are the senior software engineer and frontend architect responsible for this repository: an interactive 3D Solar System for NASA Space Apps 2026. Your job is to implement tasks incrementally, respecting the architecture defined in `ARCHITECTURE.md` and keeping the 2D interface and the 3D scene decoupled.
+## Project in one paragraph
 
-Before starting any task:
+NASA Space Apps 2026 challenge "Lunar Landing Site Navigator". A desktop web tool where mission planners compare lunar **south pole** landing sites and dates: for a site and a mission window `[t0, tf]` it shows the Sun and the Earth relative to the local horizon, evaluates solar power and direct-to-Earth communication, and summarizes the result as a **Suitability Index** (0–100) with a traffic-light color and explained vetoes. Full requirements: `REQUIREMENTS.md`.
 
-1. Read `ARCHITECTURE.md` and `AGENTS.md`.
-2. Review the latest entries in `AI_LOG.md` to understand the current state.
-3. Confirm the scope of the task and avoid changes outside it.
+## Before any task
 
-## Language
-
-- English is the default language for all agent output: chat responses, documentation, code identifiers, comments, UI copy, commit messages, and `AI_LOG.md` entries.
-- Do not introduce Spanish text in new files or changes unless explicitly requested.
-- If the user writes in another language, reply in English unless the user asks otherwise.
+1. Read this file, the workspace `AGENTS.md`, and `ARCHITECTURE.md`.
+2. Read the relevant sections of `REQUIREMENTS.md` and `docs/contracts/`.
+3. Review the latest entries in `AI_LOG.md`.
+4. Confirm which workspace and folder the task belongs to (see Ownership map). Do not change files outside that scope.
 
 ## Clarification protocol
 
-Before implementing, assess whether the request is clear enough to complete correctly. Ask the user when there is material ambiguity that could change the outcome.
+**Ask the user clarifying questions when in doubt; do not guess ambiguous requirements.**
 
-Ask about, for example:
+- Stop and ask before implementing when scope, acceptance criteria, the target folder, inputs (data sources, values, designs), or a meaningful technical trade-off is unclear.
+- Values marked _Pending_ or _Proposed_ in `REQUIREMENTS.md` are not decided. Ask before using them as final.
+- Group questions, propose a recommended default, and state explicit assumptions.
+- Trivial, unambiguous tasks proceed without questions.
 
-- Scope: what is included vs. explicitly out of scope.
-- Acceptance criteria: how the result will be considered done.
-- Layer: whether the work belongs in `ui/`, `canvas/`, `store/`, `data/`, `lib/`, or `types/`.
-- Inputs: data sources, assets, designs, texts, or external APIs to use.
-- Technical trade-offs: options with meaningful performance, architecture, or UX impact.
+## Language
 
-Rules:
+- Everything written to the repository is in **English**: documentation, code, identifiers, comments, UI copy, log entries, commit messages, and PR descriptions.
+- Chat replies may follow the language the user writes in.
 
-- Ask only what is necessary; do not ask for information already present in the repository or the request.
-- Group related questions and, when possible, propose a recommended default.
-- State explicit assumptions instead of silently guessing.
-- Do not start implementation while a material ambiguity remains unresolved.
-- For trivial, unambiguous tasks, proceed without questions.
+## Ownership map (separation of concerns)
 
-## Stack
+| Path | Owner role | Contents |
+|---|---|---|
+| `apps/frontend/src/components/ui/` | Frontend 2 (UI & integration) | 2D Tailwind UI: calendar, selectors, 2D map, horizon panel, breakdown, vetoes |
+| `apps/frontend/src/components/canvas/` | Frontend 1 (visualization) | 3D R3F/Three.js scene: Moon globe, Sun light, Earth, markers |
+| `apps/frontend/src/store/`, `src/types/`, `src/lib/` | Frontend 2 (with Frontend 1) | Shared state, contract types, API client |
+| `apps/backend/app/api/` | Backend B (backup: Backend A) | HTTP routes only |
+| `apps/backend/app/services/`, `app/models/` | Backend B (backup: Backend A) | Artifact loading, windowed aggregation, Suitability Index, vetoes |
+| `pipeline/lunar_pipeline/ephemeris/` | Backend A | SpiceyPy Sun/Earth time series |
+| `pipeline/lunar_pipeline/terrain/`, `layers/` | Backend B | Horizons, slope, regional layers |
+| `data/catalog/`, `data/README.md` | QA, Data & Docs | Verified site list, data source registry |
+| `docs/contracts/` | Backend A + B propose, Frontend 2 approves | Data contracts between workspaces |
+| `REQUIREMENTS.md`, `README.md` | Lead / PO (with QA) | Scope, priorities, decisions |
 
-- React 19 + TypeScript + Vite 8.
-- Tailwind CSS v4 for all 2D UI.
-- Three.js with `@react-three/fiber` and `@react-three/drei` for the 3D layer.
-- Zustand as the single source of truth for shared state.
-- npm as the package manager.
+Hard boundaries:
 
-## Architecture rules
+- 2D Tailwind UI components live only in `apps/frontend/src/components/ui/`; 3D Canvas elements only in `apps/frontend/src/components/canvas/`; backend API routes only in `apps/backend/app/api/`.
+- `apps/backend` uses the Python standard library plus FastAPI/Pydantic only. Heavy scientific libraries live only in `pipeline/`.
+- Workspaces communicate only through `docs/contracts/` artifacts and the HTTP API. No cross-workspace imports.
 
-### Strict 2D / 3D separation
+## Contract changes
 
-- `src/components/ui/` contains only 2D interface components built with Tailwind.
-  - Importing `three`, `@react-three/fiber`, or `@react-three/drei` is forbidden.
-  - Manipulating Three.js objects directly is forbidden.
-- `src/components/canvas/` contains only 3D scene components (R3F).
-  - Importing components from `src/components/ui/` is forbidden.
-  - Using Tailwind classes or DOM layout APIs is forbidden.
-- Communication between layers happens only through `src/store/` (Zustand) and the shared types in `src/types/`.
-- The flow is unidirectional: 2D UI writes intentions/actions → store → 3D Canvas reads state with selectors.
-- Do not create cross-imports between `ui/` and `canvas/`.
+`docs/contracts/` is the single source of truth between pipeline, backend, and frontend.
 
-### TypeScript
+- Never change a contract as a side effect of another task. Propose the change, ask the user, and wait for approval.
+- After approval, update the contract first, then the producer, then the consumers, and log it in `AI_LOG.md`.
 
-- `strict` is enabled; do not disable or relax it.
-- Implicit or explicit `any` is forbidden without documented justification.
-- Use `import type` for types and `verbatimModuleSyntax`.
-- Explicitly type public APIs (components, hooks, stores, utilities).
-- Do not use `@ts-ignore` or `@ts-expect-error` without a comment explaining the cause and a resolution TODO.
-- Prefer derived types (`ComponentProps`, `ReturnType`, etc.) over duplication.
-- Shared types live in `src/types/`; do not redefine them locally.
+## Scientific integrity
 
-### State
+- Single reference frame `MOON_ME`; degrees for angles; UTC ISO 8601 for time; meters for distances unless a field name says otherwise.
+- No atmospheric refraction on the Moon; subtract lunar curvature for horizons.
+- Never invent or recall from memory coordinates, thresholds, dataset URLs, or physical constants. Use `REQUIREMENTS.md`, `data/README.md`, or an official source, and cite it. If none exists, ask.
+- Always say "Suitability Index", never "probability of success".
 
-- Zustand is the single source of truth shared between UI and Canvas.
-- Define the store in `src/store/` with typed state and actions.
-- The 2D UI only invokes actions; it does not read Three.js objects.
-- The 3D Canvas consumes granular selectors to avoid unnecessary re-renders.
-- For high-frequency data (camera position, orbits, simulation time), use refs, `useFrame`, and transient subscriptions (`store.subscribe`) instead of re-rendering React components.
+## Git workflow
 
-## WebGL performance rules
+- `main` is always deployable. Never commit directly to `main`.
+- One short-lived branch per task: `feat/<area>-<topic>`, `fix/<area>-<topic>`, `chore/<topic>`, `docs/<topic>`.
+- Small PRs (ideally < 400 changed lines), one concern each, using `.github/pull_request_template.md`.
+- Commit messages follow Conventional Commits in English: `feat(frontend): add mission window calendar`.
+- Agents do not commit, push, or open PRs unless the user explicitly asks.
+- Never commit secrets, `.env` files, raw NASA data, or SPICE kernels.
 
-- Reuse geometries and materials; create them with `useMemo` and dispose of them on unmount.
-- Use `InstancedMesh` for repeated bodies (stars, asteroids, particles).
-- Do not instantiate objects, vectors, colors, or materials inside `useFrame`.
-- Limit the Canvas `dpr` to `[1, 2]`.
-- Use `frameloop="demand"` when the scene is static and `invalidate()` for one-off updates.
-- Load models and textures with `useGLTF` / `useTexture` and wrap them in `Suspense` with fallbacks.
-- Store heavy assets in `public/models/` and `public/textures/`.
-- Avoid shadows and post-processing by default; enable them only with a justified performance budget.
-- Measure before optimizing and document any relevant decision in `AI_LOG.md`.
+## Out of scope for now
 
-## UI and styling rules
+- No test frameworks (Jest, Vitest, Playwright, pytest) and no CI/CD pipelines unless the user explicitly asks. This will be revisited during development.
+- No functional features without an explicit task.
+- Verification is done with the commands in each workspace's Definition of Done plus the manual scientific checks in `pipeline/AGENTS.md`.
 
-- Use Tailwind CSS v4 utilities; design tokens live in `src/index.css` inside `@theme`.
-- Do not add `tailwind.config.js` files or manual PostCSS configuration.
-- Avoid inline styles except for dynamic values that cannot be expressed with Tailwind.
-- Maintain accessibility: semantic tags, `aria-*`, visible focus, and sufficient contrast.
-- Components must be small, composable, and have a single responsibility.
+## Mandatory logging
 
-## Code conventions
+After **every** completed task, append an entry to `AI_LOG.md` using the template at the end of that file (date, task, changes, files, architectural decisions, verification, risks). A task is not complete until `AI_LOG.md` is updated.
 
-- Components in `PascalCase.tsx`; hooks in `useCamelCase.ts`; utilities in `camelCase.ts`.
-- One component per component file.
-- Use the `@/` alias for imports from `src/`.
-- Do not add comments unless they provide non-obvious context.
-- Do not create new files if an adequate one already exists and can be extended.
+## Quick commands
 
-## Dependencies
-
-- Do not add dependencies without justifying the need, size, and native alternative.
-- Document every new dependency in `AI_LOG.md`.
-- Keep versions aligned with the stack declared in `package.json`.
-
-## Project prohibitions
-
-- Do not add test suites (Jest, Vitest, Playwright, Cypress, etc.) without explicit instruction.
-- Do not add CI/CD (GitHub Actions, GitLab CI, etc.) without explicit instruction.
-- Do not implement scene or control UI components without an explicit task.
-- Do not commit, push, or open PRs without explicit instruction.
-
-## Mandatory logging in AI_LOG.md
-
-After **every** completed task, add an entry to `AI_LOG.md` using the template defined at the end of the file. The entry must include:
-
-- Date.
-- Requested task.
-- Description of the change.
-- Files created/modified.
-- Technical decisions and trade-offs.
-- Verification performed (`npm run typecheck`, `npm run build`, etc.).
-- Risks or pending items.
-
-A task is not considered complete until `AI_LOG.md` is updated.
-
-## Commands
-
-```bash
-npm install        # install dependencies
-npm run dev        # development server
-npm run typecheck  # type checking
-npm run build      # production build
-npm run preview    # serve the build
-```
-
-## Definition of Done
-
-- The task meets the requested scope without collateral changes.
-- `npm run typecheck` passes with no errors.
-- `npm run build` passes with no errors.
-- `AI_LOG.md` is updated with the corresponding entry.
+| Workspace | Install | Run | Verify |
+|---|---|---|---|
+| `apps/frontend` | `npm install` | `npm run dev` | `npm run typecheck && npm run build` |
+| `apps/backend` | `pip install -r requirements.txt` | `uvicorn app.main:app --reload` | `python -m compileall app` + `GET /api/health` |
+| `pipeline` | `pip install -r requirements.txt` | `python -m lunar_pipeline` | Manual validation (see `pipeline/AGENTS.md`) |
