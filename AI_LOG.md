@@ -146,6 +146,24 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `npm run typecheck` and `npm run build` pass.
 - **Risks or pending items:** Contracts are still DRAFT (D6). The user explicitly approved, in-session on 2026-11-14, building mock types and client against the draft contract. Non-blocking QA notes: move shared store types to `src/types/`, clamp `setTimeCursor`. `group` format unspecified; series/terrain endpoints have types but no client yet.
 
+### 2026-11-14 — FR-01 horizon panel and time slider (mock data)
+
+- **Agent:** Claude Code (Sonnet 5.5, Frontend 2 role)
+- **Requested task:** Implement FR-01 with fake data: mock `getSiteSeries`, a 2D Canvas horizon panel with Sun and Earth at the time cursor, a time slider, English strings in a resource file.
+- **Change description:** Added `getSiteSeries` (mirrors `GET /api/sites/{site_id}/series`) returning a mock `SiteTimeSeries` (360-value horizon, hourly Sun/Earth series for 2027-03-15 to 2027-03-29). Added the horizon panel: azimuth 0-360 by elevation chart, filled terrain, Sun and Earth with icon, text label and visible/hidden-by-terrain indicator (hollow dashed marker plus check/cross), a DOM status list for screen readers, and a range slider that updates `timeCursor`.
+- **Files created/modified:** `apps/frontend/src/lib/api/mockData.ts`, `lib/api/client.ts`, `lib/api/index.ts` (modified); `src/components/ui/horizon/strings.ts`, `drawHorizon.ts`, `HorizonPanel.tsx`, `TimeSlider.tsx`, `index.ts` (created); `src/App.tsx` (modified, flagged: imports `HorizonPanel`, adds `relative` to `<main>`, mounts the panel in a bottom overlay; `MoonScene` unchanged); `AI_LOG.md`.
+- **Technical decisions / trade-offs:**
+  - Mock only: synthetic horizon and Sun/Earth motion, marked with a "Mock data" badge and comments; no network call yet.
+  - Canvas 2D colors are hex literals because Canvas cannot use `@theme` tokens; status is never conveyed by color alone.
+  - Slider uses 1-hour steps matching the mock `time_step_minutes`.
+  - No new dependencies; no imports from `three` or `canvas/`.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass (existing chunk-size warning only).
+- **Risks or pending items:**
+  - Contracts are still DRAFT; the user approved mock use against them.
+  - Panel is hard-wired to `mock-site-a`; should follow the store selection later.
+  - Panel temporarily calls `setMissionWindow` with `MOCK_WINDOW` when the window is null, until a real calendar exists.
+  - Browser check pending.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]

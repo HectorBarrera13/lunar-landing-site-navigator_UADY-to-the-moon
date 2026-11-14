@@ -1,5 +1,5 @@
-import type { EvaluateRequest, EvaluateResponse, SiteListItem } from '@/types'
-import { MOCK_SITES, buildMockEvaluation } from '@/lib/api/mockData'
+import type { EvaluateRequest, EvaluateResponse, SiteListItem, SiteTimeSeries } from '@/types'
+import { MOCK_SITES, buildMockEvaluation, buildMockSiteSeries } from '@/lib/api/mockData'
 
 /** Base URL for the real backend; unused while the mock is active. */
 export const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
@@ -20,4 +20,10 @@ export async function getSites(): Promise<SiteListItem[]> {
 export async function evaluate(request: EvaluateRequest): Promise<EvaluateResponse> {
   await delay(MOCK_DELAY_MS)
   return buildMockEvaluation(request)
+}
+
+/** GET /api/sites/{site_id}/series?start=&end= (MOCK until the backend is ready). */
+export async function getSiteSeries(siteId: string, startUtc?: string, endUtc?: string): Promise<SiteTimeSeries> {
+  await delay(MOCK_DELAY_MS)
+  return buildMockSiteSeries(siteId, startUtc, endUtc)
 }
