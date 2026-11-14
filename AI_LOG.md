@@ -133,6 +133,19 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `python -m compileall app` OK. With `uvicorn app.main:app --port 8000`: `/api/health` 200; `/api/sites` 200 with 13 sites; `/api/evaluate` by site 200 (`date_specific`, orange, MOCK warning) and by point 200 (`average`); neither/both targets, `end < start`, `lat 100`, naive datetimes → 422; unknown site → 404; OpenAPI lists `/api/health`, `/api/sites`, `/api/evaluate`. Python 3.14.7 locally.
 - **Risks or pending items:** Replace the mock with real windowed aggregation in round 3 once pipeline artifacts and weights/vetoes (5.2, PD-04) are Agreed. `GET /api/sites/{site_id}/series` and `/api/layers/{region_id}` are not implemented yet.
 
+### 2026-11-14 — Frontend contract types, store, and mock API client
+
+- **Agent:** Claude Code (Sonnet 5.5, Frontend 2 role)
+- **Requested task:** Create contract types, the Zustand store, and a mock API client (no visual components).
+- **Change description:** Added types mirroring `docs/contracts/README.md`; a store with mission (t0, tf, time cursor), selection (none/site/point), mode (3d/2d) and active layer; an API client with `getSites` and `evaluate` returning mock data after a simulated delay.
+- **Files created/modified:** `apps/frontend/src/types/contracts.ts`, `types/index.ts`, `store/types.ts`, `store/useAppStore.ts`, `store/index.ts`, `lib/api/client.ts`, `lib/api/mockData.ts`, `lib/api/index.ts`; `AI_LOG.md`.
+- **Technical decisions / trade-offs:**
+  - Types keep contract snake_case names; `GET /api/sites` item uses `lat`/`lon` as the contract states (differs from `lat_deg`/`lon_deg` elsewhere).
+  - Mock is marked via `MOCK_NOTICE` in `warnings`, `mock-*` site ids, and comments; mock coordinates are not real (PD-01 pending).
+  - Active layer options mirror the four layer PNGs in contract 1.3. `getSites`/`evaluate` do not yet call `VITE_API_URL`.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass.
+- **Risks or pending items:** Contracts are still DRAFT (D6). The user explicitly approved, in-session on 2026-11-14, building mock types and client against the draft contract. Non-blocking QA notes: move shared store types to `src/types/`, clamp `setTimeCursor`. `group` format unspecified; series/terrain endpoints have types but no client yet.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
