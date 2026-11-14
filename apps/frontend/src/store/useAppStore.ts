@@ -8,8 +8,17 @@ export interface MissionState {
   timeCursor: string | null
 }
 
+export type Vec3 = [number, number, number]
+
+export interface BodyDirections {
+  /** Unit vectors from the Moon center toward the Sun / Earth, in scene axes. */
+  sunDir: Vec3
+  earthDir: Vec3
+}
+
 export interface AppState {
   mission: MissionState
+  bodies: BodyDirections
   selection: Selection
   mode: ViewMode
   activeLayer: ActiveLayer
@@ -18,6 +27,7 @@ export interface AppState {
   selectSite: (siteId: string) => void
   selectPoint: (latDeg: number, lonDeg: number) => void
   clearSelection: () => void
+  setBodyDirections: (sunDir: Vec3, earthDir: Vec3) => void
   setMode: (mode: ViewMode) => void
   setActiveLayer: (layer: ActiveLayer) => void
 }
@@ -30,6 +40,8 @@ function clampCursor(cursor: string | null, t0: string, tf: string): string {
 
 export const useAppStore = create<AppState>()((set) => ({
   mission: { t0: null, tf: null, timeCursor: null },
+  // MOCK defaults: not computed from ephemerides.
+  bodies: { sunDir: [0.78, 0.31, 0.54], earthDir: [0, 0.2, 0.98] },
   selection: { kind: 'none' },
   mode: '3d',
   activeLayer: 'illumination',
@@ -39,6 +51,7 @@ export const useAppStore = create<AppState>()((set) => ({
   selectSite: (siteId) => set({ selection: { kind: 'site', siteId } }),
   selectPoint: (latDeg, lonDeg) => set({ selection: { kind: 'point', latDeg, lonDeg } }),
   clearSelection: () => set({ selection: { kind: 'none' } }),
+  setBodyDirections: (sunDir, earthDir) => set({ bodies: { sunDir, earthDir } }),
   setMode: (mode) => set({ mode }),
   setActiveLayer: (activeLayer) => set({ activeLayer }),
 }))

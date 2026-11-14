@@ -146,6 +146,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `npm run typecheck` and `npm run build` pass.
 - **Risks or pending items:** Contracts are still DRAFT (D6). The user explicitly approved, in-session on 2026-11-14, building mock types and client against the draft contract. Non-blocking QA notes: move shared store types to `src/types/`, clamp `setTimeCursor`. `group` format unspecified; series/terrain endpoints have types but no client yet.
 
+### 2026-11-14 — 3D scene: site markers, Sun direction, Earth
+
+- **Agent:** Claude Code (Frontend 1 / visualization)
+- **Requested task:** Draw site markers (InstancedMesh) with click-to-select, and drive the Sun light and Earth position from the store.
+- **Change description:** `SiteMarkers` loads sites via `getSites()` (src/lib/api) and renders one InstancedMesh (memoized geometry/material, disposed on unmount); click calls `selectSite`; the selected site is highlighted. `SunLight` and `EarthBody` read `bodies.sunDir`/`earthDir` via granular selectors; Earth (2k_earth_daymap.jpg, unlit material) sits 6 units from the Moon center. Orbit max distance raised to 10. Store: added `bodies` and `setBodyDirections` (approved by the user; Frontend 2 file; no contract change).
+- **Files created/modified:** `apps/frontend/src/components/canvas/SiteMarkers.tsx`, `SunLight.tsx`, `EarthBody.tsx` (created); `MoonScene.tsx` (modified); `apps/frontend/src/store/useAppStore.ts`, `store/index.ts` (modified); `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Lat/lon to scene mapping (+Y north, lon 0 on +X, east toward -Z) is UNVERIFIED against the Moon texture and MOON_ME. Sites are mock placeholders (not real coordinates). `bodies` defaults are MOCK values, not ephemerides; the real producer (series angles to global vectors) is pending a contract decision. Directions change rarely, so no useFrame is used. Earth radius/distance are not to scale.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning).
+- **Risks or pending items:** Browser check pending. Texture orientation vs. marker convention pending. Earth size/distance are visual placeholders.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
