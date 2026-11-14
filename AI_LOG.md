@@ -104,6 +104,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** Manually checked that each agent's scope matches the Ownership map in `AGENTS.md` and that the frontmatter is valid (`name`, `description`, `tools`). No code changed, so the workspace build commands do not apply.
 - **Risks or pending items:** `data-curator` relies on web access; if the network is restricted, PD-01 verification must be done by a human.
 
+### 2026-11-14 — 3D scene: Moon globe, Sun light, orbit controls
+
+- **Agent:** Claude Code (Frontend 1 / visualization)
+- **Requested task:** Create the R3F scene with a textured Moon globe, fixed directional Sun light plus dim ambient light, limited OrbitControls, mounted full-screen in `App.tsx`.
+- **Change description:** `MoonScene` (Canvas, dpr [1,2], lights, Suspense, OrbitControls without pan, distance 1.6-8), `MoonGlobe` (memoized SphereGeometry disposed on unmount, `useTexture` of `/textures/2k_moon.jpg`), `SceneFallback` (wireframe sphere). No store reads, no Earth, no shadows or postprocessing, nothing allocated per frame.
+- **Files created/modified:** `apps/frontend/src/components/canvas/MoonScene.tsx`, `MoonGlobe.tsx`, `SceneFallback.tsx` (created); `apps/frontend/src/App.tsx` (modified: import, `h-dvh` instead of `min-h-dvh`, mount `<MoonScene />`; Frontend 2 file).
+- **Technical decisions / trade-offs:** Sun is a fixed placeholder direction; it will be driven from backend data via the store in a later task. Moon radius is 1 scene unit. Texture is sRGB. Build warns about a >500 kB chunk (three.js); code-splitting deferred.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Browser check is pending for the user.
+- **Risks or pending items:** Visual check pending; texture is not oriented to MOON_ME yet; lighting intensities are provisional.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
