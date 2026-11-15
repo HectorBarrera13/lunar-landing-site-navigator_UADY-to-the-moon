@@ -1,12 +1,12 @@
 /**
- * PROVISIONAL landing zone geometry (REQUIREMENTS R-22 / PD-02, status Proposed):
- * "Landing zone 200 m diameter + 100 m error margin, as a documented assumption".
- * Reading used here: the zone is a circle of 200 m diameter (100 m radius) around the proposed
- * landing point, and the 100 m error margin is added radially, so the margin ring reaches
- * 100 + 100 = 200 m from the center. Replace both values when PD-02 is decided.
+ * Landing zone geometry (REQUIREMENTS R-22 / PD-02, Agreed 2026-11-15): the zone is a circle of
+ * 200 m diameter (100 m radius) around the proposed landing point; the 100 m error margin is
+ * spread across the diameter, so the margin ring is 300 m in diameter, i.e. 50 m wide radially
+ * and 150 m from the center.
  */
 export const ZONE_RADIUS_M = 100
-export const MARGIN_M = 100
+/** Radial width of the error margin ring (100 m across the diameter). */
+export const MARGIN_M = 50
 export const MARGIN_RADIUS_M = ZONE_RADIUS_M + MARGIN_M
 
 /** Fraction of the smaller canvas side used by the margin ring radius. */

@@ -5,7 +5,7 @@ export const MAP_STRINGS = {
   backHint: 'Esc',
   placeholder: 'Placeholder base image — PGDA 90 relief pending',
   notGeoreferenced: 'Not georeferenced: image up is not north',
-  provisional: 'Provisional zone and margin (PD-02 / R-22)',
+  provisional: 'Zone and margin agreed (PD-02 / R-22)',
   canvasLabel: 'Landing zone drawing',
   legendLabel: 'Legend',
   legendZone: 'Landing zone',
@@ -33,7 +33,7 @@ export const MAP_STRINGS = {
     `Landing zone for ${args.name} at ${args.lat}, ${args.lon}. ` +
     `Circle of ${args.zoneDiameterM} m diameter (${args.zoneRadiusM} m radius) centered on the proposed landing point. ` +
     `Dotted error margin of ${args.marginM} m around it, out to ${args.marginRadiusM} m from the center. ` +
-    `Zone and margin are provisional (PD-02). ${args.index} ` +
+    `Zone and margin follow the agreed PD-02 values. ${args.index} ` +
     'The base image is a placeholder until the PGDA 90 relief is available.',
   indexText: (value: number, label: string): string => `Suitability Index ${value} of 100, ${label}.`,
 } as const

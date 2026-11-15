@@ -18,7 +18,7 @@ A monorepo with three workspaces and one data folder. Heavy scientific computati
 ## Repository map
 
 ```text
-space-app-26/
+lunar-landing-site-navigator_UADY-to-the-moon/
 ├── AGENTS.md · CLAUDE.md          # Agent rules (CLAUDE.md imports AGENTS.md)
 ├── ARCHITECTURE.md                # This file
 ├── REQUIREMENTS.md                # Scope, requirements, decisions, pending items
@@ -34,7 +34,7 @@ space-app-26/
 │   └── processed/                 # Pipeline outputs served by the backend
 ├── pipeline/                      # Offline precomputation (heavy libraries allowed)
 │   ├── AGENTS.md · requirements.txt
-│   └── lunar_pipeline/{ephemeris,terrain,layers}/
+│   └── lunar_pipeline/{ephemeris,terrain,layers,sites}/
 └── apps/
     ├── backend/                   # FastAPI (stdlib + Pydantic only)
     │   ├── AGENTS.md · requirements.txt · .env.example
@@ -69,7 +69,7 @@ Direction of dependencies: `pipeline → data/processed → backend → frontend
 ## Precision levels
 
 - **13 curated sites:** full date-specific evaluation from precomputed SPICE series and LOLA horizons.
-- **Free click / manual coordinates:** standard precision using NASA long-term average layers.
+- **Free click / manual coordinates:** date-specific evaluation after resolving to the nearest preset with precomputed artifacts. Regional average layers remain future work in `pipeline/layers`.
 - Site Finder (optional module, decided at H12) reuses the regional layers.
 
 ## Environment
@@ -81,6 +81,7 @@ Direction of dependencies: `pipeline → data/processed → backend → frontend
 | `DEBUG_MODE` | backend | `False` |
 | `DATA_DIR` | backend | `data/processed` |
 | `VITE_API_URL` | frontend | `http://localhost:8000/api` |
+| `CATALOG_FILE` | backend | `data/catalog/sites.json` |
 
 ## Deployment (to decide)
 

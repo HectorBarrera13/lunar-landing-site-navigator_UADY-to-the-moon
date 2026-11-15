@@ -1,8 +1,14 @@
 """Pipeline step `terrain`: evaluate verified polar sites and historical spherical horizons.
 
 Writes:
+<<<<<<< HEAD
 - data/processed/terrain/<site_id>.json for sites with terrain (docs/contracts 1.2)
 - data/interim/horizon/<site_id>.json for terrain and historical spherical profiles
+=======
+- data/processed/terrain/<site_id>.json (docs/contracts §1.2; `terrain_roughness_index`
+  and `nearest_ice_deposit_meters` omitted until REQUIREMENTS 5.5 defines them)
+- data/interim/horizon/<site_id>.json (360-value profile, joined into sites/<id>.json later)
+>>>>>>> 72a0baff068b05d61b547101bdd8f182e15bbb0e
 """
 
 from itertools import combinations

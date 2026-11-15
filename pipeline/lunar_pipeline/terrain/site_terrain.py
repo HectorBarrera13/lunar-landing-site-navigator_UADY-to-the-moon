@@ -1,7 +1,7 @@
 """Terrain evaluation for one site: slope inside the landing circle and horizon profile.
 
-Reads only windows of remote rasters (see remote_window.py). All projection and
-body-radius values come from the rasters' own CRS.
+Reads windows of local or remote rasters (see remote_window.py). All projection
+and body-radius values come from the rasters' own CRS.
 """
 
 from dataclasses import dataclass
@@ -17,6 +17,7 @@ from lunar_pipeline.terrain.slope import SlopeStats, slope_stats
 from lunar_pipeline.terrain.sources import (
     LDEM_60S_240MPP_ADJ_URL,
     LDEM_80S_20MPP_ADJ_URL,
+<<<<<<< HEAD
     LDSM_80S_20MPP_ADJ_URL,
     pgda78_url,
 )
@@ -37,6 +38,11 @@ def terrain_source_urls(pgda78_tile: str | None) -> dict[str, str]:
         "horizon_near": LDEM_80S_20MPP_ADJ_URL,
         "horizon_far": LDEM_60S_240MPP_ADJ_URL,
     }
+=======
+    pgda78_local_path,
+    pgda78_url,
+)
+>>>>>>> 72a0baff068b05d61b547101bdd8f182e15bbb0e
 
 
 @dataclass(frozen=True)
@@ -49,6 +55,12 @@ class SiteTerrain:
     missing_horizon_samples: int
     """DEM samples along the rays with no data (ignored by the horizon max)."""
     sources: dict[str, str]
+
+
+def _pgda78_source(site_folder: str, product: str) -> str:
+    """Prefer a local PGDA 78 tile and fall back to its registered HTTPS URL."""
+    local_path = pgda78_local_path(site_folder, product)
+    return str(local_path) if local_path.is_file() else pgda78_url(site_folder, product)
 
 
 def _body(win: DemWindow) -> tuple[CRS, Geod, float]:
@@ -92,9 +104,14 @@ def evaluate_site_terrain(
     config: TerrainConfig,
 ) -> SiteTerrain:
     radius = config.landing_radius_m
+<<<<<<< HEAD
     sources = terrain_source_urls(pgda78_tile)
     slope_url = sources["slope"]
     surf_url = sources["center_elevation"]
+=======
+    slope_url = _pgda78_source(pgda78_tile, "slp")
+    surf_url = _pgda78_source(pgda78_tile, "surf")
+>>>>>>> 72a0baff068b05d61b547101bdd8f182e15bbb0e
 
     # Use the QA-confirmed 5 m tile when available; otherwise use the registered
     # PGDA 90 20 m products for verified polar sites.

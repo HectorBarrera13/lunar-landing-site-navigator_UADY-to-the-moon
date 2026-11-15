@@ -56,6 +56,7 @@ class EvaluationMetrics(BaseModel):
 class EvaluateResponse(BaseModel):
     """Response body of `POST /api/evaluate` (docs/contracts §2.1)."""
 
+    resolved_site_id: str
     suitability_index: int = Field(ge=0, le=100)
     traffic_light: TrafficLight
     precision: Precision
