@@ -510,6 +510,23 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `npm run typecheck` passes; `npm run build` passes (existing >500 kB chunk warning only). Built CSS contains `z-5`, `left-[calc(560px+2rem)]`, `right-[calc(384px+1rem)]`, `top-32`, `w-[560px]`, `stroke-light-*`, `stroke-ink-*`, `border-l-primary` and the `--color-*` variables the canvas reads. No browser check was done; no server was started.
 - **Risks or pending items:** Not checked in a browser (drawing, focus handling, Escape order, DPR). On short viewports the horizon panel (max height `100dvh - 9rem`) can grow up to `top-32` and sit under the notice; below ~1100 px width (sidebar open) the 2D viewport becomes very narrow (desktop target ≥ 1280 px). The traffic-light grid of FR-08 (PD-03 cell size) and the PGDA 90 base image are not implemented. The point card's Compare action moved into the 2D header; the anchored card re-fetches the evaluation when returning to 3D. PD-02 and PD-05 remain provisional.
 
+### 2026-11-15 — Frontend on contract 1.1 (columnar yearly series) and round 3 browser check
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Adapt the frontend to contract 1.1 from `feat/round3-data-series` (Compu 1), which would otherwise break `main` when merged; also record the post-merge UI fix and the browser verification of round 3 Compu 2.
+- **Change description:**
+  - `src/types/contracts.ts` now mirrors contract 1.1 / 2.0: `SiteSeriesResponse` (horizon metadata `max_radius_m`, `near_field_m`, `observer_height_m`, `assumptions`, plus columns `time_utc`, `*_azimuth_deg`, `*_elevation_deg`, `*_visible_fraction`, `*_distance_km`, `*_dir_me`). The 1.0 row types were removed from the contract mirror.
+  - New UI row model in `src/types/series.ts` (`SiteTimeSeries`, `SeriesPoint`), built once in `src/lib/api/seriesRows.ts` from the columnar response. `sun_visible` / `earth_visible` are derived with the contract 1.1 rules (Sun: fraction > 0; Earth: fraction >= 0.5, i.e. center above the horizon), so the existing consumers keep working.
+  - Horizon panel "% visible" now shows the real disc fraction (R3-2) instead of 100/0; the timeline sunlight band is the mean solar-disc fraction (R3-2), Earth stays the share of visible hours.
+  - Earlier (commit `4f9afb4`, already in `main`): wider hour selects in the mission window picker and no repeated "visible" label on the body badges.
+- **Files created/modified:** `apps/frontend/src/types/{contracts,series,index}.ts`, `apps/frontend/src/lib/api/{client,seriesRows}.ts`, `apps/frontend/src/components/ui/horizon/BodyReadout.tsx`, `apps/frontend/src/components/ui/timeline/timeBuckets.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Columnar-to-rows conversion happens once at the API boundary, keeping `types/contracts.ts` an exact mirror and the UI code unchanged. Disc sizes stay symbolic ("Disc size not to scale"): the contract derives angular radii from SPICE kernel radii, but no field exposes the radii or the angular size, and the frontend must not use recalled constants. Proposal for Compu 1: add `sun_radius_km`/`earth_radius_km` (from the kernels) to `horizon.json`, or an angular-radius column. 3D directions keep using azimuth/elevation; `*_dir_me` is available for the round 4 perspective view.
+- **Verification performed:**
+  - `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning only).
+  - Headless Chrome (DevTools Protocol, one-off script outside the repo) against the backend of `feat/round3-data-series` on port 8000: series loads (337 points for 2027-03-15..29); far-side click shows "Selection blocked" and selects nothing; a globe click resolves to Malapert with "Nearest preset site", zooms and opens the 2D view after the animation; "Back to globe" returns to 3D; "Sunlit example" loads 73 points; at 2027-03-31T05:00Z the Sun badge shows 18% visible (fraction 0.1846); a 2030 window loads 241 points; compare "+7 days" shows Index 50 → 43. No application console errors.
+  - Before this change, the same flow passed on `main` with the 1.0 backend (demo window Index 21 red with 3 vetoes; sunlit example 52 red, Earth visibility veto).
+- **Risks or pending items:** This branch must merge right after `feat/round3-data-series`; against a 1.0 backend the series request fails (shown as "No precomputed data for this window"). Body radii are missing from the contract (see above). R3-5, R3-6 and PD-05 are still provisional in the UI.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
