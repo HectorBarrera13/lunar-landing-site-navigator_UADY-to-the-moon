@@ -587,6 +587,22 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `python -m pip install -r requirements.txt` and `python -m compileall -q apps/backend/app` passed in the temporary backend venv. A temporary Uvicorn run returned `/api/health` status `ok` and 13 sites. `/api/evaluate` returned Index 21 / red with `earth_visibility_low`, `sunlight_low`, and `darkness_exceeded` for the demo window; the Sunlit example returned 85.7% sunlight and Index 50 / red with `earth_visibility_low`. `data/README.md` already documents that `abcorr LT+S` is light-time plus stellar aberration, not refraction.
 - **Risks or pending items:** Deleting the merged remote branches for PRs #18 and #19 was attempted but GitHub rejected the operation because this checkout has no valid Git credentials. No stale worktrees exist. Frontend and pipeline changes remain out of scope.
 
+### 2026-11-15 — Fix series crash on null angular radii and regenerate artifacts
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Critical item from the second backend/project audit: `GET /api/sites/{id}/series` returned `"sun_angular_radius_deg": null` / `"earth_angular_radius_deg": null` (backend `list[float] | None = None`, artifacts not regenerated), and the frontend adapter `optionalColumnValue` only handled `undefined`, so every series load threw `Cannot read properties of null (reading 'length')` (reproduced with Node). FR-01 could not load.
+- **Change description:**
+  - Part A (frontend boundary): `optionalColumnValue` treats `null` and `undefined` alike (`column == null`); the contract mirror types the two optional columns as `number[] | null` (absent or null for legacy artifacts). The "shorter than `time_utc`" check is kept.
+  - Part B (data): regenerated Malapert Massif artifacts with `python -m lunar_pipeline terrain ephemeris sites` (NAIF kernels from `data/README.md` downloaded to the git-ignored `pipeline/kernels/`; PGDA 78 `Site23` and PGDA 90 read over HTTPS). The 11 year files now include `sun_angular_radius_deg` and `earth_angular_radius_deg`.
+- **Files created/modified:** `apps/frontend/src/lib/api/seriesRows.ts`, `apps/frontend/src/types/contracts.ts`, `data/processed/sites/malapert-massif/{2025..2035}.json`, `AI_LOG.md`. Unchanged after regeneration: `horizon.json`, `data/processed/terrain/malapert-massif.json`.
+- **Technical decisions / trade-offs:** Backend and contract untouched (the backend keeps emitting `null` for missing optional columns); whether the contract should say "absent" or "null" is left to a separate, approval-gated contract task. Pipeline and backend run in throwaway venvs outside the repository (Python 3.14.7).
+- **Verification performed:**
+  - Determinism vs. a backup of the previous artifacts: terrain JSON and `horizon.json` identical; in year files every pre-existing column is identical except two `sun_distance_km` values (2025 index 2087, 2029 index 1036) that differ by 0.001 km in the last rounded digit (rounding tie, relative 7e-12).
+  - Sanity: radius columns have the same length as `time_utc`, all finite and > 0; Sun 0.2614–0.2717°, Earth 0.8984–1.0254°; max hourly step 0.00001° (Sun) and 0.0007° (Earth). Year files 1.45 MB each (< 5 MB).
+  - Backend (uvicorn on port 8000): `/series` returns radius arrays; demo window Index 21 red with `earth_visibility_low`, `sunlight_low`, `darkness_exceeded`; sunlit window Index 50 red; 2036 → 422; far side → 422; no-sample window → 422; unknown site / site without artifacts → 404; year-crossing series concatenates.
+  - Frontend: Node repro of the adapter with `null`, `undefined`, an array, and a short column (error kept); `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning only). No browser check was done.
+- **Risks or pending items:** Contract still silent on absent vs. `null` for optional columns. Pipeline validated on Python 3.14 only (declared 3.11+). Horizons comparison for the radii was not repeated (geometry columns are unchanged).
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
