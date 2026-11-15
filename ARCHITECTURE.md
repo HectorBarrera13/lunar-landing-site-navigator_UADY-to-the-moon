@@ -77,7 +77,7 @@ Direction of dependencies: `pipeline → data/processed → backend → frontend
 | Variable | Used by | Default |
 |---|---|---|
 | `PORT` | backend | `8000` |
-| `FRONTEND_URL` | backend (CORS) | `http://localhost:5173` |
+| `FRONTEND_URL` | backend (CORS) | `http://localhost:5173` (comma-separated list allowed) |
 | `DEBUG_MODE` | backend | `False` |
 | `DATA_DIR` | backend | `data/processed` |
 | `VITE_API_URL` | frontend | `http://localhost:8000/api` |

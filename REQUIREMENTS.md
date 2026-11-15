@@ -108,24 +108,44 @@ Baseline (SRS, agreed) vs. adjustment (master document, proposed). The proposal 
 | Radiation | 5% | 5% | 0% (informative) | 0% (informative) | Future work |
 | Roughness / other | 5% | 0% | 5% | 5% | LOLA roughness (optional) |
 
-**Status:** Pending team choice between SRS baseline and proposed adjustment. Weights must live in configuration, not in code.
+**Status:** Agreed (2026-11-14): proposed adjustment, south-pole column (30/20/15/10/20/0/0/5). Criteria at 0% are informative and not scored. Weights live in configuration, not in code.
 
-### 5.3 Vetoes — Proposed (PD-04)
+### 5.3 Vetoes — Agreed (2026-11-14, PD-04)
 
-| Veto | Proposed rule | Rationale |
+| Veto | Rule | Rationale |
 |---|---|---|
 | Communication | Earth visible < 25% of the mission window | NASA excluded zones with Earth visibility < 25% when selecting Artemis III regions |
-| Power | Continuous darkness longer than an assumed battery limit (e.g., 48 h), or light < 5% | NASA excluded zones with solar visibility < 5%; continuous darkness drains batteries |
-| Slope | 95th percentile of slope inside the landing circle > 10° | Artemis III landing criterion; the mean hides fatal obstacles |
+| Power | Continuous darkness longer than the battery limit (48 h), or light < 5% | NASA excluded zones with solar visibility < 5%; continuous darkness drains batteries |
+| Slope | Mean slope inside the landing circle > 10° | SRS rule (5.4). The 95th percentile > 10° is a warning, not a veto |
 | Far side | lon outside [-90°, +90°] and lat > -80° | No direct communication without relays |
+
+The previously proposed slope veto on the 95th percentile was rejected because it contradicts the agreed 5.4 behaviour (secondary warning) and would veto the only verified site with current data. The 95th percentile is still reported as a warning.
 
 ### 5.4 Slope aggregation — Agreed (SRS) with recommended guard
 
 The SRS defines the mean slope inside the landing circle with a < 10° threshold. Because the mean can hide a steep crater wall, the system also computes the max / 95th percentile and shows a secondary warning when micro-areas exceed 10°.
 
-### 5.5 Pending formalization — Pending
+### 5.5 Normalization and thresholds — Agreed (2026-11-14)
 
-Normalization functions (0–1) for every criterion; minimum Earth elevation angle; battery darkness limit; zone-vs-margin formula; geodesic distance-to-ice function; whether radiation is weighted or informative; roughness metric.
+Normalization functions (0–1), evaluated over `[t0, tf]`:
+
+| Criterion | Normalization |
+|---|---|
+| Power / solar illumination | `sunlight_percent / 100` |
+| Direct-to-Earth communication | `earth_visible_percent / 100` |
+| Terrain slope | `clamp(1 − mean_slope_degrees / 10, 0, 1)` |
+| Landing zone vs. error margin | `is_slope_safe ? 1 : 0` |
+| Resources (ice proximity) | Excluded until a distance-to-ice product exists |
+| Roughness | Excluded until a roughness metric is defined |
+
+- Battery darkness limit: 48 h.
+- Minimum solar visibility: 5%.
+- Minimum Earth visibility: 25%.
+- No separate minimum Earth elevation angle: visibility is defined by the horizon profile (contract 1.1).
+- When a criterion has no data, it is excluded and the remaining weights are renormalized; the response says so in `warnings`.
+- Free points are redirected to the nearest preset site that has a precomputed series. The evaluation is `date_specific`; there is no average-precision evaluation until `pipeline/layers` exists.
+
+Open (not blocking the hackathon core): distance-to-ice function, roughness metric, zone-vs-margin formula beyond the binary `is_slope_safe`.
 
 ---
 

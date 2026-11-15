@@ -15,6 +15,7 @@ Step = tuple[str, Callable[[], None]]
 STEP_MODULES: tuple[str, ...] = (
     "lunar_pipeline.terrain.steps",
     "lunar_pipeline.ephemeris.steps",
+    "lunar_pipeline.sites.steps",
     "lunar_pipeline.layers.steps",
 )
 
