@@ -9,30 +9,73 @@ export const MOCK_SITES: SiteListItem[] = [
   { id: 'mock-site-c', name: 'Mock Site C', group: 'mock', lat: -87.0, lon: -90.0 },
 ]
 
+function hashString(text: string): number {
+  let h = 0x811c9dc5
+  for (let i = 0; i < text.length; i += 1) {
+    h ^= text.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  return h >>> 0
+}
+
+function mockIndexFromKey(key: string): number {
+  return Math.floor(hashString(key) % 101)
+}
+
+/** MOCK Suitability Index: deterministic per rounded location, NOT computed by any model. */
+export function getMockSuitabilityIndex(latDeg: number, lonDeg: number): number {
+  return mockIndexFromKey(`${latDeg.toFixed(3)},${lonDeg.toFixed(3)}`)
+}
+
+/**
+ * MOCK-ONLY thresholds. They are NOT the REQUIREMENTS.md traffic-light thresholds
+ * (those are still pending); they only keep the mock internally consistent.
+ */
+function mockTrafficLight(index: number): EvaluateResponse['traffic_light'] {
+  if (index >= 70) return 'green'
+  if (index >= 40) return 'orange'
+  return 'red'
+}
+
+function mockIndexForRequest(req: EvaluateRequest): number {
+  if (req.lat_deg !== null && req.lon_deg !== null) return getMockSuitabilityIndex(req.lat_deg, req.lon_deg)
+  const site = MOCK_SITES.find((s) => s.id === req.site_id)
+  if (site) return getMockSuitabilityIndex(site.lat, site.lon)
+  return mockIndexFromKey(`site:${req.site_id ?? ''}`)
+}
+
 export function buildMockEvaluation(req: EvaluateRequest): EvaluateResponse {
   const isSite = req.site_id !== null
+  const index = mockIndexForRequest(req)
+  const light = mockTrafficLight(index)
+  const earthVisible = light === 'red' ? 12 : 40 + Math.round(index / 4)
+  const warnings = [MOCK_NOTICE]
+  if (light === 'orange') warnings.push('Caution: some criteria are marginal. [mock]')
   return {
-    suitability_index: 72,
-    traffic_light: 'orange',
+    suitability_index: index,
+    traffic_light: light,
     precision: isSite ? 'date_specific' : 'average',
-    vetoes: [
-      {
-        code: 'earth_visibility_low',
-        message: 'Earth visible only 12% of the mission window (minimum 25%). [mock]',
-      },
-    ],
+    vetoes:
+      light === 'red'
+        ? [
+            {
+              code: 'earth_visibility_low',
+              message: 'Earth visible only 12% of the mission window (minimum 25%). [mock]',
+            },
+          ]
+        : [],
     criteria: [
-      { code: 'power', label: 'Solar power', normalized: 0.8, weight: 0.3, contribution: 24, detail: 'Mock detail.' },
-      { code: 'communications', label: 'Earth communications', normalized: 0.5, weight: 0.3, contribution: 15, detail: 'Mock detail.' },
+      { code: 'power', label: 'Solar power', normalized: index / 100, weight: 0.3, contribution: Math.round(index * 0.3), detail: 'Mock detail.' },
+      { code: 'communications', label: 'Earth communications', normalized: earthVisible / 100, weight: 0.3, contribution: Math.round(earthVisible * 0.3), detail: 'Mock detail.' },
     ],
     metrics: {
-      sunlight_percent: 78.5,
-      earth_visible_percent: 12,
-      longest_darkness_hours: 36,
+      sunlight_percent: Math.min(100, 30 + index * 0.7),
+      earth_visible_percent: earthVisible,
+      longest_darkness_hours: Math.round(120 - index),
       next_sunset_utc: req.start_utc,
       next_earthset_utc: null,
     },
-    warnings: [MOCK_NOTICE],
+    warnings,
   }
 }
 

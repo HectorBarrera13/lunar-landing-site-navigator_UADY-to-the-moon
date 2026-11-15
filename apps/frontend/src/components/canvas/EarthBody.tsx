@@ -2,9 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { useTexture } from '@react-three/drei'
 import { SRGBColorSpace, SphereGeometry } from 'three'
 import { useAppStore } from '@/store'
-
-const EARTH_DISTANCE = 6
-const EARTH_RADIUS = 0.6
+import { EARTH_DISTANCE, EARTH_RADIUS } from './scale'
 
 export default function EarthBody() {
   const earthDir = useAppStore((s) => s.bodies.earthDir)
@@ -17,13 +15,14 @@ export default function EarthBody() {
     return [x * k, y * k, z * k]
   }, [earthDir])
 
-  useMemo(() => {
+  useEffect(() => {
     texture.colorSpace = SRGBColorSpace
+    texture.needsUpdate = true
   }, [texture])
   useEffect(() => () => geometry.dispose(), [geometry])
 
   return (
-    <mesh geometry={geometry} position={position}>
+    <mesh geometry={geometry} position={position} frustumCulled={false}>
       <meshBasicMaterial map={texture} />
     </mesh>
   )
