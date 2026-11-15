@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useAppStore } from '@/store'
+import { seriesPointAtIndex } from '@/lib/orientation'
 import type { SiteTimeSeries } from '@/types'
 import { TIMELINE_STRINGS } from './strings'
 import ViewToggle from './ViewToggle'
@@ -30,7 +31,8 @@ function utcDay(date: Date): string {
 function visibilityByDay(series: SiteTimeSeries | null): Map<string, DayVisibility> {
   const counts = new Map<string, { sun: number; earth: number; total: number }>()
   if (series === null) return new Map()
-  for (const point of series.series) {
+  for (let i = 0; i < series.time_utc.length; i += 1) {
+    const point = seriesPointAtIndex(series, i)
     const day = point.time_utc.slice(0, 10)
     const entry = counts.get(day) ?? { sun: 0, earth: 0, total: 0 }
     entry.total += 1

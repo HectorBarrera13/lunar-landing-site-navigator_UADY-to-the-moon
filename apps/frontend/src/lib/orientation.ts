@@ -1,5 +1,6 @@
 import type { SeriesPoint, SiteTimeSeries } from '@/types'
 
+
 export type DirectionVec = [number, number, number]
 
 export interface BodyDirections {
@@ -9,23 +10,39 @@ export interface BodyDirections {
 
 const RAD = Math.PI / 180
 
+/** Sample `index` of the columnar series; Sun visible when fraction > 0, Earth when center is above the horizon (fraction >= 0.5). */
+export function seriesPointAtIndex(series: SiteTimeSeries, index: number): SeriesPoint {
+  const sunFraction = series.sun_visible_fraction[index]
+  const earthFraction = series.earth_visible_fraction[index]
+  return {
+    time_utc: series.time_utc[index],
+    sun_azimuth_deg: series.sun_azimuth_deg[index],
+    sun_elevation_deg: series.sun_elevation_deg[index],
+    sun_visible_fraction: sunFraction,
+    sun_visible: sunFraction > 0,
+    earth_azimuth_deg: series.earth_azimuth_deg[index],
+    earth_elevation_deg: series.earth_elevation_deg[index],
+    earth_visible_fraction: earthFraction,
+    earth_visible: earthFraction >= 0.5,
+  }
+}
+
 /** Series point closest to `timeUtc`; the first point when the cursor is missing. */
 export function seriesPointAt(series: SiteTimeSeries, timeUtc: string | null): SeriesPoint | null {
-  if (series.series.length === 0) return null
-  const first = series.series[0]
-  if (timeUtc === null) return first
+  if (series.time_utc.length === 0) return null
+  if (timeUtc === null) return seriesPointAtIndex(series, 0)
   const target = Date.parse(timeUtc)
-  if (Number.isNaN(target)) return first
-  let best = first
-  let bestDelta = Math.abs(Date.parse(first.time_utc) - target)
-  for (const point of series.series) {
-    const delta = Math.abs(Date.parse(point.time_utc) - target)
+  if (Number.isNaN(target)) return seriesPointAtIndex(series, 0)
+  let bestIndex = 0
+  let bestDelta = Math.abs(Date.parse(series.time_utc[0]) - target)
+  for (let i = 1; i < series.time_utc.length; i += 1) {
+    const delta = Math.abs(Date.parse(series.time_utc[i]) - target)
     if (delta < bestDelta) {
-      best = point
+      bestIndex = i
       bestDelta = delta
     }
   }
-  return best
+  return seriesPointAtIndex(series, bestIndex)
 }
 
 /**

@@ -1,4 +1,4 @@
-// Mirrors docs/contracts/README.md (approved 2026-11-14). Do not diverge.
+// Mirrors docs/contracts/README.md (approved 2026-11-14; series section 1.1 approved 2026-11-15). Do not diverge.
 
 export type HorizonSource = 'lola' | 'sphere'
 
@@ -17,17 +17,25 @@ export interface SiteListItem {
   lon: number | null
 }
 
+/** One sample of a series, derived on the client from the columns (not on the wire). */
 export interface SeriesPoint {
   time_utc: string
   sun_azimuth_deg: number
   sun_elevation_deg: number
+  sun_visible_fraction: number
+  /** Sun fraction > 0. */
   sun_visible: boolean
   earth_azimuth_deg: number
   earth_elevation_deg: number
+  earth_visible_fraction: number
+  /** Earth fraction >= 0.5 (center above the horizon). */
   earth_visible: boolean
 }
 
-/** sites/<site_id>.json and GET /api/sites/{site_id}/series */
+/** Unit vector in MOON_ME. */
+export type DirectionMe = [number, number, number]
+
+/** GET /api/sites/{site_id}/series (contract 1.1, section 2.0): horizon.json fields plus columns. */
 export interface SiteTimeSeries {
   site_id: string
   name: string
@@ -36,8 +44,22 @@ export interface SiteTimeSeries {
   horizon_source: HorizonSource
   /** 360 values, index = azimuth in whole degrees (0 = north, clockwise). */
   horizon_profile_deg: number[]
+  max_radius_m: number
+  near_field_m: number
+  observer_height_m: number
+  assumptions: string[]
   time_step_minutes: number
-  series: SeriesPoint[]
+  time_utc: string[]
+  sun_azimuth_deg: number[]
+  sun_elevation_deg: number[]
+  sun_visible_fraction: number[]
+  sun_distance_km: number[]
+  sun_dir_me: DirectionMe[]
+  earth_azimuth_deg: number[]
+  earth_elevation_deg: number[]
+  earth_visible_fraction: number[]
+  earth_distance_km: number[]
+  earth_dir_me: DirectionMe[]
 }
 
 /** terrain/<site_id>.json */

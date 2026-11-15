@@ -480,6 +480,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `compileall` OK; uvicorn health OK. Malapert 2027-03-15..29: red, index 21, vetoes `earth_visibility_low`, `sunlight_low`, `darkness_exceeded` (re-confirmed by the lead after deleting the old file). 2027-03-31..04-03: sunlight 85.7 %, index 50, red with only `earth_visibility_low`. 2024 window and inverted window give 422; unknown site 404; window reaching 2028 gives 404 (missing year); fixture deleted.
 - **Risks or pending items:** Breaking change for the frontend series shape (see previous entry). Proposed, not added: `next_sunrise_utc`/`next_earthrise_utc` in evaluate metrics; exposing precomputed sites/years in `/api/sites`; optional downsampling for multi-year windows (~1.3 MB per year).
 
+### 2026-11-14 — Frontend: consume contract 1.1 series columns
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Adapt the frontend to the contract 1.1 `/series` shape so `feat/round3-data-series` can merge without breaking the horizon panel, time bar and globe.
+- **Change description:** `SiteTimeSeries` now mirrors the columnar response (horizon fields + `time_utc[]`, `*_visible_fraction[]`, `*_distance_km[]`, `*_dir_me[]`). `SeriesPoint` is kept as a client-side derived sample (Sun visible = fraction > 0; Earth visible = fraction >= 0.5) built by the new `seriesPointAtIndex`; `seriesPointAt` searches the `time_utc` column. `TimeCursorBar` iterates the columns. `getSiteSeries` now requires `start` and `end` (the backend requires them).
+- **Files created/modified:** `apps/frontend/src/types/contracts.ts`, `src/lib/orientation.ts`, `src/lib/api/client.ts`, `src/components/ui/timeline/TimeCursorBar.tsx`, `AI_LOG.md`. `HorizonPanel` and the store are unchanged (they use the derived point).
+- **Technical decisions / trade-offs:** Minimal change instead of rewriting consumers. `*_dir_me` is typed but not used yet: scene axes differ from MOON_ME and az/el conversion is kept to avoid a visual regression (to be revisited in round 4, "view in perspective"). Contract not changed.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. The keys of a real `/series` response (2027-03-31..04-03, 73 samples) match the TypeScript type exactly (no missing or extra fields). Not visually checked in a browser.
+- **Risks or pending items:** The contract has no Sun/Earth angular radius, so the panel discs stay unscaled; proposal for Compu 1 (needs contract approval): `sun_angular_radius_deg[]` and `earth_angular_radius_deg[]` columns in the year files. A mission window crossing an unprecomputed year returns 404. The horizon panel v2, calendar and 3-point comparison remain Compu 2 tasks.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
