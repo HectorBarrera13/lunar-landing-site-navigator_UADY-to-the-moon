@@ -101,10 +101,17 @@ Shape kept from the team's original contract.
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/api/health` | Liveness and data directory check (implemented) |
-| GET | `/api/sites` | List of preset sites (id, name, lat, lon, group) |
+| GET | `/api/sites` | List of preset sites (id, name, group, region, lat, lon); see 2.2 |
 | GET | `/api/sites/{site_id}/series?start=&end=` | Series sliced to the window (columns of 1.1), plus `horizon.json` content. 404 if the site is not precomputed; 422 if the window is inverted or outside 2025–2035 |
 | POST | `/api/evaluate` | Suitability Index for a site/point and window |
 | GET | `/api/layers/{region_id}` | Layer metadata; images served as static files |
+
+### 2.2 `GET /api/sites`
+
+Response: list of `{ "id": str, "name": str, "group": str, "region": "south_pole" | "other", "lat": float | null, "lon": float | null }`.
+
+- `region` (added 2026-11-15, approved by the project owner): `south_pole` when `lat <= -80°` (R-11), otherwise `other`. While `lat` is null (PD-01), it falls back to `group` (`artemis-iii-region` → `south_pole`, `historical-landing` → `other`). Consumers color fixed markers with it (south pole pink `#ff46af`, other yellow `#ffec46`).
+- `lat` / `lon` stay null until QA verifies them; consumers skip such sites on the globe unless they use clearly marked mock data.
 
 ### 2.0 `GET /api/sites/{site_id}/series`
 

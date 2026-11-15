@@ -577,6 +577,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** From `apps/frontend`, `npm run typecheck` passed and `npm run build` passed. Vite reported the existing warning for a JavaScript chunk larger than 500 kB.
 - **Risks or pending items:** Existing processed artifacts may still provide `null` angular radii until the pipeline is rerun; no visual consumer has been added in this non-design phase.
 
+### 2026-11-15 - Backend round 4: multi-site terrain and historical evaluations
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Execute round 4 for the backend only; do not modify the frontend.
+- **Change description:** Recorded the approved terrain footprint and resolution, the 2025-2035 artifact budget, and historical-site evaluation decisions. The terrain pipeline now selects PGDA 78 terrain when available, falls back to registered PGDA 90 products for verified polar sites, writes an idealized 0-degree spherical horizon for verified historical sites without terrain, and propagates processing errors. Historical evaluations without terrain are accepted only when their series declares `horizon_source: "sphere"`; slope and landing-zone criteria are omitted, available criteria are renormalized with the approved SRS near-side weights, and unavailable criteria are reported. Missing terrain for other sites remains an error.
+- **Files created/modified:** `REQUIREMENTS.md`; `pipeline/lunar_pipeline/terrain/{config.py,horizon.py,site_terrain.py,sources.py,steps.py}`; `apps/backend/app/core/config.py`; `apps/backend/app/services/evaluate.py`; `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The user's approved historical horizon is a constant 0 degrees; the 10-degree value applies only to the slope veto. The approved near-side baseline weights (25% power, 15% communication) are configured separately and renormalized over available criteria. Regional layers and their endpoint are deferred. No coordinates or processed series were invented for the 12 unverified catalog sites.
+- **Verification performed:** `apps/backend/.venv/Scripts/python.exe -m compileall -q app` passed; a temporary Uvicorn run returned HTTP 200 from `GET /api/health`; focused evaluator assertions passed for historical sphere-only evaluation, 25:15 weight renormalization, and continued failure on missing terrain for a LOLA site. `pipeline/.venv/Scripts/python.exe -m compileall -q lunar_pipeline` and `python -m lunar_pipeline --list` passed. `git diff --check` passed. FastAPI `TestClient` could not run because the environment lacks `httpx2`; the live Uvicorn health check was used instead.
+- **Risks or pending items:** The other 12 catalog sites still lack verified coordinates, so their artifacts cannot be generated. No processed artifacts were generated in this task. PD-08 hosting and initial-load validation remain open. Regional layers remain deferred by user decision.
+
 ### 2026-11-15 — Round 3 backend integration and QA closure
 
 - **Agent:** Copilot SDK in VS Code
@@ -745,6 +755,138 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Technical decisions / trade-offs:** Segmented parallel download chosen over waiting on a ~4 h single-connection transfer (PGDA per-connection throttle observed). Local-first mirrors the existing PGDA 78 pattern rather than a new mechanism. Historical sites intentionally have no `terrain/<id>.json` (R-15 sphere path, evaluator renormalizes 25:15). The PGDA server-side tile corruption is a data-source issue, not a pipeline bug; the fallback makes runs reproducible on this machine and teammates on other machines still read the official URLs.
 - **Verification performed:** `python -m compileall -q lunar_pipeline app` passes; `lunar_pipeline --list` OK; local tile test: de-gerlache and slater surf+near windows fully finite. **JPL Horizons validation for Haworth** (official API, `CENTER=COORD@301`, `COORD_TYPE=GEODETIC`, `SITE_COORD='-5.2, -87.5, 0'`, `APPARENT=AIRLESS`, quantities 4, three instants 2027-03-15T00Z / 2027-03-30T00Z / 2027-04-13T23Z, Sun and Earth): max absolute difference **0.000046° in azimuth and 0.000056° in elevation** (at/below the artifact's 4-decimal rounding; same tolerance scale as the Malapert check). Backend battery on a fresh uvicorn (port 8010): `/api/health` ok; `/api/sites` 13 sites all with coordinates; `/api/sites/haworth/series` returns 721 steps with `horizon_source: lola` and radius columns; `/api/evaluate` haworth Index 15 red with `earth_visibility_low, sunlight_low, darkness_exceeded`; apollo-11 Index 69 red with `darkness_exceeded` (14-day lunar night — correct R-15 sphere behavior with power+communication only); malapert demo window still Index 21 red with 3 vetoes and sunlit window Index 50 (no regression); a free point at (-87.4, -5.4) resolves to haworth.
 - **Risks or pending items:** (1) ~200 MB of new untracked artifacts in `data/processed/` — committing them to git vs generating at deploy is an unresolved hosting/PD-08 decision; (2) the PGDA server returns corrupt tiles for one region of `LDEM_80S_20MPP_ADJ` and for Site23 `slp` — other machines reading HTTPS may hit this; (3) an older backend instance is running on port 8000 (started before this task) — restart it to serve the new artifacts; (4) de Gerlache Rim 2 mean slope 22° means it is always slope-vetoed if PO values survive; (5) regional layers, ice distance, roughness and `/api/layers` remain open (need decisions).
+
+### 2026-11-15 — Intro screen: "Lunar Mission" title and large Moon before the simulation
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** On load show only the space background, a large "Lunar Mission" title at the top and a bigger Moon in the lower half; clicking the Moon returns to the usual framing and reveals all the existing UI.
+- **Change description:** New store flag `introActive` (initial `true`) and `startSimulation()`. `IntroRig` (canvas) eases the camera from the intro framing (distance 2.6, `setViewOffset` placing the Moon center at 85 % of the viewport height) to the usual distance and then clears the offset; the Moon stays at the world origin, so markers, `CameraRig` and `AnchorProjector` are unaffected. During the intro the markers, Earth and Sun are hidden, `OrbitControls` is disabled and the Moon click calls `startSimulation()` instead of `focusNearestSite`. `IntroOverlay` (ui) shows the title and a hint with `pointer-events-none`. `App.tsx` mounts the existing UI only when the intro is over, inside a 700 ms fade (`--animate-reveal` in `@theme`). `prefers-reduced-motion` disables the fade and snaps the camera. The camera direction follows `bodies.sunDir` (placed on the Sun side, eased as the series loads), so the face toward the viewer is the lit one in the intro and in the framing after the click. During the intro the Moon spins about its north axis (0.4 rad/s) and the starfield spins slower in the opposite direction (-0.08 rad/s) through the new `useIntroSpin` hook; on the click both decelerate and settle on the next whole turn so the rotation ends at exactly 0, which markers and picking (`surface.ts`) assume. No spin with `prefers-reduced-motion`.
+- **Files created/modified:** `src/store/useAppStore.ts`, `src/components/canvas/{IntroRig.tsx (new),useIntroSpin.ts (new),MoonScene.tsx,MoonGlobe.tsx,StarBackground.tsx,scale.ts}`, `src/components/ui/intro/{IntroOverlay.tsx,strings.ts,index.ts}` (new), `src/App.tsx`, `src/index.css`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** A boolean instead of a new `ViewMode` so `CameraRig`'s "back to 3D" branch is not triggered. Intro distance 2.6 (the plan said ~2.2) because at 2.2 the Moon would cover the title at the chosen vertical position; at 2.6 the Moon radius is about half the viewport height and its top edge sits near 35 % of the height. The intro shows on every page load (no persistence). No new dependencies.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass; the `reveal` animation is present in the built CSS. Not verified visually: no browser automation is available in this environment.
+- **Risks or pending items:** Needs a visual check in a browser (Moon position/size on different aspect ratios, title overlap on short windows, fade-in, click starting the simulation without opening the 2D view). Zooming during the first second after the click is overridden by the camera easing. Before the site series loads, `sunDir` is the store placeholder, so the lit face shifts slightly once real ephemeris arrives; the lit hemisphere in the intro depends on the cursor time of the mission window (polar night at Malapert in the demo window).
+
+### 2026-11-15 — Time cursor hour control in its own container below the day cells
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Move the UTC hour control (the one in the same bar as the day cells that show the light and Earth-visibility bands) into a separate container positioned below the days container. A first attempt moved the start/end hour selects of the mission window picker instead; that was a misreading and was reverted.
+- **Change description:** `HourControl` (stepper and 00/06/12/18 chips of the time cursor) is no longer in the second row of `TopBar`; it renders in its own panel (`absolute top-full left-4 mt-2`, positioned against the absolute `header`) right under the day cells. The mission window picker is back to its original layout. `BlockedNotice` moved from `top-32` to `top-44` so it does not overlap the new panel.
+- **Files created/modified:** `apps/frontend/src/components/ui/timeline/TopBar.tsx`, `apps/frontend/src/components/ui/notice/BlockedNotice.tsx`, `AI_LOG.md`. `mission/*` restored to the committed version.
+- **Technical decisions / trade-offs:** The top bar height (`TOP_BAR_PX`) is unchanged, so the other overlays are not shifted. The panel sits below the whole bar, aligned left under the day cells.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** The panel may cover the top-left of the 2D view or collide with the point info card when it is anchored near the top-left. The day cells now use the full row width.
+
+### 2026-11-15 — Day strip: transparent container, pager of 6, inverted date colors
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Remove the background and border of the container of the day cells (light and Earth-visibility bands), paginate those cells to at most 6 at a time keeping their alignment with the page, and invert the date colors so they do not blend into the background.
+- **Change description:** `TopBar` no longer paints the header: the mission-window row keeps `bg-chassis` and its bottom border, and the day row has no background or border (fully transparent over the scene). `TimeCursorBar` shows `PAGE_SIZE = 6` buckets and adds a prev/next pager (`‹ 1/N ›`) after the list, so the first cell stays on the page's left gutter; the pager only appears when there is more than one page and follows the time cursor to the page of the selected bucket. Date cells are inverted: light cell (`bg-ink`, dark text) when idle, `bg-primary` when selected; the Sunlight/Earth band tracks are dark so the cream and blue fills stay visible on light cells.
+- **Files created/modified:** `apps/frontend/src/components/ui/timeline/{TopBar.tsx,TimeCursorBar.tsx,strings.ts}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Pagination applies to every granularity (day, week, month). Page state is adjusted during render when the selected bucket changes (no effect). The legend and the hour panel keep their previous look. No new dependencies.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** Contrast of the light cells and of the legend text against the Moon/star background should be checked in a browser, including the lit Moon behind the strip. The top bar no longer has a bottom hairline under the day row.
+
+### 2026-11-15 — Day strip: remove Sunlight / Earth visibility symbology, white caret pager arrows
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Remove the Sunlight and Earth visibility elements (legend and per-day bands) from the day strip, and make the pager arrows white Font Awesome `caret-left` / `caret-right` icons.
+- **Change description:** `TimeCursorBar` no longer renders the per-day bands, their `Band` component, the sun/earth text in each day's `aria-label`, or the legend; the "No precomputed data" and "Loading series" status messages stay. The pager arrows are inline SVGs (`CaretIcon`) with the Font Awesome Free 7.3.1 solid `caret-left` / `caret-right` paths, drawn in white (`text-white!`). Unused `sunBand`, `earthBand`, `legendLabel` and `noData` strings were removed from `timeline/strings.ts`. The per-bucket `sunPercent`/`earthPercent` values are still computed in `timeBuckets.ts` but no longer displayed.
+- **Files created/modified:** `apps/frontend/src/components/ui/timeline/{TimeCursorBar.tsx,strings.ts}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The icon paths were taken from the official `@fortawesome/free-solid-svg-icons` package (downloaded only to a scratch directory to read the path data) and inlined, so no dependency was added. Font Awesome Free icons are CC BY 4.0, so keep the attribution comment in `TimeCursorBar.tsx` and credit it in the README.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** `sunPercent`/`earthPercent` in `timeBuckets.ts` are now dead data and can be deleted in a cleanup. Contrast of the white arrows over the background should be checked in a browser.
+
+### 2026-11-15 — Day carousel: arrows at both ends, no page count, 2 px gap
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Put the first arrow at the start of the day carousel and the second at the end, remove the page counter, and separate the day cells by 2 px.
+- **Change description:** In `TimeCursorBar` the previous arrow now sits before the first cell and the next arrow after the last one, in one group (`Calendar pages`). The `n/N` counter and its `pageStatus` string were removed. The cells are separated with `gap-[2px]` instead of overlapping 1 px borders. Arrows still render only when there is more than one page.
+- **Files created/modified:** `apps/frontend/src/components/ui/timeline/{TimeCursorBar.tsx,strings.ts}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The first arrow now occupies the left gutter, so the first day cell starts one arrow-width (28 px plus 4 px gap) to the right of the page margin when there are several pages. Without pagination the cells start at the margin as before.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** Check in a browser that the carousel width does not push the hour panel or the top bar content.
+
+### 2026-11-15 — Day carousel: arrow hover color and rounded day cells
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** On hover over an arrow, when the page can change, only change the arrow color to #88b3c7 (no outline changes); slightly round the corners of each day cell.
+- **Change description:** The pager arrows turn `text-primary` (#88b3c7 in `@theme`) on hover only when enabled (`enabled:hover:text-primary!`); the inherited hover border of `ICON_BUTTON` is neutralised (`hover:border-transparent!`) and the focus ring is untouched. Day cells got `rounded-sm`.
+- **Files created/modified:** `apps/frontend/src/components/ui/timeline/TimeCursorBar.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Reused the existing `primary` token instead of a literal hex, since it is exactly #88b3c7. DESIGN.md asks for square corners; this rounding is an explicit user request limited to the day cells.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** Check the hover on an enabled arrow and the absence of any hover on a disabled one in a browser.
+
+### 2026-11-15 — Map View selector aligned to the bottom-right
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Align the "Map View" component to the lower right side.
+- **Change description:** The `MapViewSelect` wrapper in `App.tsx` moved from `bottom-4 left-[calc(560px+2rem)]` (right of the horizon panel) to `bottom-4 right-4`. While the compare sidebar is open (`sidebarOpen`) it uses `right-[calc(384px+1rem)]`, the same offset the 2D view uses, so it never sits under the sidebar.
+- **Files created/modified:** `apps/frontend/src/App.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Offset follows the sidebar instead of overlapping it. Still shown only in the 3D mode.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** Check in a browser that it does not collide with the point info card or the horizon panel at narrow widths.
+
+### 2026-11-15 — Point selection: region-colored markers, x1.6 zoom and "Show landing site" button
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Let the user select points on the Moon with a 60 % zoom centered on the point's coordinates (coordinates from the back-end catalog, mocks allowed), fixed markers colored by region (south pole `#ff46af`, others `#ffec46`, region from the back-end), and a bottom-centered "Show landing site" button that opens the existing "Landing zone" window only when pressed.
+- **Change description:**
+  - Contract 2.2 and REQUIREMENTS (R-10 update, FR-08 note): `/api/sites` now returns `region` (`south_pole` when `lat <= -80`, otherwise `other`; falls back to `group` while `lat` is null). Backend: `SiteSummary.region`, `_region()` in `services/sites.py`, `south_pole_max_lat_deg` in settings.
+  - Frontend: `SiteListItem.region`; `lib/mockSites.ts` (synthetic, clearly marked MOCK coordinates for the 12 null sites, filled in `loadSites`); `focusNearestSite` keeps the redirect to the nearest preset site but now blocks only the face receiving no sunlight (`isSunlitSurfacePoint` in `lib/geo.ts`, south-pole exception kept); `FOCUS_DISTANCE = MOON_VIEW_DISTANCE / 1.6` (= 2.0); `CameraRig` no longer switches to the 2D view on its own; `SiteMarkers` colors by region, enlarges the selected marker and shows a pointer cursor; new `ui/landing/ShowLandingSiteButton` (3D mode, with a focus) calls `setMode('2d')`.
+- **Files created/modified:** `docs/contracts/README.md`, `REQUIREMENTS.md`, `apps/backend/app/{models/site.py,services/sites.py,core/config.py}`, `apps/frontend/src/{types/contracts.ts,lib/{geo,mockSites,notices}.ts,store/useAppStore.ts,components/canvas/{scale.ts,CameraRig.tsx,SiteMarkers.tsx},components/ui/landing/*,App.tsx}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The back-end derives `region` instead of editing the QA-owned catalog. Mock coordinates are frontend-only and synthetic (not real landing sites) because AGENTS.md forbids inventing coordinates in the catalog. The blocked face follows the current Sun direction, so it moves with the time cursor; this replaces the geometric far-side rule of R-10/R-11 by the owner's decision. Selected marker is scaled up instead of turned white so the region color stays visible.
+- **Verification performed:** `python -m compileall app`; `GET /api/sites` returns `region` for all 13 sites (Malapert, other Artemis III regions: `south_pole`; the four historical sites: `other`). `npm run typecheck` and `npm run build` pass. Not verified visually in a browser.
+- **Risks or pending items:** Evaluating a mock-located site returns the existing "No precomputed data" state (only Malapert has artifacts). The mock positions must be deleted once QA verifies coordinates (PD-01). The unlit-face rule depends on the placeholder Sun direction until the series loads. Check in a browser: marker colors, zoom centering, the bottom button not overlapping the horizon panel or Map View, and the hit area of small markers.
+
+### 2026-11-15 — Day cells: 70 % fill opacity and white border
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Set the fill opacity of the day cells to 70 % and add a white, fully opaque border of the same thickness as the rest of the interface.
+- **Change description:** In `TimeCursorBar` the day cell fills are now `bg-ink/70` (idle), `hover:bg-secondary/70` and `bg-primary/70` (selected), and every cell has the 1 px `border-white` (100 % opacity). The selected cell keeps its primary fill and the top marker dot.
+- **Files created/modified:** `apps/frontend/src/components/ui/timeline/TimeCursorBar.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The existing 1 px border width already matches the hairline borders of the UI, so only the color changed. The selected cell no longer differs by border color, only by fill and the dot.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** Text contrast on a 70 % fill depends on what is behind the strip (Moon or stars); check in a browser.
+
+### 2026-11-15 — Day cells: fill opacity raised to 75 %
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Raise the day cell fill opacity to 75 % and add a 2 px spacing between the cells.
+- **Change description:** `bg-ink/75`, `hover:bg-secondary/75` and `bg-primary/75` in `TimeCursorBar`. The cells were already separated by `gap-[2px]` (added in the carousel layout change), so no further spacing change was made.
+- **Files created/modified:** `apps/frontend/src/components/ui/timeline/TimeCursorBar.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The 2 px spacing was not duplicated; if a larger gap is wanted it is a single class (`gap-[2px]` on the cell list).
+- **Verification performed:** `npm run typecheck` and `npm run build` pass.
+- **Risks or pending items:** Not verified visually.
+
+### 2026-11-15 — Day cells: 4 px spacing
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Set the spacing between the day cells to 4 px.
+- **Change description:** The cell list in `TimeCursorBar` uses `gap-1` (4 px) instead of `gap-[2px]`.
+- **Files created/modified:** `apps/frontend/src/components/ui/timeline/TimeCursorBar.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Only the gap between day cells changed; the arrow-to-cells gap was already 4 px.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** Six cells now take 24 px more width than with the 1 px overlap layout; check the top bar at narrow widths.
+
+### 2026-11-15 — Intro title font: "International"
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Use the "International" font (1001Fonts) for the "Lunar Mission" title. Moonglade (personal use only) and Nasalization (webfonts/apps not covered by its license) were discarded.
+- **Change description:** `@font-face` for `International` and a `--font-title` token (fallback Space Grotesk) in `index.css`; the intro title uses `font-title`. The font file is `apps/frontend/public/fonts/International.ttf`.
+- **Files created/modified:** `apps/frontend/src/index.css`, `apps/frontend/src/components/ui/intro/IntroOverlay.tsx`, `.gitignore`, `AI_LOG.md`; font file added (git-ignored).
+- **Technical decisions / trade-offs:** The 1001Fonts FFC license allows commercial use and embedding in a web app, but says the typeface "may not be sold or published without written permission", so the TTF is git-ignored and not committed to the public repository. Without the file (a fresh clone or a deployment build) the title falls back to Space Grotesk. No attribution is required by the license. The weight is normal because the font has a single regular style.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass; the dev server serves `/fonts/International.ttf`. Not verified visually.
+- **Risks or pending items:** To use it in the public deployment, ask the author (Vladimir Nikolic, via 1001Fonts) for written permission to publish the file, then remove the `.gitignore` line; or place the file in the deployment artifact outside git.
+
+### 2026-11-15 — Intro title block centered above the Moon
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Place the title ("Lunar Mission") and the "Click the Moon to begin" message in the middle between the top of the Moon and the top of the page.
+- **Change description:** `IntroOverlay` now occupies the top 35 % of the viewport (`h-[35%]`) and centers the title block vertically in it. The Moon's top edge is at about 34.7 % of the height (center at 85 % minus a radius of about 50 % at distance 2.6, fov 45).
+- **Files created/modified:** `apps/frontend/src/components/ui/intro/IntroOverlay.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The 35 % is a literal in the UI layer because `ui/` must not import from `canvas/`; if `INTRO_VIEW_DISTANCE` or `INTRO_MOON_Y_FRACTION` change, update it. It is relative to the height, so it holds for any aspect ratio.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** On very short windows the title text (up to `text-8xl`) can be taller than the 35 % band; check in a browser.
 
 ## Template for future entries
 
