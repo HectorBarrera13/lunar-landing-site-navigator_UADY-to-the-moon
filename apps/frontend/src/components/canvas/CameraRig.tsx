@@ -36,19 +36,25 @@ export default function CameraRig() {
   useEffect(() => {
     let prevFocus = useAppStore.getState().focus
     let prevView = useAppStore.getState().cameraView
+    let prevMap = useAppStore.getState().moonMapView
     return useAppStore.subscribe((state) => {
-      const { focus, cameraView } = state
-      if (focus === prevFocus && cameraView === prevView) return
+      const { focus, cameraView, moonMapView } = state
+      if (focus === prevFocus && cameraView === prevView && moonMapView === prevMap) return
+      const mapChanged = moonMapView !== prevMap
+      prevMap = moonMapView
+      const refocusForMap = mapChanged && cameraView === 'moon'
+      if (mapChanged && focus === prevFocus && cameraView === prevView && !refocusForMap) return
       const hadFocus = prevFocus !== null
+      const focusChanged = focus !== prevFocus
       const viewChanged = cameraView !== prevView
       prevFocus = focus
       prevView = cameraView
-      if (focus) {
+      if (focus && focusChanged && !refocusForMap) {
         setSurfaceVector(targetDir.current, focus.latDeg, focus.lonDeg)
         targetDir.current.normalize()
         targetDist.current = FOCUS_DISTANCE
         animating.current = true
-      } else if (viewChanged || hadFocus) {
+      } else if (viewChanged || hadFocus || refocusForMap) {
         if (cameraView === 'perspective') {
           const [x, y, z] = state.bodies.sunDir
           const sun = sunV.current.set(x, y, z).normalize()
@@ -57,6 +63,10 @@ export default function CameraRig() {
           lat.normalize()
           targetDir.current.copy(sun).multiplyScalar(-COS_PSI).addScaledVector(lat, -SIN_PSI)
           targetDist.current = PERSPECTIVE_DISTANCE
+        } else if (viewChanged || refocusForMap) {
+          const [x, y, z] = state.bodies.sunDir
+          targetDir.current.set(x, y, z).normalize()
+          targetDist.current = MOON_VIEW_DISTANCE
         } else {
           targetDir.current.copy(camera.position).normalize()
           targetDist.current = MOON_VIEW_DISTANCE

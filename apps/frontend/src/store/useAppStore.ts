@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { ActiveLayer, CameraView, Selection, ViewMode } from '@/store/types'
+import type { ActiveLayer, CameraView, MoonMapView, Selection, ViewMode } from '@/store/types'
 import { getSites } from '@/lib/api'
 import { centralAngleDegrees } from '@/lib/geo'
 import { DEFAULT_MISSION_WINDOW } from '@/lib/mission'
@@ -39,6 +39,8 @@ export interface AppState {
   /** Camera framing: Moon close-up or wide Perspective (Sun, Earth and Moon). */
   cameraView: CameraView
   activeLayer: ActiveLayer
+  /** Texture displayed on the Moon globe. */
+  moonMapView: MoonMapView
   /** Location shown in the info card/sidebar. Written by 2D and 3D, read by both. */
   focus: FocusedLocation | null
   /** Screen position of `focus`, written by the 3D layer every frame it changes. */
@@ -65,6 +67,7 @@ export interface AppState {
   setMode: (mode: ViewMode) => void
   setCameraView: (view: CameraView) => void
   setActiveLayer: (layer: ActiveLayer) => void
+  setMoonMapView: (view: MoonMapView) => void
 }
 
 function clampCursor(cursor: string | null, t0: string, tf: string): string {
@@ -96,6 +99,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   mode: '3d',
   cameraView: 'moon',
   activeLayer: 'illumination',
+  moonMapView: 'albedo',
   focus: null,
   anchor: null,
   sidebarOpen: false,
@@ -170,4 +174,5 @@ export const useAppStore = create<AppState>()((set, get) => ({
   setMode: (mode) => set({ mode }),
   setCameraView: (cameraView) => set({ cameraView }),
   setActiveLayer: (activeLayer) => set({ activeLayer }),
+  setMoonMapView: (moonMapView) => set({ moonMapView }),
 }))

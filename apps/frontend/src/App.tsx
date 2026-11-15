@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import MoonScene from '@/components/canvas/MoonScene'
 import HorizonPanel from '@/components/ui/horizon'
+import { MapViewSelect } from '@/components/ui/mapview'
 import { PointInfoCard, PointSidebar } from '@/components/ui/pointInfo'
 import { TimeCursorBar } from '@/components/ui/timeline'
 import { useMissionSeries } from '@/lib/api/useSiteSeries'
@@ -21,6 +22,9 @@ export default function App() {
       <MoonScene />
       <TimeCursorBar />
       <HorizonPanel />
+      <div className="absolute bottom-4 left-[18rem] z-10">
+        <MapViewSelect />
+      </div>
       <PointInfoCard />
       <PointSidebar />
     </main>
