@@ -36,3 +36,6 @@ pipeline/kernels/
 .vscode/*
 !.vscode/extensions.json
 *.log
+
+# Pipeline intermediate results (regenerated, not committed)
+data/interim/
