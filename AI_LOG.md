@@ -209,6 +209,34 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** WebFetch of the LROC page (values above). With the pipeline reader: the point projects to x=635.3 m, y=121341.0 m in the PGDA 78 Site23 CRS and is inside `Site23_final_adj_5mpp_surf.tif` (9.4 km from the edge); 100 m window around it has no NaN (elevation 4810–4848 m). Haversine distances (R = 1737.4 km): 4.22 km to the Gazetteer center, 1.14 km to the Site23 tile center, 0.63 km to LROC post 1294. `sites.json` parses as valid JSON.
 - **Risks or pending items:** The LROC page does not state the reference frame or longitude convention for the mosaic center (negative bounds imply -180..180 east). Marked verified, so round 2 (terrain and ephemeris for Malapert) is unblocked; the value is a region center, so round 2 results describe that point, not an official landing site. Better landing points may come from Wueller et al. 2026 (Table A1, MMA01), not yet extracted.
 
+### 2026-11-14 — Malapert slope stats and horizon profile
+
+- **Agent:** Claude Code (Opus 5.5), following `.claude/agents/terrain-engineer.md` rules inline
+- **Requested task:** Runbook Compu 1 · Round 2 · Session A: for Malapert Massif, slope inside the landing circle (mean, max, p95) from PGDA 78 `_slp.tif` (QA-confirmed tile) with a provisional configurable 100 m radius (PD-02); 360-value horizon profile (0 = local north, clockwise) with lunar curvature, near from the 20 m mosaic and far from `LDEM_60S_240MPP_ADJ`, configurable max radius (PD-07); compare 25/75/150 km; write `data/processed/terrain/malapert-massif.json` (contract 1.2) and `data/interim/horizon/malapert-massif.json`; ignore `data/interim/`; register the step in `python -m lunar_pipeline`.
+- **Change description:**
+  - `lunar_pipeline/__main__.py`: step discovery from `<package>.steps.STEPS`; `python -m lunar_pipeline [step ...] [--list]`. `lunar_pipeline/paths.py`: repo paths, verified-site loader, deterministic JSON writer.
+  - `terrain/config.py` (all provisional values in one dataclass), `slope.py` and `horizon.py` (pure math), `site_terrain.py` (window reads + bilinear sampling), `steps.py` (step `terrain`), `sources.py` (`PGDA78_SITE_TILES`: Malapert Massif → Site23).
+  - Horizon geometry: rays built with `Geod.fwd` on the raster's own sphere (R = 1737400 m read from the CRS), so azimuths are true local azimuths in polar stereographic (R-05). Elevation angle uses exact spherical geometry `atan2((R+h)cosθ − (R+h0), (R+h)sinθ)`, θ = d/R. No refraction.
+- **Files created/modified:** `pipeline/lunar_pipeline/paths.py`, `terrain/config.py`, `terrain/slope.py`, `terrain/horizon.py`, `terrain/site_terrain.py`, `terrain/steps.py`, `data/processed/terrain/malapert-massif.json` (created); `pipeline/lunar_pipeline/__main__.py`, `terrain/sources.py`, `.gitignore`, `pipeline/AGENTS.md`, `data/README.md`, `AI_LOG.md` (modified).
+- **Technical decisions / trade-offs (user decisions marked):**
+  - Slope and center elevation from PGDA 78 Site23 (5 m; user). Mapping Malapert → Site23 recorded as QA-confirmed.
+  - `terrain_roughness_index` and `nearest_ice_deposit_meters` are **omitted** from the terrain file (user) because REQUIREMENTS 5.5 has no agreed metric; the file does not fully match contract 1.2 until round 3.
+  - Near/far switch at 10 km (user); written profile uses 150 km until PD-07 (user).
+  - Observer at the DEM surface (0 m) and terrain counted from the first sample at 20 m (user, after reviewing the sensitivity below).
+  - Contract 1.2 is still DRAFT (D6); producing against it follows the runbook's Leader decision allowing work against the draft contract.
+  - `is_slope_safe` = mean slope < 10° (REQUIREMENTS 5.4, Agreed). Landing radius 100 m is PD-02 (Proposed).
+  - DEM heights have no stated reference radius in the file metadata; treated as heights above the CRS sphere. A constant reference offset cancels between observer and target.
+  - Remote reads only (Site23 is not a COG, but a 140 m window reads fine); the step takes ~30 s.
+- **Verification performed:**
+  - `python -m lunar_pipeline --list` → `terrain`; `python -m lunar_pipeline` runs end to end (~29 s). `python -m compileall lunar_pipeline` OK.
+  - Malapert Massif (lat -86.0, lon 0.3): center elevation 4830.756 m; slope over 1261 px inside 100 m: mean 8.732°, p95 12.754°, max 19.988° → `is_slope_safe: true` (note: p95 > 10°, so the Proposed PD-04 slope veto would trigger).
+  - Horizon (150 km): 360 finite values, min -4.857°, max 8.552°, all within [-90, 90].
+  - Azimuth check: a 1 km ray at az 0 increases latitude (north), az 90 increases longitude (east), az 180 decreases latitude.
+  - **PD-07 3-radius test** (max / mean increase of the profile, azimuths changed > 0.1°): 25 → 75 km: 3.286° (az 225) / 0.466° / 83; 75 → 150 km: 2.968° (az 185) / 0.255° / 59; 25 → 150 km: 4.230° (az 203) / 0.721° / 92. The profile still changes between 75 and 150 km toward the south (az ~185–225), so a radius below 150 km would lose real blocking terrain there.
+  - **Near-field sensitivity** (not adopted; input for the team): the max 8.55° comes from the local slope 20 m away. Counting terrain only beyond 100 m → max 7.35°, mean 1.67°; beyond 200 m → 6.04°, 1.31°; observer at 2 m → 6.41°, 1.34°; at 10 m → 5.39°, 0.34° (current mean 2.09°). Terrain beyond 10 km alone peaks at 0.08°.
+  - Determinism: two runs give byte-identical outputs. `data/interim/` is ignored; terrain file is 232 bytes.
+- **Risks or pending items:** PD-07 (radius) and the near-field setting (observer height / minimum distance) strongly affect sunlight results and need a team decision; roughness and ice distance pending (5.5); contract 1.2 still DRAFT; only Malapert has a QA-confirmed tile.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
