@@ -209,7 +209,6 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** WebFetch of the LROC page (values above). With the pipeline reader: the point projects to x=635.3 m, y=121341.0 m in the PGDA 78 Site23 CRS and is inside `Site23_final_adj_5mpp_surf.tif` (9.4 km from the edge); 100 m window around it has no NaN (elevation 4810–4848 m). Haversine distances (R = 1737.4 km): 4.22 km to the Gazetteer center, 1.14 km to the Site23 tile center, 0.63 km to LROC post 1294. `sites.json` parses as valid JSON.
 - **Risks or pending items:** The LROC page does not state the reference frame or longitude convention for the mosaic center (negative bounds imply -180..180 east). Marked verified, so round 2 (terrain and ephemeris for Malapert) is unblocked; the value is a region center, so round 2 results describe that point, not an official landing site. Better landing points may come from Wueller et al. 2026 (Table A1, MMA01), not yet extracted.
 
-<<<<<<< HEAD
 ### 2026-11-14 — Malapert slope stats and horizon profile
 
 - **Agent:** Claude Code (Opus 5.5), following `.claude/agents/terrain-engineer.md` rules inline
@@ -247,7 +246,7 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Technical decisions / trade-offs:** The 100 m exclusion matches the provisional landing-zone radius; slope evaluation remains responsible for terrain inside that zone. The 150 km maximum radius remains provisional and configurable. `REQUIREMENTS.md` was intentionally not changed.
 - **Verification performed:** `python -m compileall lunar_pipeline` passed; `python -m lunar_pipeline terrain` passed. Sensitivity results (maximum / mean elevation at 150 km): observer 0 m and min distance 0/60/100 m → `8.552° / 2.091°`, `8.024° / 1.801°`, `7.458° / 1.701°`; observer 2 m and min distance 0/60/100 m → `6.414° / 1.342°`, `6.414° / 1.342°`, `6.414° / 1.333°`.
 - **Risks or pending items:** These values remain provisional pending Leader confirmation; contract 1.2 and the formal REQUIREMENTS decisions remain unchanged.
-=======
+
 ### 2026-11-14 — SPICE Sun and Earth series for Malapert
 
 - **Agent:** Claude Code (Opus 5.5), following `.claude/agents/ephemeris-engineer.md` rules inline
@@ -272,7 +271,26 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
     - 2027-03-30T00:00:00Z — Sun az 272.0712, el -1.0841; Earth az 1.5165, el -0.6040
     - 2027-04-13T23:00:00Z — Sun az 89.2339, el -1.3351; Earth az 359.5640, el 6.4419
 - **Risks or pending items:** **JPL Horizons comparison pending (QA, human)**; record the result here and in the PR. Contract 1.1 is DRAFT (Leader allowed working against it); visibility criterion (center vs. limb) still Pending. Only Malapert has verified coordinates.
->>>>>>> origin/main
+
+### 2026-11-14 — JPL Horizons comparison for Malapert ephemeris
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Complete the QA comparison of the three Malapert SPICE instants against JPL Horizons.
+- **Change description:** Queried the official Horizons API for an observer at `coord@301`, geodetic coordinates lon `0.3`, lat `-86.0`, height `0 km`, with `AIRLESS` apparent azimuth/elevation and compared all three timestamps for the Sun and Earth against the generated series.
+- **Files created/modified:** `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The comparison preserves the existing `DE421`/`MOON_ME` SPICE configuration and does not invent an acceptance tolerance. Horizons reports its current DE441-based result and includes gravitational light deflection; the observed differences are recorded as evidence for QA/Lead.
+- **Verification performed:** Horizons API comparison passed for all six values. Maximum absolute difference was `0.000045°` in azimuth and `0.000031°` in elevation (less than `0.2` arcseconds). The three timestamp pairs matched the artifact values to the reported precision.
+- **Risks or pending items:** QA/Lead must still choose and document the formal tolerance. Weights/vetoes and PD-07 horizon-radius selection remain team decisions.
+
+### 2026-11-14 — Repair AI_LOG after round 2 merges
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Check that the user's latest changes follow the repository rules after PRs #11 and #12 were merged.
+- **Change description:** PR #12 was merged before the follow-up commit that removed the conflict markers, so `main` had `<<<<<<<`/`=======`/`>>>>>>>` lines in this file. Removed them, restored the blank lines between entries, and added the JPL Horizons comparison entry (commit `7ef9513`), which was pushed to `feat/pipeline-ephemeris-malapert` after PR #11 was merged and therefore never reached `main`.
+- **Files created/modified:** `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Log entries are kept as written. The terrain entry says the near field counts terrain from 20 m; the later near-field entry changed the default to `min_distance_m = 100` (PD-02, Proposed). The later entry wins and is still pending Leader confirmation.
+- **Verification performed:** No conflict markers left in the repository (`git grep`). `python -m compileall lunar_pipeline` OK; `python -m lunar_pipeline --list` shows `terrain` and `ephemeris`.
+- **Risks or pending items:** The formal Horizons tolerance (QA/Lead), PD-07 and the near-field setting are still team decisions.
 
 ## Template for future entries
 
