@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import type { ActiveLayer, CameraView, MoonMapView, Selection, ViewMode } from '@/store/types'
 import { ApiError, evaluate, getSites } from '@/lib/api'
+import { isSunlitSurfacePoint } from '@/lib/geo'
+import { withMockCoordinates } from '@/lib/mockSites'
 import { DEFAULT_MISSION_WINDOW } from '@/lib/mission'
 import { NOTICE_STRINGS } from '@/lib/notices'
 import { bodiesForSeries } from '@/lib/orientation'
@@ -60,6 +62,8 @@ export interface AppState {
   compared: ComparedLocation[]
   /** Educational message for a blocked selection (e.g. far side, R-10); null when none. */
   blockedNotice: string | null
+  /** True while the intro screen (title + large Moon) is shown; the Moon click ends it. */
+  introActive: boolean
   setMissionWindow: (t0: string, tf: string) => void
   setTimeCursor: (timeUtc: string) => void
   loadSites: () => Promise<void>
@@ -81,6 +85,7 @@ export interface AppState {
   setActiveLayer: (layer: ActiveLayer) => void
   setMoonMapView: (view: MoonMapView) => void
   setBlockedNotice: (notice: string | null) => void
+  startSimulation: () => void
 }
 
 function clampCursor(cursor: string | null, t0: string, tf: string): string {
@@ -129,6 +134,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   sidebarOpen: false,
   compared: [],
   blockedNotice: null,
+  introActive: true,
   setMissionWindow: (t0, tf) =>
     set((s) => ({ mission: { t0, tf, timeCursor: clampCursor(s.mission.timeCursor, t0, tf) } })),
   setTimeCursor: (timeUtc) =>
@@ -140,15 +146,15 @@ export const useAppStore = create<AppState>()((set, get) => ({
     if (get().sitesStatus !== 'idle') return
     set({ sitesStatus: 'loading' })
     try {
-      const sites = await getSites()
+      const sites = withMockCoordinates(await getSites())
       set({ sites, sitesStatus: 'ready' })
     } catch {
       set({ sitesStatus: 'error' })
     }
   },
   focusNearestSite: async (latDeg, lonDeg) => {
-    // R-10/R-11: the far side has no direct-to-Earth communication.
-    if (latDeg > -80 && Math.abs(lonDeg) > 90) {
+    // R-10 (updated 2026-11-15): the face receiving no sunlight is blocked; R-11 keeps the south pole selectable.
+    if (latDeg > -80 && !isSunlitSurfacePoint(latDeg, lonDeg, get().bodies.sunDir)) {
       set({ blockedNotice: NOTICE_STRINGS.farSide })
       return
     }
@@ -215,4 +221,5 @@ export const useAppStore = create<AppState>()((set, get) => ({
   setActiveLayer: (activeLayer) => set({ activeLayer }),
   setMoonMapView: (moonMapView) => set({ moonMapView }),
   setBlockedNotice: (blockedNotice) => set({ blockedNotice }),
+  startSimulation: () => set({ introActive: false }),
 }))

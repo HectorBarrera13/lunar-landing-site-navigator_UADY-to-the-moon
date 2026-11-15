@@ -39,3 +39,6 @@ pipeline/kernels/
 
 # Pipeline intermediate results (regenerated, not committed)
 data/interim/
+
+# Licensed font (1001Fonts FFC): usable in the app, not publishable in a public repo without the author's written permission
+apps/frontend/public/fonts/International.ttf

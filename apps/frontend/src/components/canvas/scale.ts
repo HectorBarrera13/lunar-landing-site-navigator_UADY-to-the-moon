@@ -22,7 +22,14 @@ export const SUN_DISTANCE = 1400
 export const CAMERA_FAR = 20000
 export const MOON_VIEW_DISTANCE = 3.2
 export const PERSPECTIVE_DISTANCE = 120
-/** Camera distance from the Moon center when a site is focused (0.8 Moon radii above the surface). */
-export const FOCUS_DISTANCE = 1.8
+/** Selecting a point magnifies the Moon x1.6 (a 60 % zoom) relative to the usual view. */
+export const FOCUS_ZOOM_FACTOR = 1.6
+/** Camera distance from the Moon center when a point is focused. */
+export const FOCUS_DISTANCE = MOON_VIEW_DISTANCE / FOCUS_ZOOM_FACTOR
 export const CAMERA_MIN_DISTANCE = 1.6
 export const CAMERA_MAX_DISTANCE = 400
+
+/** Intro screen: the Moon is larger than usual and its center sits in the lower part of the frame. */
+export const INTRO_VIEW_DISTANCE = 2.6
+/** Vertical position of the Moon center as a fraction of the viewport height (0 = top). */
+export const INTRO_MOON_Y_FRACTION = 0.85

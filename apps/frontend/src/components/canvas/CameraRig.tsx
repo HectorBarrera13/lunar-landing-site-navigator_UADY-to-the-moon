@@ -22,9 +22,6 @@ export default function CameraRig() {
   const camera = useThree((s) => s.camera)
   const controls = useThree((s) => s.controls) as Controls | null
   const animating = useRef(false)
-  // Armed by a new focus; when that focus animation settles, the app switches to the 2D view.
-  // Cleared by any other retarget or by a user drag/zoom (OrbitControls 'start').
-  const pending2d = useRef(false)
   const targetDir = useRef(new Vector3(0, 0, 1))
   const targetDist = useRef(MOON_VIEW_DISTANCE)
   const tmpDir = useRef(new Vector3())
@@ -49,7 +46,6 @@ export default function CameraRig() {
           // Returning from the 2D view: pull back along the current (focus) direction.
           targetDir.current.copy(camera.position).normalize()
           targetDist.current = MOON_VIEW_DISTANCE
-          pending2d.current = false
           animating.current = true
         }
         return
@@ -67,7 +63,6 @@ export default function CameraRig() {
         setSurfaceVector(targetDir.current, focus.latDeg, focus.lonDeg)
         targetDir.current.normalize()
         targetDist.current = FOCUS_DISTANCE
-        pending2d.current = true
         animating.current = true
       } else if (viewChanged || hadFocus || refocusForMap) {
         if (cameraView === 'perspective') {
@@ -86,7 +81,6 @@ export default function CameraRig() {
           targetDir.current.copy(camera.position).normalize()
           targetDist.current = MOON_VIEW_DISTANCE
         }
-        pending2d.current = false
         animating.current = true
       }
     })
@@ -96,7 +90,6 @@ export default function CameraRig() {
     if (!controls) return
     const stop = () => {
       animating.current = false
-      pending2d.current = false
     }
     controls.addEventListener('start', stop)
     return () => controls.removeEventListener('start', stop)
@@ -117,11 +110,6 @@ export default function CameraRig() {
     const angle = 2 * Math.acos(Math.min(1, Math.abs(qFull.current.w)))
     if (angle < DONE_ANGLE && Math.abs(len - dist) < DONE_DIST) {
       animating.current = false
-      if (pending2d.current) {
-        pending2d.current = false
-        const store = useAppStore.getState()
-        if (store.mode !== '2d') store.setMode('2d')
-      }
     }
   })
 

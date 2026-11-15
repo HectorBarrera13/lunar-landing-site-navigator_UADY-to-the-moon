@@ -10,19 +10,22 @@ import SunLight from './SunLight'
 import EarthBody from './EarthBody'
 import SunBody from './SunBody'
 import StarBackground from './StarBackground'
+import IntroRig from './IntroRig'
+import { useAppStore } from '@/store'
 import {
   CAMERA_FAR,
   CAMERA_MAX_DISTANCE,
   CAMERA_MIN_DISTANCE,
-  MOON_VIEW_DISTANCE,
+  INTRO_VIEW_DISTANCE,
 } from './scale'
 
-const CAMERA = { position: [0, 0, MOON_VIEW_DISTANCE] as [number, number, number],
+const CAMERA = { position: [0, 0, INTRO_VIEW_DISTANCE] as [number, number, number],
   fov: 45,
   near: 0.1,
   far: CAMERA_FAR, }
 
 export default function MoonScene() {
+  const introActive = useAppStore((s) => s.introActive)
   return (
     <Canvas dpr={[1, 2]} camera={CAMERA} gl={{ antialias: true, logarithmicDepthBuffer: true }}>
       <ambientLight intensity={0.08} />
@@ -30,12 +33,17 @@ export default function MoonScene() {
       <Suspense fallback={<SceneFallback />}>
         <StarBackground />
         <MoonGlobe />
-        <SiteMarkers />
-        <EarthBody />
-        <SunBody />
+        {!introActive && (
+          <>
+            <SiteMarkers />
+            <EarthBody />
+            <SunBody />
+          </>
+        )}
       </Suspense>
       <OrbitControls
         makeDefault
+        enabled={!introActive}
         enablePan={false}
         enableDamping
         minDistance={CAMERA_MIN_DISTANCE}
@@ -43,6 +51,7 @@ export default function MoonScene() {
         rotateSpeed={0.6}
         zoomSpeed={0.6}
       />
+      <IntroRig />
       <CameraRig />
       <AnchorProjector />
     </Canvas>

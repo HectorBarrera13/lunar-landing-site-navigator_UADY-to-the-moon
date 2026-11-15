@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import { BackSide, SRGBColorSpace, SphereGeometry } from 'three'
 import type { Mesh } from 'three'
+import { STARS_SPIN_SPEED, useIntroSpin } from './useIntroSpin'
 
 const STAR_SPHERE_RADIUS = 8000
 
@@ -15,6 +16,7 @@ export default function StarBackground() {
   const texture = useTexture('/textures/starmap_2020_4k.jpg')
   const geometry = useMemo(() => new SphereGeometry(STAR_SPHERE_RADIUS, 64, 32), [])
   const mesh = useRef<Mesh>(null)
+  useIntroSpin(mesh, STARS_SPIN_SPEED)
 
   useMemo(() => {
     texture.colorSpace = SRGBColorSpace

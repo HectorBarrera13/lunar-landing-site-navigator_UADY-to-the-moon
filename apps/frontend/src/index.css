@@ -6,7 +6,27 @@
  * Traffic-light colors are reserved for the Suitability Index traffic light
  * (icons, text, strokes) and are never used as backgrounds. Palette is PD-05 (provisional).
  */
+/* "International" by Vladimir Nikolic, 1001Fonts FFC license. The file is not committed (see .gitignore);
+   without it the title falls back to Space Grotesk. */
+@font-face {
+  font-family: 'International';
+  src: url('/fonts/International.ttf') format('truetype');
+  font-display: swap;
+}
+
 @theme {
+  --font-title: 'International', 'Space Grotesk', sans-serif;
+  /* Intro: UI reveal after the Moon is clicked */
+  --animate-reveal: reveal 700ms ease-out both;
+  @keyframes reveal {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
   /* Elevation layers */
   --color-base: #0d1013;
   --color-chassis: #15181d;
@@ -52,4 +72,10 @@ body {
   background-color: var(--color-base);
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-reveal {
+    animation: none;
+  }
 }
