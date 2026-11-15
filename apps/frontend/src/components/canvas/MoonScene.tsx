@@ -19,6 +19,10 @@ import {
   INTRO_VIEW_DISTANCE,
 } from './scale'
 
+/** Fill light: dim by default; raised in the South Pole view so shadowed relief stays readable without losing the shadow. */
+const AMBIENT_DEFAULT = 0.08
+const AMBIENT_SOUTH_POLE = 0.35
+
 const CAMERA = { position: [0, 0, INTRO_VIEW_DISTANCE] as [number, number, number],
   fov: 45,
   near: 0.1,
@@ -26,9 +30,10 @@ const CAMERA = { position: [0, 0, INTRO_VIEW_DISTANCE] as [number, number, numbe
 
 export default function MoonScene() {
   const introActive = useAppStore((s) => s.introActive)
+  const southPoleView = useAppStore((s) => s.cameraView === 'south_pole')
   return (
     <Canvas dpr={[1, 2]} camera={CAMERA} gl={{ antialias: true, logarithmicDepthBuffer: true }}>
-      <ambientLight intensity={0.08} />
+      <ambientLight intensity={southPoleView ? AMBIENT_SOUTH_POLE : AMBIENT_DEFAULT} />
       <SunLight />
       <Suspense fallback={<SceneFallback />}>
         <StarBackground />

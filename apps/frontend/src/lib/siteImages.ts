@@ -8,8 +8,8 @@
 export interface SiteImage {
   /** Path under `public/`, served by Vite. */
   src: string
-  /** Official LROC product page for attribution. */
-  productUrl: string
+  /** Official product page for attribution; null when the source page is not recorded yet. */
+  productUrl: string | null
   /** Short credit label. */
   credit: string
   /** Alt text for the canvas base image context. */
@@ -40,6 +40,14 @@ export const SITE_IMAGES: Record<string, SiteImage> = {
   'apollo-11': roi('apollo-11', 'NAC_ROI_APOLLO11LOA', 'Apollo 11'),
   'apollo-17': roi('apollo-17', 'NAC_ROI_APOLLO17LOA', 'Apollo 17'),
   'chandrayaan-3': roi('chandrayaan-3', 'NAC_ROI_VIKRAM__LOA', 'Chandrayaan-3 / Vikram crater'),
+}
+
+/** Team-provided image; source and license still to be recorded (see AI_LOG.md). */
+SITE_IMAGES['change-3'] = {
+  src: '/images/sites/change-3.png',
+  productUrl: null,
+  credit: 'Image provided by the team (source pending)',
+  alt: "Lunar surface near Chang'e 3",
 }
 
 export function siteImage(siteId: string | null | undefined): SiteImage | null {

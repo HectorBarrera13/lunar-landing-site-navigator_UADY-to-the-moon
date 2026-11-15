@@ -12,7 +12,7 @@ export default function ShowLandingSiteButton() {
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center">
-      <button type="button" onClick={() => setMode('2d')} className={`${BUTTON_PRIMARY} pointer-events-auto h-10 px-6`}>
+      <button type="button" data-tour="landing-button" onClick={() => setMode('2d')} className={`${BUTTON_PRIMARY} pointer-events-auto h-10 px-6`}>
         {S.show}
       </button>
     </div>

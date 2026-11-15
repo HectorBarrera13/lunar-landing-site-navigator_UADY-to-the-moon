@@ -2,16 +2,12 @@ import { useEffect, useId, useRef } from 'react'
 import {
   BUTTON_PRIMARY,
   BUTTON_SECONDARY,
-  CHIP,
-  LABEL,
   MONO_NUM,
   PANEL,
   SECTION_TITLE,
 } from '@/components/ui/common/styles'
 import { formatLat, formatLon } from '@/components/ui/pointInfo/formatCoords'
-import NearestSiteNote from '@/components/ui/pointInfo/NearestSiteNote'
 import { POINT_INFO_STRINGS as P } from '@/components/ui/pointInfo/strings'
-import TrafficLightBadge from '@/components/ui/pointInfo/TrafficLightBadge'
 import { useFocusEvaluation } from '@/components/ui/pointInfo/useFocusEvaluation'
 import { pointLabel } from '@/lib/pointColors'
 import { siteImage } from '@/lib/siteImages'
@@ -23,8 +19,8 @@ import { MAP_STRINGS as S } from './strings'
 import { useElementSize } from './useElementSize'
 
 /**
- * FR-08 2D landing view, shown when `mode === '2d'`. It is an opaque overlay below the top bar;
- * the 3D Canvas stays mounted underneath so the camera state survives. The viewport sits right
+ * FR-08 2D landing view, shown when `mode === '2d'`. Only its panel is drawn (the overlay itself has
+ * no background); the 3D Canvas stays mounted and visible underneath so the camera state survives. The viewport sits right
  * of the 560 px horizon panel (bottom-left) and left of the compare sidebar when it is open.
  */
 export default function LandingView() {
@@ -35,7 +31,6 @@ export default function LandingView() {
 
 function LandingViewContent() {
   const focus = useAppStore((s) => s.focus)
-  const focusOrigin = useAppStore((s) => s.focusOrigin)
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
   const compared = useAppStore((s) => s.compared)
   const setMode = useAppStore((s) => s.setMode)
@@ -77,7 +72,7 @@ function LandingViewContent() {
       : `${P.suitabilityIndex}: ${failed ? (noData ? P.noWindowData : P.error) : P.loading}`
 
   return (
-    <section aria-labelledby={titleId} className="absolute inset-x-0 top-28 bottom-0 z-5 bg-base text-ink">
+    <section aria-labelledby={titleId} className="absolute inset-x-0 top-28 bottom-0 z-5 text-ink">
       <div
         className={`${PANEL} absolute top-4 bottom-4 left-[calc(560px+2rem)] flex min-w-0 flex-col ${
           sidebarOpen ? 'right-[calc(384px+1rem)]' : 'right-4'
@@ -98,30 +93,9 @@ function LandingViewContent() {
                 {formatLon(focus.lonDeg)}
               </p>
             )}
-            {focusOrigin === 'nearest-site' && focus?.name != null && <NearestSiteNote name={focus.name} />}
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center gap-3">
-            {focus !== null && (
-              <div>
-                <p className={LABEL}>{P.suitabilityIndex}</p>
-                {data !== null ? (
-                  <p className="mt-0.5 flex items-center gap-2">
-                    <span className={`text-lg font-bold leading-6 ${MONO_NUM}`}>{data.suitability_index}</span>
-                    <span className="font-mono text-[11px] text-primary">/100</span>
-                    <TrafficLightBadge light={data.traffic_light} />
-                  </p>
-                ) : failed ? (
-                  <p role="alert" className="mt-0.5 text-xs">
-                    {noData ? P.noWindowData : P.error}
-                  </p>
-                ) : (
-                  <p role="status" className="mt-0.5 text-xs text-ink-muted">
-                    {P.loading}
-                  </p>
-                )}
-              </div>
-            )}
             {focus !== null && (
               <button
                 type="button"
@@ -176,14 +150,6 @@ function LandingViewContent() {
                   baseNote: imagery !== null ? S.baseNoteOfficial : S.baseNotePlaceholder,
                 })}
               </p>
-              <ul className="pointer-events-none absolute top-2 left-2 flex flex-col items-start gap-1">
-                <li className={CHIP}>
-                  <span aria-hidden="true" className="size-1 bg-ink-subtle" />
-                  {imagery !== null ? S.officialImagery : S.placeholder}
-                </li>
-                <li className={CHIP}>{S.notGeoreferenced}</li>
-                <li className={CHIP}>{S.provisional}</li>
-              </ul>
             </>
           )}
         </div>
@@ -195,16 +161,21 @@ function LandingViewContent() {
               <span aria-hidden="true">{data !== null ? '◉ ' : 'ⓘ '}</span>
               {strokeNote}
             </p>
+            {imagery === null && <p className="text-[11px] text-ink-subtle">{S.noImagery}</p>}
             {imagery !== null && (
               <p className="text-[11px] text-ink-subtle">
-                <a
-                  href={imagery.productUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-secondary underline underline-offset-2 hover:text-primary"
-                >
-                  {imagery.credit}
-                </a>
+                {imagery.productUrl === null ? (
+                  imagery.credit
+                ) : (
+                  <a
+                    href={imagery.productUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-secondary underline underline-offset-2 hover:text-primary"
+                  >
+                    {imagery.credit}
+                  </a>
+                )}
               </p>
             )}
           </footer>

@@ -8,6 +8,7 @@ export const TIMELINE_STRINGS = {
   viewGroupLabel: 'Camera view',
   viewMoon: 'Moon',
   viewPerspective: 'Perspective',
+  viewSouthPole: 'South Pole',
   hourGroupLabel: 'Time cursor hour (UTC)',
   hourLabel: 'Hour',
   hourBack: 'One hour earlier',

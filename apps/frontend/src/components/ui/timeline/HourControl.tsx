@@ -28,7 +28,7 @@ export default function HourControl() {
   return (
     <div role="group" aria-label={S.hourGroupLabel} className="pointer-events-auto flex shrink-0 items-center gap-1.5">
       <span className={LABEL}>{S.hourLabel}</span>
-      <div className="flex items-center border border-line bg-base">
+      <div className="flex items-center overflow-hidden rounded border border-line bg-base">
         <button
           type="button"
           aria-label={S.hourBack}
@@ -55,7 +55,7 @@ export default function HourControl() {
           <span aria-hidden="true">+</span>
         </button>
       </div>
-      <div className="flex border border-line">
+      <div className="flex overflow-hidden rounded border border-line">
         {QUICK_HOURS.map((h) => {
           const target = dayStart + h * HOUR_MS
           const outside = target < start || target > end

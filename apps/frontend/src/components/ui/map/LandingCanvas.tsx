@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { siteImage } from '@/lib/siteImages'
 import type { TrafficLight } from '@/types'
-import { MARGIN_RADIUS_M, ZONE_RADIUS_M, createPlaceholderTile } from './landingZone'
+import { MARGIN_RADIUS_M, ZONE_RADIUS_M } from './landingZone'
 import type { ElementSize } from './useElementSize'
 
 /** Token names from `index.css`; fallbacks keep the drawing legible if a variable is missing. */
@@ -51,13 +51,12 @@ function loadBaseImage(src: string): Promise<HTMLImageElement | null> {
 
 /**
  * Canvas 2D drawing of the landing zone, to scale: official LROC base image centered on the
- * site (placeholder pattern when none), error margin ring (dotted, neutral), zone circle
+ * site (plain dark background when none), error margin ring (dotted, neutral), zone circle
  * (traffic-light stroke only, never a fill) and the proposed landing point.
  * Redraws when the size, DPR, scale, light or base image change.
  */
 export default function LandingCanvas({ size, pxPerM, light, siteId, label, describedBy }: LandingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const tile = useMemo(() => createPlaceholderTile(), [])
   const [baseImage, setBaseImage] = useState<HTMLImageElement | null>(null)
   const imageSrc = siteImage(siteId)?.src ?? null
 
@@ -98,12 +97,6 @@ export default function LandingCanvas({ size, pxPerM, light, siteId, label, desc
       const srcW = width / scale
       const srcH = height / scale
       ctx.drawImage(baseImage, (baseImage.width - srcW) / 2, (baseImage.height - srcH) / 2, srcW, srcH, 0, 0, width, height)
-    } else {
-      const pattern = tile === null ? null : ctx.createPattern(tile, 'repeat')
-      if (pattern !== null) {
-        ctx.fillStyle = pattern
-        ctx.fillRect(0, 0, width, height)
-      }
     }
 
     const cx = width / 2
@@ -123,7 +116,7 @@ export default function LandingCanvas({ size, pxPerM, light, siteId, label, desc
     // Landing zone: stroke only (owner rule: traffic-light colors are never fills).
     ctx.beginPath()
     ctx.arc(cx, cy, zoneR, 0, Math.PI * 2)
-    ctx.lineWidth = 2
+    ctx.lineWidth = 3.5
     ctx.strokeStyle = readToken(styles, light ?? 'neutral')
     ctx.stroke()
 
@@ -143,7 +136,7 @@ export default function LandingCanvas({ size, pxPerM, light, siteId, label, desc
     ctx.lineTo(cx, cy + arm)
     ctx.stroke()
     ctx.strokeRect(cx - box + 0.5, cy - box + 0.5, box * 2 - 1, box * 2 - 1)
-  }, [size, pxPerM, light, tile, baseImage])
+  }, [size, pxPerM, light, baseImage])
 
   return (
     <canvas

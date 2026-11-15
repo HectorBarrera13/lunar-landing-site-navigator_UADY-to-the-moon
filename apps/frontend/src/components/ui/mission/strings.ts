@@ -1,6 +1,7 @@
 export const MISSION_STRINGS = {
   groupLabel: 'Mission window',
-  title: 'Window',
+  title: 'Starting date',
+  returningTitle: 'Returning date',
   start: 'Start',
   end: 'End',
   startDate: 'Start date (UTC)',
@@ -9,8 +10,6 @@ export const MISSION_STRINGS = {
   endHour: 'End hour (UTC)',
   utc: 'UTC',
   apply: 'Apply',
-  sunlitExample: 'Sunlit example',
-  sunlitExampleHint: 'Apply 31 Mar 2027 00:00 – 3 Apr 2027 00:00 UTC, a window with sunlight at Malapert Massif',
   errors: {
     startMissing: 'Enter a valid start date.',
     endMissing: 'Enter a valid end date.',

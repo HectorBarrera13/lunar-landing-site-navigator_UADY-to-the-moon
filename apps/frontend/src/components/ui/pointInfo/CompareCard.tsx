@@ -3,14 +3,16 @@ import { pointColor, pointLabel } from '@/lib/pointColors'
 import { siteImage } from '@/lib/siteImages'
 import { useAppStore } from '@/store'
 import type { ComparedLocation } from '@/types'
-import { formatLat, formatLon } from './formatCoords'
 import CriterionRow from './CriterionRow'
 import IndexDelta from './IndexDelta'
-import NearestSiteNote from './NearestSiteNote'
 import ScoreCell from './ScoreCell'
 import { POINT_INFO_STRINGS as S } from './strings'
 import TrafficLightBadge from './TrafficLightBadge'
+import VetoIcon from './VetoIcon'
 import type { CompareResult } from './useCompareResults'
+
+/** Sites north of -80° are outside the south pole region (pipeline/AGENTS.md: "lat > -80°"). */
+const POLE_REGION_MAX_LAT_DEG = -80
 
 interface CompareCardProps {
   location: ComparedLocation
@@ -32,6 +34,7 @@ export default function CompareCard({ location, result, shift, rank, onOpenLandi
   const shiftedData = shift?.result?.data ?? null
   const imagery = siteImage(location.id)
   const gradientId = `cc-grad-${location.id}`
+  const isFarFromPole = location.latDeg > POLE_REGION_MAX_LAT_DEG
 
   return (
     <article aria-labelledby={headingId} className="border border-line bg-panel text-sm">
@@ -85,21 +88,18 @@ export default function CompareCard({ location, result, shift, rank, onOpenLandi
       </div>
 
       <div className="space-y-3 p-3">
-        {location.origin === 'nearest-site' && location.name !== null && <NearestSiteNote name={location.name} />}
-        <p className={`text-[11px] text-ink-muted ${MONO_NUM}`}>
-          {formatLat(location.latDeg)}, {formatLon(location.lonDeg)}
-        </p>
-
-        <div>
-          <p className={LABEL}>{S.suitabilityIndex}</p>
-          <div className={`mt-1 grid gap-2 ${shift === null ? 'grid-cols-1' : 'grid-cols-2'}`}>
-            <ScoreCell label={shift === null ? null : S.base} result={result} />
-            {shift !== null && <ScoreCell label={`+${shift.days} ${S.days}`} result={shift.result} />}
+        {shift !== null && (
+          <div>
+            <p className={LABEL}>{S.suitabilityIndex}</p>
+            <div className="mt-1 grid grid-cols-2 gap-2">
+              <ScoreCell label={S.base} result={result} />
+              <ScoreCell label={`+${shift.days} ${S.days}`} result={shift.result} />
+            </div>
+            {data !== null && shiftedData !== null && (
+              <IndexDelta base={data.suitability_index} shifted={shiftedData.suitability_index} days={shift.days} />
+            )}
           </div>
-          {shift !== null && data !== null && shiftedData !== null && (
-            <IndexDelta base={data.suitability_index} shifted={shiftedData.suitability_index} days={shift.days} />
-          )}
-        </div>
+        )}
 
         {data !== null && (
           <>
@@ -127,27 +127,23 @@ export default function CompareCard({ location, result, shift, rank, onOpenLandi
                 <ul className="mt-1 space-y-1">
                   {data.vetoes.map((v) => (
                     <li key={v.code} className="flex gap-2 text-xs">
-                      <span aria-hidden="true" className="text-ink-muted">
-                        {'⛔'}
-                      </span>
+                      <VetoIcon />
                       <span>{v.message}</span>
                     </li>
                   ))}
                 </ul>
               )}
             </section>
-            <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-ink-subtle">
-              {S.precision[data.precision]}
-            </p>
+            {data.precision !== 'date_specific' && (
+              <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-ink-subtle">
+                {S.precision[data.precision]}
+              </p>
+            )}
 
-            {data.warnings.length > 0 && (
+            {isFarFromPole && (
               <section aria-label={S.warnings} className="text-[11px] text-ink-muted">
                 <h4 className={LABEL}>{S.warnings}</h4>
-                <ul className="mt-1 space-y-1">
-                  {data.warnings.map((warning) => (
-                    <li key={warning}>{warning}</li>
-                  ))}
-                </ul>
+                <p className="mt-1">{S.iceFarAway}</p>
               </section>
             )}
           </>
