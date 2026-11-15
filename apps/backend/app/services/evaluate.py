@@ -50,7 +50,9 @@ class WindowAggregates:
     earth_visible_percent: float
     longest_darkness_hours: float
     next_sunset_utc: str | None
+    next_sunrise_utc: str | None
     next_earthset_utc: str | None
+    next_earthrise_utc: str | None
 
 
 def traffic_light_for(suitability_index: int, vetoes: list[Veto]) -> TrafficLight:
@@ -75,6 +77,14 @@ def _next_set(times: list[str], visible: list[bool]) -> str | None:
     return None
 
 
+def _next_rise(times: list[str], visible: list[bool]) -> str | None:
+    """First hidden -> visible transition inside the window, if any."""
+    for index in range(len(visible) - 1):
+        if not visible[index] and visible[index + 1]:
+            return times[index + 1]
+    return None
+
+
 def _aggregate(series: SiteTimeSeries) -> WindowAggregates:
     total = len(series.time_utc)
     if total == 0:
@@ -95,7 +105,9 @@ def _aggregate(series: SiteTimeSeries) -> WindowAggregates:
         earth_visible_percent=round(100 * sum(earth) / total, 2),
         longest_darkness_hours=round(longest_run * series.time_step_minutes / 60, 2),
         next_sunset_utc=_next_set(series.time_utc, sun_visible),
+        next_sunrise_utc=_next_rise(series.time_utc, sun_visible),
         next_earthset_utc=_next_set(series.time_utc, earth),
+        next_earthrise_utc=_next_rise(series.time_utc, earth),
     )
 
 
@@ -272,7 +284,9 @@ def evaluate(request: EvaluateRequest) -> EvaluateResponse:
             earth_visible_percent=aggregates.earth_visible_percent,
             longest_darkness_hours=aggregates.longest_darkness_hours,
             next_sunset_utc=_parse_utc(aggregates.next_sunset_utc),
+            next_sunrise_utc=_parse_utc(aggregates.next_sunrise_utc),
             next_earthset_utc=_parse_utc(aggregates.next_earthset_utc),
+            next_earthrise_utc=_parse_utc(aggregates.next_earthrise_utc),
         ),
         warnings=warnings,
     )

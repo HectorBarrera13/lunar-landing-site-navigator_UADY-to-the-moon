@@ -48,7 +48,9 @@ class EvaluationMetrics(BaseModel):
     earth_visible_percent: float = Field(ge=0, le=100)
     longest_darkness_hours: float = Field(ge=0)
     next_sunset_utc: AwareDatetime | None = None
+    next_sunrise_utc: AwareDatetime | None = None
     next_earthset_utc: AwareDatetime | None = None
+    next_earthrise_utc: AwareDatetime | None = None
 
 
 class EvaluateResponse(BaseModel):

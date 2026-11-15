@@ -12,6 +12,8 @@ export interface SeriesPoint {
   /** Sun counts as visible when any part of the disc is above the horizon (fraction > 0). */
   sun_visible: boolean
   sun_distance_km: number
+  /** Null when the backend is serving a legacy artifact without angular radii. */
+  sun_angular_radius_deg: number | null
   sun_dir_me: DirectionMe
   earth_azimuth_deg: number
   earth_elevation_deg: number
@@ -19,6 +21,8 @@ export interface SeriesPoint {
   /** Earth counts as visible when its center is above the horizon (fraction >= 0.5). */
   earth_visible: boolean
   earth_distance_km: number
+  /** Null when the backend is serving a legacy artifact without angular radii. */
+  earth_angular_radius_deg: number | null
   earth_dir_me: DirectionMe
 }
 

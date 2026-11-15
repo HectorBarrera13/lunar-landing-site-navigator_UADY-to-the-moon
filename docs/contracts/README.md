@@ -44,11 +44,13 @@ Conventions: `MOON_ME` frame · latitude/longitude in degrees (lon ∈ [-180, 18
   "sun_elevation_deg": [0.0],
   "sun_visible_fraction": [0.0],
   "sun_distance_km": [0.0],
+  "sun_angular_radius_deg": [0.0],
   "sun_dir_me": [[0.0, 0.0, 0.0]],
   "earth_azimuth_deg": [0.0],
   "earth_elevation_deg": [0.0],
   "earth_visible_fraction": [0.0],
   "earth_distance_km": [0.0],
+  "earth_angular_radius_deg": [0.0],
   "earth_dir_me": [[0.0, 0.0, 0.0]]
 }
 ```
@@ -57,7 +59,7 @@ Conventions: `MOON_ME` frame · latitude/longitude in degrees (lon ∈ [-180, 18
 - `horizon_source`: `"lola"` (real terrain) or `"sphere"` (approximate, near side).
 - `horizon_profile_deg`: 360 values, index = azimuth in whole degrees (0 = local north, clockwise), value = horizon elevation angle including lunar curvature. `max_radius_m` = 150000 (PD-07), `near_field_m` = 100 and `observer_height_m` = 0 (PD-09).
 - `*_dir_me`: unit vector from the Moon center to the body in `MOON_ME`. `*_distance_km`: distance from the site to the body center.
-- Angular radii of the Sun and Earth are derived from the SPICE kernel radii and `*_distance_km`; no constants are stored.
+- `*_angular_radius_deg`: apparent angular radius derived from the SPICE kernel body radius and `*_distance_km`; no physical radius constants are stored in the artifact.
 - Visibility (R3-2): `sun_visible_fraction` = fraction (0–1) of the solar disc above the horizon, assuming the horizon is flat across the disc width (horizon interpolated linearly in azimuth). `earth_visible_fraction` uses the same computation, and Earth counts as visible when its center is above the horizon (margin 0°).
 - The `sun_visible` / `earth_visible` booleans of version 1.0 are removed: consumers derive them (Sun: fraction > 0; Earth: center elevation above the horizon, equivalently fraction >= 0.5).
 
@@ -117,7 +119,7 @@ Request:
 }
 ```
 
-Either `site_id` or both `lat_deg`/`lon_deg` are required. Free points use average layers (standard precision).
+Either `site_id` or both `lat_deg`/`lon_deg` are required. Free points currently use the nearest preset site's date-specific evaluation.
 
 Response:
 
@@ -135,7 +137,9 @@ Response:
     "earth_visible_percent": 0.0,
     "longest_darkness_hours": 0.0,
     "next_sunset_utc": null,
-    "next_earthset_utc": null
+    "next_sunrise_utc": null,
+    "next_earthset_utc": null,
+    "next_earthrise_utc": null
   },
   "warnings": []
 }
@@ -143,5 +147,7 @@ Response:
 
 - `traffic_light`: `"green" | "orange" | "red"`.
 - `precision`: `"date_specific"` (preset sites) | `"average"` (reserved; not implemented until `pipeline/layers` exists).
-- Free points (`lat_deg`/`lon_deg`) are redirected to the nearest preset site that has a precomputed series; the response is the site's `date_specific` evaluation. There is no `average`-precision evaluation yet.
+- Free points (`lat_deg`/`lon_deg`) are redirected silently to the nearest preset site that has a precomputed series; the response is the site's `date_specific` evaluation. There is no `average`-precision evaluation yet.
 - Weights and veto thresholds come from configuration (REQUIREMENTS 5.2–5.5, Agreed 2026-11-14). Criteria without data are excluded and the remaining weights are renormalized; this is reported in `warnings`.
+- A valid window with no matching series samples returns `422` with the detail `No series points in the requested window.`
+- `GET /api/layers/{region_id}` is reserved by the contract and is not implemented until regional layer artifacts exist.
