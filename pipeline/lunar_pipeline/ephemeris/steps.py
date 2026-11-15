@@ -1,7 +1,7 @@
 """Pipeline step `ephemeris`: Sun and Earth geometry for verified sites, one interim file per year.
 
 Writes data/interim/ephemeris/<site_id>/<year>.json (columnar, unrounded floats). Visibility
-fractions and the contract 1.1 files are produced by the `sites` step.
+fractions and the contract §1.1 files are produced by the `sites` step.
 """
 
 from datetime import datetime, timedelta, timezone

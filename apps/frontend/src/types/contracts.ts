@@ -1,4 +1,4 @@
-// Mirrors docs/contracts/README.md (approved 2026-11-14; section 1.1 version 1.1, 2026-11-15). Do not diverge.
+// Mirrors docs/contracts/README.md (version 1.2, approved 2026-11-15). Do not diverge.
 
 export type HorizonSource = 'lola' | 'sphere'
 
@@ -25,7 +25,7 @@ export interface SiteListItem {
 export type DirectionMe = [number, number, number]
 
 /**
- * GET /api/sites/{site_id}/series (contract 2.0, version 1.1): `horizon.json` fields,
+ * GET /api/sites/{site_id}/series (contract §2.0, version 1.2): `horizon.json` fields,
  * `time_step_minutes`, and the year-file columns sliced to the window. Every column has
  * the same length as `time_utc`.
  */
@@ -48,12 +48,16 @@ export interface SiteSeriesResponse {
   /** Fraction (0-1) of the solar disc above the horizon (R3-2). */
   sun_visible_fraction: number[]
   sun_distance_km: number[]
+  /** Absent or null when the processed artifact predates the angular-radius column. */
+  sun_angular_radius_deg?: number[] | null
   sun_dir_me: DirectionMe[]
   earth_azimuth_deg: number[]
   earth_elevation_deg: number[]
   /** Fraction (0-1) of the Earth disc above the horizon (R3-2). */
   earth_visible_fraction: number[]
   earth_distance_km: number[]
+  /** Absent or null when the processed artifact predates the angular-radius column. */
+  earth_angular_radius_deg?: number[] | null
   earth_dir_me: DirectionMe[]
 }
 
@@ -100,10 +104,13 @@ export interface EvaluationMetrics {
   earth_visible_percent: number
   longest_darkness_hours: number
   next_sunset_utc: string | null
+  next_sunrise_utc: string | null
   next_earthset_utc: string | null
+  next_earthrise_utc: string | null
 }
 
 export interface EvaluateResponse {
+  resolved_site_id: string
   suitability_index: number
   traffic_light: TrafficLight
   precision: Precision

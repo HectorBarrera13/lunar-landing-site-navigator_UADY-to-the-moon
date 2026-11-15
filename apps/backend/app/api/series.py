@@ -13,7 +13,7 @@ router = APIRouter(tags=["sites"])
     response_model=SiteTimeSeries,
     summary="Precomputed Sun and Earth series for a site",
     description=(
-        "Returns horizon.json plus the yearly series columns (contract 1.1) concatenated "
+        "Returns horizon.json plus the yearly series columns (contract §1.1, version 1.2) concatenated "
         "and sliced to [start, end], inclusive."
     ),
     responses={

@@ -1,4 +1,4 @@
-"""`GET /api/sites/{site_id}/series` models (docs/contracts 1.1 and 2.0, version 1.1)."""
+"""`GET /api/sites/{site_id}/series` models (docs/contracts §1.1 and §2.0, version 1.2)."""
 
 from typing import Literal
 
@@ -30,9 +30,11 @@ class SiteTimeSeries(BaseModel):
     sun_elevation_deg: list[float]
     sun_visible_fraction: list[float]
     sun_distance_km: list[float]
+    sun_angular_radius_deg: list[float] | None = None
     sun_dir_me: list[list[float]]
     earth_azimuth_deg: list[float]
     earth_elevation_deg: list[float]
     earth_visible_fraction: list[float]
     earth_distance_km: list[float]
+    earth_angular_radius_deg: list[float] | None = None
     earth_dir_me: list[list[float]]

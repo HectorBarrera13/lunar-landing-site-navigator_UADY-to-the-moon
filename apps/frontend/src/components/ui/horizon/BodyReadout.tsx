@@ -12,7 +12,7 @@ export interface BodyReading {
   azimuthDeg: number
   elevationDeg: number
   visible: boolean
-  /** Share of the disc above the terrain (contract 1.1 `<body>_visible_fraction`). */
+  /** Share of the disc above the terrain (contract §1.1 `<body>_visible_fraction`). */
   visiblePercent: number
   marginDeg: number
 }

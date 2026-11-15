@@ -156,7 +156,7 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning).
 - **Risks or pending items:** Browser check pending. Texture orientation vs. marker convention pending. Earth size/distance are visual placeholders.
 
-### 2026-11-15 — FR-01 horizon panel and time slider (mock data)
+### 2026-11-14 — FR-01 horizon panel and time slider (mock data)
 
 - **Agent:** Claude Code (Sonnet 5.5, Frontend 2 role)
 - **Requested task:** Implement FR-01 with fake data: mock `getSiteSeries`, a 2D Canvas horizon panel with Sun and Earth at the time cursor, a time slider, English strings in a resource file.
@@ -556,6 +556,154 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
   - Headless Chrome (DevTools Protocol, one-off script outside the repo) against the backend of `feat/round3-data-series` on port 8000: series loads (337 points for 2027-03-15..29); far-side click shows "Selection blocked" and selects nothing; a globe click resolves to Malapert with "Nearest preset site", zooms and opens the 2D view after the animation; "Back to globe" returns to 3D; "Sunlit example" loads 73 points; at 2027-03-31T05:00Z the Sun badge shows 18% visible (fraction 0.1846); a 2030 window loads 241 points; compare "+7 days" shows Index 50 → 43. No application console errors.
   - Before this change, the same flow passed on `main` with the 1.0 backend (demo window Index 21 red with 3 vetoes; sunlit example 52 red, Earth visibility veto).
 - **Risks or pending items:** This branch must merge right after `feat/round3-data-series`; against a 1.0 backend the series request fails (shown as "No precomputed data for this window"). Body radii are missing from the contract (see above). R3-5, R3-6 and PD-05 are still provisional in the UI.
+
+### 2026-11-15 — Contract and backend alignment after R3 audit
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Resolve the R3 documentation contradictions and align the approved contract, pipeline producer, and backend consumer without modifying the frontend.
+- **Change description:** D6 is recorded as approved. R3-5, R3-6, and the formal Horizons tolerance are recorded in `REQUIREMENTS.md`. The contract now specifies angular-radius columns, sunrise/earthrise metrics, the current silent nearest-preset behavior, the no-series-points response, and the unimplemented layers endpoint. The pipeline join writes angular-radius columns, while the backend reads them when available and computes sunrise/earthrise transitions.
+- **Files created/modified:** `REQUIREMENTS.md`, `docs/contracts/README.md`, `data/README.md`, `pipeline/lunar_pipeline/sites/join.py`, `apps/backend/app/models/series.py`, `apps/backend/app/models/evaluate.py`, `apps/backend/app/services/series.py`, `apps/backend/app/services/evaluate.py`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Existing processed artifacts without angular-radius columns remain readable during regeneration; newly produced artifacts include the columns. Free-point evaluation remains the current silent nearest-preset redirection by product decision. Frontend files were intentionally not modified.
+- **Verification performed:** `git diff --check` passed; `python -m compileall -q apps/backend/app pipeline/lunar_pipeline` passed; backend dependencies installed in `apps/backend/.venv`; temporary Uvicorn integration passed for `/api/health` (200), `/api/sites` (13 sites), `/api/sites/malapert-massif/series` (337 points), the nocturnal evaluation (Index 21 with `earth_visibility_low`, `sunlight_low`, `darkness_exceeded`), and the sunlit evaluation (Index 50 with `earth_visibility_low`). Existing artifacts remain readable, but do not yet expose the new angular-radius columns.
+- **Risks or pending items:** Existing processed artifacts must be regenerated with the updated pipeline before the frontend can consume angular radii or the new series fields. The frontend remains intentionally out of scope for this task.
+
+### 2026-11-15 — Frontend contract integration without visual changes
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Apply frontend changes that do not alter visual design after the R3 backend and contract alignment.
+- **Change description:** The frontend contract mirror now includes optional Sun/Earth angular-radius columns and sunrise/earthrise evaluation metrics. The columnar-to-row adapter carries angular radii into `SeriesPoint`, using `null` for legacy artifacts and reporting a malformed shorter optional column instead of silently producing misaligned data. Existing three-scenario comparison and `+N days` logic was reviewed and left unchanged because it already satisfies R3-6.
+- **Files created/modified:** `apps/frontend/src/types/contracts.ts`, `apps/frontend/src/types/series.ts`, `apps/frontend/src/lib/api/seriesRows.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Angular-radius fields remain optional at the frontend boundary until processed artifacts are regenerated. No component markup, Tailwind class, layout, copy, or scene geometry was changed.
+- **Verification performed:** From `apps/frontend`, `npm run typecheck` passed and `npm run build` passed. Vite reported the existing warning for a JavaScript chunk larger than 500 kB.
+- **Risks or pending items:** Existing processed artifacts may still provide `null` angular radii until the pipeline is rerun; no visual consumer has been added in this non-design phase.
+
+### 2026-11-15 - Backend round 4: multi-site terrain and historical evaluations
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Execute round 4 for the backend only; do not modify the frontend.
+- **Change description:** Recorded the approved terrain footprint and resolution, the 2025-2035 artifact budget, and historical-site evaluation decisions. The terrain pipeline now selects PGDA 78 terrain when available, falls back to registered PGDA 90 products for verified polar sites, writes an idealized 0-degree spherical horizon for verified historical sites without terrain, and propagates processing errors. Historical evaluations without terrain are accepted only when their series declares `horizon_source: "sphere"`; slope and landing-zone criteria are omitted, available criteria are renormalized with the approved SRS near-side weights, and unavailable criteria are reported. Missing terrain for other sites remains an error.
+- **Files created/modified:** `REQUIREMENTS.md`; `pipeline/lunar_pipeline/terrain/{config.py,horizon.py,site_terrain.py,sources.py,steps.py}`; `apps/backend/app/core/config.py`; `apps/backend/app/services/evaluate.py`; `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The user's approved historical horizon is a constant 0 degrees; the 10-degree value applies only to the slope veto. The approved near-side baseline weights (25% power, 15% communication) are configured separately and renormalized over available criteria. Regional layers and their endpoint are deferred. No coordinates or processed series were invented for the 12 unverified catalog sites.
+- **Verification performed:** `apps/backend/.venv/Scripts/python.exe -m compileall -q app` passed; a temporary Uvicorn run returned HTTP 200 from `GET /api/health`; focused evaluator assertions passed for historical sphere-only evaluation, 25:15 weight renormalization, and continued failure on missing terrain for a LOLA site. `pipeline/.venv/Scripts/python.exe -m compileall -q lunar_pipeline` and `python -m lunar_pipeline --list` passed. `git diff --check` passed. FastAPI `TestClient` could not run because the environment lacks `httpx2`; the live Uvicorn health check was used instead.
+- **Risks or pending items:** The other 12 catalog sites still lack verified coordinates, so their artifacts cannot be generated. No processed artifacts were generated in this task. PD-08 hosting and initial-load validation remain open. Regional layers remain deferred by user decision.
+
+### 2026-11-15 — Round 3 backend integration and QA closure
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Complete only the Round 3 Backend and Leader/QA items.
+- **Change description:** Recorded the agreed Malapert demo windows in `REQUIREMENTS.md`, removed the stale top-level `status: "draft"` from the partially verified site catalog, corrected the date of the FR-01 log entry, and recorded the Horizons validation tolerance alongside the measured comparison.
+- **Files created/modified:** `REQUIREMENTS.md`, `data/catalog/sites.json`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** No API or contract changes were needed; R3 contract/backend alignment was already present. The measured maximum absolute Horizons difference is `0.000045°` in azimuth and `0.000031°` in elevation, with refraction disabled. The demo window remains `2027-03-15..29`; the **"Sunlit example"** window is `2027-03-31..2027-04-03`.
+- **Verification performed:** `python -m pip install -r requirements.txt` and `python -m compileall -q apps/backend/app` passed in the temporary backend venv. A temporary Uvicorn run returned `/api/health` status `ok` and 13 sites. `/api/evaluate` returned Index 21 / red with `earth_visibility_low`, `sunlight_low`, and `darkness_exceeded` for the demo window; the Sunlit example returned 85.7% sunlight and Index 50 / red with `earth_visibility_low`. `data/README.md` already documents that `abcorr LT+S` is light-time plus stellar aberration, not refraction.
+- **Risks or pending items:** Deleting the merged remote branches for PRs #18 and #19 was attempted but GitHub rejected the operation because this checkout has no valid Git credentials. No stale worktrees exist. Frontend and pipeline changes remain out of scope.
+
+### 2026-11-15 — Fix series crash on null angular radii and regenerate artifacts
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Critical item from the second backend/project audit: `GET /api/sites/{id}/series` returned `"sun_angular_radius_deg": null` / `"earth_angular_radius_deg": null` (backend `list[float] | None = None`, artifacts not regenerated), and the frontend adapter `optionalColumnValue` only handled `undefined`, so every series load threw `Cannot read properties of null (reading 'length')` (reproduced with Node). FR-01 could not load.
+- **Change description:**
+  - Part A (frontend boundary): `optionalColumnValue` treats `null` and `undefined` alike (`column == null`); the contract mirror types the two optional columns as `number[] | null` (absent or null for legacy artifacts). The "shorter than `time_utc`" check is kept.
+  - Part B (data): regenerated Malapert Massif artifacts with `python -m lunar_pipeline terrain ephemeris sites` (NAIF kernels from `data/README.md` downloaded to the git-ignored `pipeline/kernels/`; PGDA 78 `Site23` and PGDA 90 read over HTTPS). The 11 year files now include `sun_angular_radius_deg` and `earth_angular_radius_deg`.
+- **Files created/modified:** `apps/frontend/src/lib/api/seriesRows.ts`, `apps/frontend/src/types/contracts.ts`, `data/processed/sites/malapert-massif/{2025..2035}.json`, `AI_LOG.md`. Unchanged after regeneration: `horizon.json`, `data/processed/terrain/malapert-massif.json`.
+- **Technical decisions / trade-offs:** Backend and contract untouched (the backend keeps emitting `null` for missing optional columns); whether the contract should say "absent" or "null" is left to a separate, approval-gated contract task. Pipeline and backend run in throwaway venvs outside the repository (Python 3.14.7).
+- **Verification performed:**
+  - Determinism vs. a backup of the previous artifacts: terrain JSON and `horizon.json` identical; in year files every pre-existing column is identical except two `sun_distance_km` values (2025 index 2087, 2029 index 1036) that differ by 0.001 km in the last rounded digit (rounding tie, relative 7e-12).
+  - Sanity: radius columns have the same length as `time_utc`, all finite and > 0; Sun 0.2614–0.2717°, Earth 0.8984–1.0254°; max hourly step 0.00001° (Sun) and 0.0007° (Earth). Year files 1.45 MB each (< 5 MB).
+  - Backend (uvicorn on port 8000): `/series` returns radius arrays; demo window Index 21 red with `earth_visibility_low`, `sunlight_low`, `darkness_exceeded`; sunlit window Index 50 red; 2036 → 422; far side → 422; no-sample window → 422; unknown site / site without artifacts → 404; year-crossing series concatenates.
+  - Frontend: Node repro of the adapter with `null`, `undefined`, an array, and a short column (error kept); `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning only). No browser check was done.
+- **Risks or pending items:** Contract still silent on absent vs. `null` for optional columns. Pipeline validated on Python 3.14 only (declared 3.11+). Horizons comparison for the radii was not repeated (geometry columns are unchanged).
+
+### 2026-11-15 — Proposed contract version 1.2
+
+- **Agent:** contracts-steward
+- **Requested task:** Prepare and, after explicit approval, apply the version 1.2 contract clarification without committing or pushing.
+- **Change description:** Section 1.1 now identifies version 1.2 as proposed, records `pipeline/sites` as the producer, and documents optional angular-radius columns with legacy omission or `null` behavior. Section 1.1 defines the four transition metrics at `time_step_minutes` resolution, and section 2.1 documents the two possible `detail` shapes for HTTP 422 responses. Backend and frontend contract comments were updated to version 1.2.
+- **Files created/modified:** `docs/contracts/README.md`, `apps/backend/app/models/series.py`, `apps/frontend/src/types/contracts.ts`, `apps/frontend/src/lib/api/seriesRows.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The general contract status remains approved while version 1.2 is explicitly proposed pending project-owner approval. Existing local frontend and regenerated artifact changes were preserved and not folded into the contract proposal.
+- **Verification performed:** Run later by Claude Code during the version 1.2 approval task: `python -m compileall app`, `npm run typecheck`, and `npm run build` pass (existing >500 kB chunk warning only).
+- **Risks or pending items:** The proposed contract still requires project-owner approval before version 1.2 can be treated as approved or merged.
+
+### 2026-11-15 — Single resolved-site rule
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Align free-point resolution between backend and frontend by exposing the preset site used by `POST /api/evaluate`.
+- **Change description:** Contract response revision 1.3 adds `resolved_site_id`. The backend returns the site selected by the artifact-aware resolver, and the frontend now asks the backend to resolve free points instead of calculating the nearest coordinate-only site locally. Resolution failures use the existing notice channel; no styles or layout were changed.
+- **Files created/modified:** `docs/contracts/README.md`, `apps/backend/app/models/evaluate.py`, `apps/backend/app/services/evaluate.py`, `apps/frontend/src/types/contracts.ts`, `apps/frontend/src/store/useAppStore.ts`, `apps/frontend/src/lib/notices.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The frontend retains its local far-side guard before calling the API, but all successful nearest-site selection comes from `resolved_site_id`. The response field is required for successful evaluations and is absent from errors.
+- **Verification performed:** Temporary Uvicorn `/api/health` returned HTTP 200. `POST /api/evaluate` for `(0, 0)` and `(-86.1, 0.5)` returned HTTP 200 with `resolved_site_id=malapert-massif` and `precision=date_specific`. `python -m compileall app`, `npm run typecheck`, and `npm run build` passed; Vite reported the existing >500 kB chunk warning.
+- **Risks or pending items:** Contract response revision 1.3 remains approval-gated until the updated contract is accepted and merged.
+
+### 2026-11-15 — Contract version 1.2 approved; section vs. version references disambiguated
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** The project owner approved a single contract version 1.2 covering the proposed "version 1.2" (optional angular-radius columns, transition metrics, 422 `detail` shapes) and the proposed "response revision 1.3" (`resolved_site_id`). Update the contract status, fix references that confused section numbers with version numbers, and close the pending verification of the version 1.2 entry.
+- **Change description:**
+  - `docs/contracts/README.md`: header now reads "APPROVED — version 1.2" with a version history (1.0, 1.1, 1.2) and a note that `§` denotes sections; §1.1 "Version 1.2 — approved 2026-11-15"; the separate "Response revision 1.3 — proposed" marker is removed (it is part of version 1.2).
+  - Comments and docstrings only: references now use `§1.1` (site time series), `§1.2` (terrain evaluation) and `§2.0` (series endpoint) for sections and "version 1.2" for the version. Fixed two wrong ones introduced earlier: `apps/backend/app/models/series.py` and `apps/frontend/src/lib/api/seriesRows.ts` cited "contracts 1.2" (the terrain section) for the time series.
+- **Files created/modified:** `docs/contracts/README.md`; `apps/backend/app/{api/series.py,models/series.py,models/terrain.py,services/evaluate.py,services/series.py,services/terrain.py}`; `apps/frontend/src/{lib/api/seriesRows.ts,types/contracts.ts,types/series.ts,components/ui/horizon/BodyReadout.tsx}` (comment only); `pipeline/lunar_pipeline/{ephemeris/config.py,ephemeris/steps.py,sites/__init__.py,sites/join.py,sites/steps.py,terrain/steps.py}`; `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The assumption string `"Visible fractions (contract 1.1, R3-2) ..."` in `pipeline/lunar_pipeline/sites/join.py` is left unchanged because it is written into `horizon.json`; changing it would alter a committed artifact. Update it at the next artifact regeneration.
+- **Verification performed:** `python -m compileall app` passes; `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning only); uvicorn on port 8000: `POST /api/evaluate` returns `resolved_site_id = malapert-massif` for `site_id`, for the free points (0, 0) and (−86.1, 0.5), with Index 21 and the three vetoes; far side → 422; `/series` returns angular-radius arrays. No browser check was done.
+- **Risks or pending items:** The assumption string above; `REQUIREMENTS.md` does not list contract versions (none needed).
+
+### 2026-11-15 — Documentation consistency audit
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Align architecture, requirements, pipeline guidance, and terrain comments with the current nearest-preset behavior without changing contracts or runtime logic.
+- **Change description:** Free-point documentation now describes resolution to the nearest precomputed preset, with regional average layers reserved for future `pipeline/layers` work. `REQUIREMENTS.md` no longer lists agreed D6, PD-04, or the weights choice as open items. Architecture and pipeline maps now include `pipeline/sites`, `CATALOG_FILE`, and the repository name. Terrain comments identify PD-07 and PD-09 as agreed and cite the existing user decision for the 10 km near/far switch without treating it as a formal requirements decision.
+- **Files created/modified:** `REQUIREMENTS.md`, `ARCHITECTURE.md`, `pipeline/AGENTS.md`, `pipeline/lunar_pipeline/terrain/config.py`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The 10 km near/far switch remains documented as a user decision recorded in `AI_LOG.md:224`; it was not promoted to an agreed requirement.
+- **Verification performed:** Reviewed the documentation diff, searched the targeted documents for stale free-click/average-layer and pending-decision references, and `git diff --check` passed. No code or contract behavior was changed.
+- **Risks or pending items:** Existing local frontend/backend/data changes were preserved and remain outside this documentation audit.
+
+### 2026-11-15 — Local PGDA 78 tile fallback
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Make the terrain pipeline read local PGDA 78 tiles when present and use the registered HTTPS URL otherwise, without committing or pushing.
+- **Change description:** Added the configured `data/raw/raster/` root and PGDA 78 local-path builder. Terrain evaluation now selects existing local `<Site>_final_adj_5mpp_{surf,slp}.tif` files before falling back to the remote source. Updated the data source registry to remove the temporary-runner note.
+- **Files created/modified:** `pipeline/lunar_pipeline/paths.py`, `pipeline/lunar_pipeline/terrain/sources.py`, `pipeline/lunar_pipeline/terrain/site_terrain.py`, `data/README.md`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The local layout is derived from `paths.py`; the source resolver keeps the existing URL behavior when either local tile is absent, preserving reproducibility with legacy environments.
+- **Verification performed:** `python -m compileall -q lunar_pipeline` passed; `python -m lunar_pipeline terrain` completed using the HTTPS fallback because no local PGDA 78 tile is present; SHA-256 comparison confirmed `data/processed/terrain/malapert-massif.json` is identical before and after the run; `git diff --check` passed.
+- **Risks or pending items:** No local PGDA 78 tiles are currently present in `data/raw/raster/`; the local branch will be exercised when the ignored input files are supplied.
+
+### 2026-11-15 — Frontend validation error details
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Show useful validation messages when the backend returns a Pydantic 422 response with `detail` as a list.
+- **Change description:** Added strict runtime guards in the frontend API client to extract validation `msg` fields, remove the `Value error, ` prefix, and join multiple messages. Text details and existing HTTP fallbacks remain unchanged.
+- **Files created/modified:** `apps/frontend/src/lib/api/client.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The parser accepts only list entries with a string `msg`; malformed entries are ignored rather than converted through an unsafe cast or broad fallback.
+- **Verification performed:** From `apps/frontend`, `npm run typecheck` passed and `npm run build` passed with the existing Vite warning for a JavaScript chunk larger than 500 kB; `git diff --check` passed.
+- **Risks or pending items:** No visual or design changes were made.
+
+### 2026-11-15 — README status, NASA data sources and env guidance (audit task 6)
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Audit task 6: environment example and README.
+- **Change description:** `README.md` status now describes the current end-to-end state (Malapert Massif only; other presets pending PD-01). "NASA data used" summarizes the sources registered in `data/README.md` (NAIF SPICE kernels, PGDA 78, PGDA 90, SVS Deep Star Maps 2020) with citations, and flags as pending QA the unverified Deep Star Maps license and its ICRF/J2000 (not `MOON_ME`) orientation. The `.env` sentence now says which file each variable is read from.
+- **Files created/modified:** `README.md`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The root `.env.example` was left unchanged: the audit claimed it defined `VITE_API_URL`, but it does not (that line belongs to `apps/frontend/.env.example`; the audit misread two concatenated outputs). Every README fact is taken from `data/README.md` or `apps/backend/app/core/config.py`.
+- **Verification performed:** Manual review of the README diff against `data/README.md` and `config.py` (lookup order root `.env` then `apps/backend/.env`); `git diff --check`.
+- **Risks or pending items:** Deep Star Maps license (QA).
+
+### 2026-11-15 — PD-02 landing zone and margin agreed
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Record the team decision on PD-02 (300 m), confirmed with the user as: landing zone 200 m diameter (radius 100 m); the 100 m error margin is spread across the diameter, so the margin ring is 300 m in diameter (radius 150 m); slope keeps being evaluated inside the 100 m radius.
+- **Change description:** `REQUIREMENTS.md` R-22 rewritten with that geometry and marked Agreed (2026-11-15, PD-02); PD-02 removed from the open items. `terrain/config.py` comment updated (value 100 m unchanged). Frontend 2D map: `MARGIN_M` is now the 50 m radial width, so the margin ring sits at 150 m; the "provisional" chip text and the screen-reader summary now say the values are agreed.
+- **Files created/modified:** `REQUIREMENTS.md`, `pipeline/lunar_pipeline/terrain/config.py`, `apps/frontend/src/components/ui/map/{landingZone.ts,strings.ts}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** No terrain regeneration: `safety_radius_meters`, slope statistics, `is_slope_safe` and the slope veto already use 100 m. The `provisional` string key is kept to avoid touching `LandingView.tsx` markup; only its text changed. The legend and scale derive from the constants (now "+50 m" and 150 m).
+- **Verification performed:** `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning only). No browser check was done.
+- **Risks or pending items:** SF-2/SF-8 (margin-aware slope) are not implemented; if the margin should also be slope-checked, that is a new decision.
+
+### 2026-11-15 — Horizon assumption string uses §1.1
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Close the leftover from the contract version 1.2 task: the visibility assumption written into `horizon.json` still said "contract 1.1".
+- **Change description:** `pipeline/lunar_pipeline/sites/join.py` now writes "Visible fractions (contract §1.1, R3-2) ..."; `data/processed/sites/malapert-massif/horizon.json` regenerated with `python -m lunar_pipeline sites` from the existing git-ignored `data/interim/` (offline).
+- **Files created/modified:** `pipeline/lunar_pipeline/sites/join.py`, `data/processed/sites/malapert-massif/horizon.json`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Only the `sites` step was rerun; terrain and ephemeris inputs are unchanged.
+- **Verification performed:** `horizon.json` differs from the committed one only in that assumption string (all other keys equal); the 11 year files were rewritten byte-identical (no git diff); `python -m compileall` passes for the pipeline and backend; uvicorn: `/series` returns the new assumption text and the demo window is still Index 21 red with `earth_visibility_low`, `sunlight_low`, `darkness_exceeded`.
+- **Risks or pending items:** None.
 
 ### 2026-11-15 — Intro screen: "Lunar Mission" title and large Moon before the simulation
 

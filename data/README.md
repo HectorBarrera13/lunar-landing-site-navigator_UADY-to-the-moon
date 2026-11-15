@@ -22,8 +22,8 @@ Notes:
 
 - PGDA 90: the product page states "All TIF files are cloud-optimized GeoTiffs (COGs)", so they can be read by window over HTTPS.
 - PGDA 90: checked on `LDEM_80S_20MPP_ADJ.TIF` (2026-11-14): `LAYOUT=COG`, 512×512 tiles, DEFLATE, overviews 2–64, float32, nodata NaN, 30400×30400 px. CRS read from the file: `+proj=stere +lat_0=-90 +lat_ts=-90 +lon_0=0 +R=1737400 +units=m` ("Moon (2015) - Sphere / Ocentric / South Polar").
-- PGDA 78: COG status is not stated on the product page. Checked on `Site23/Site23_final_adj_5mpp_surf.tif` (2026-11-14): **not a COG** (1-row strips, no overviews, no compression; 4200×4200 px, 70.6 MB, float32, nodata NaN), same CRS as PGDA 90. Remote window reads work but need many range requests; download the site tile once to `data/raw/` and read it locally. (Malapert Massif → Site23 was QA-confirmed later on 2026-11-14: the verified site point projects inside this tile with valid data.)
-- PGDA 78 reads in practice: the 5 m tiles are read from a local copy in `data/raw/raster/` (git-ignored) because the PGDA server sometimes returns empty range responses for these striped, non-COG files. A remote read did work in the latest run (2026-11-14), so both paths are valid; the local copy is the reliable fallback. Reading from `data/raw/raster/` currently relies on a temporary runner that only rewrites the source path; the pipeline code still opens the PGDA HTTPS URL.
+- PGDA 78: COG status is not stated on the product page. Checked on `Site23/Site23_final_adj_5mpp_surf.tif` (2026-11-14): **not a COG** (1-row strips, no overviews, no compression; 4200×4200 px, 70.6 MB, float32, nodata NaN), same CRS as PGDA 90. Remote window reads work but need many range requests; download the site tile once to `data/raw/raster/<Site>/` and read it locally. (Malapert Massif → Site23 was QA-confirmed later on 2026-11-14: the verified site point projects inside this tile with valid data.)
+- PGDA 78 reads in practice: the 5 m tiles are read from a local copy in `data/raw/raster/<Site>/` (git-ignored) when the expected `<Site>_final_adj_5mpp_{surf,slp}.tif` file exists. Otherwise the pipeline falls back to the registered PGDA HTTPS URL. The local copy is the reliable option because the PGDA server sometimes returns empty range responses for these striped, non-COG files.
 - The PGDA server rejects multi-range HTTP requests (answers with the whole file) and intermittently returns 403/503 on valid range requests; `lunar_pipeline/terrain/remote_window.py` uses single-range requests with retries.
 
 ## SPICE kernels
@@ -40,3 +40,7 @@ Downloaded by `python -m lunar_pipeline ephemeris` into `pipeline/kernels/` (nev
 | `moon_assoc_me.tf` (FK) | https://naif.jpl.nasa.gov/pub/naif/generic_kernels/fk/satellites/moon_assoc_me.tf | 8 KB | Sets `MOON_ME` as the Moon's body-fixed frame |
 
 DE421 matches the `MOON_ME` (DE421) frame of the LOLA data (PGDA 78 and 90).
+
+SPICE correction note: `abcorr = LT+S` means one-way light-time correction plus stellar
+aberration for the apparent direction. It is not atmospheric refraction; lunar calculations
+use no refraction.

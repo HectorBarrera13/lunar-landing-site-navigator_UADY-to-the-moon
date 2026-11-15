@@ -48,12 +48,15 @@ class EvaluationMetrics(BaseModel):
     earth_visible_percent: float = Field(ge=0, le=100)
     longest_darkness_hours: float = Field(ge=0)
     next_sunset_utc: AwareDatetime | None = None
+    next_sunrise_utc: AwareDatetime | None = None
     next_earthset_utc: AwareDatetime | None = None
+    next_earthrise_utc: AwareDatetime | None = None
 
 
 class EvaluateResponse(BaseModel):
     """Response body of `POST /api/evaluate` (docs/contracts §2.1)."""
 
+    resolved_site_id: str
     suitability_index: int = Field(ge=0, le=100)
     traffic_light: TrafficLight
     precision: Precision

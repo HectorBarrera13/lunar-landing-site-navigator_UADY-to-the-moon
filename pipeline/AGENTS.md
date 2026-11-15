@@ -18,6 +18,7 @@ Offline Python scripts that run **before** the demo, not at request time. They t
 | `lunar_pipeline/ephemeris/` | Backend A | Per-site time series: Sun and Earth azimuth, elevation, visibility (2025–2035) |
 | `lunar_pipeline/terrain/` | Backend B | Per-site 360° horizon profiles, slope statistics inside the landing circle |
 | `lunar_pipeline/layers/` | Backend B | Regional raster layers (illumination, Earth visibility, slope, permanent shadow) as images + metadata on a shared grid |
+| `lunar_pipeline/sites/` | Backend A + Backend B | Joins ephemerides and horizons and writes `data/processed/sites/` artifacts |
 
 ## Data sources
 

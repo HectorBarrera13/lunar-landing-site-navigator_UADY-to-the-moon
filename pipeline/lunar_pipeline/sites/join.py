@@ -1,4 +1,4 @@
-"""Pure join of ephemeris columns with a 360-degree horizon profile (docs/contracts 1.1)."""
+"""Pure join of ephemeris columns with a 360-degree horizon profile (docs/contracts §1.1)."""
 
 from collections.abc import Sequence
 from typing import Any
@@ -8,7 +8,7 @@ import numpy as np
 HORIZON_SOURCES = ("lola", "sphere")
 
 VISIBILITY_APPROXIMATION = (
-    "Visible fractions (contract 1.1, R3-2): the horizon elevation is read at the azimuth of the body "
+    "Visible fractions (contract §1.1, R3-2): the horizon elevation is read at the azimuth of the body "
     "center by linear interpolation between whole-degree bins (periodic in azimuth) and treated as a "
     "straight horizontal line across the whole disc width. The visible fraction is the area of the "
     "circular segment of the disc above that line divided by the disc area (disc radius from the SPICE "
@@ -67,7 +67,7 @@ def _round(array: np.ndarray, decimals: int) -> list[Any]:
 
 
 def build_year_series(ephemeris: dict[str, Any], profile_deg: np.ndarray) -> dict[str, Any]:
-    """Contract 1.1 `<year>.json` payload from an ephemeris interim payload and a horizon profile."""
+    """Contract §1.1 `<year>.json` payload from an ephemeris interim payload and a horizon profile."""
     out: dict[str, Any] = {
         "site_id": _required(ephemeris, "site_id"),
         "year": int(_required(ephemeris, "year")),
@@ -91,12 +91,13 @@ def build_year_series(ephemeris: dict[str, Any], profile_deg: np.ndarray) -> dic
         out[f"{key}_elevation_deg"] = _round(el, 4)
         out[f"{key}_visible_fraction"] = _round(fraction, 4)
         out[f"{key}_distance_km"] = _round(dist, 3)
+        out[f"{key}_angular_radius_deg"] = _round(radius, 6)
         out[f"{key}_dir_me"] = _round(direction, 6)
     return out
 
 
 def build_horizon(horizon: dict[str, Any], name: str) -> dict[str, Any]:
-    """Contract 1.1 `horizon.json` payload from the terrain horizon interim payload."""
+    """Contract §1.1 `horizon.json` payload from the terrain horizon interim payload."""
     source = _required(horizon, "horizon_source")
     if source not in HORIZON_SOURCES:
         raise ValueError(f"horizon_source must be one of {HORIZON_SOURCES}, got {source!r}.")

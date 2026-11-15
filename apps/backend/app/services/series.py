@@ -1,4 +1,4 @@
-"""Loads precomputed site time series from data/processed/sites/<id>/ (contract 1.1, version 1.1)."""
+"""Loads precomputed site time series from data/processed/sites/<id>/ (contract §1.1, version 1.2)."""
 
 import json
 import logging
@@ -30,6 +30,10 @@ COLUMNS = (
     "earth_visible_fraction",
     "earth_distance_km",
     "earth_dir_me",
+)
+OPTIONAL_COLUMNS = (
+    "sun_angular_radius_deg",
+    "earth_angular_radius_deg",
 )
 
 
@@ -105,6 +109,8 @@ def get_site_series(site_id: str, start: datetime, end: datetime) -> SiteTimeSer
         raise SeriesNotFoundError(f"No precomputed series for site_id: {site_id!r}")
 
     columns: dict[str, list[Any]] = {name: [] for name in COLUMNS}
+    optional_columns: dict[str, list[Any]] = {name: [] for name in OPTIONAL_COLUMNS}
+    optional_presence: dict[str, bool | None] = {name: None for name in OPTIONAL_COLUMNS}
     step_minutes: int | None = None
     for year in range(start_utc.year, end_utc.year + 1):
         year_path = directory / f"{year}.json"
@@ -119,10 +125,26 @@ def get_site_series(site_id: str, start: datetime, end: datetime) -> SiteTimeSer
         hi = bisect_right(year_file.epochs, end_utc.timestamp())
         for name in COLUMNS:
             columns[name].extend(year_file.data[name][lo:hi])
+        for name in OPTIONAL_COLUMNS:
+            present = name in year_file.data
+            previous = optional_presence[name]
+            if previous is not None and previous != present:
+                raise SeriesNotFoundError(f"Inconsistent {name} availability across year files of {site_id!r}.")
+            optional_presence[name] = present
+            if present:
+                optional_columns[name].extend(year_file.data[name][lo:hi])
 
     horizon = _load(horizon_path)
+    payload: dict[str, Any] = {**horizon, "time_step_minutes": step_minutes, **columns}
+    payload.update(
+        {
+            name: values
+            for name, values in optional_columns.items()
+            if optional_presence[name]
+        }
+    )
     logger.debug("Sliced %s series to %d steps", site_id, len(columns["time_utc"]))
-    return SiteTimeSeries.model_validate({**horizon, "time_step_minutes": step_minutes, **columns})
+    return SiteTimeSeries.model_validate(payload)
 
 
 __all__ = [

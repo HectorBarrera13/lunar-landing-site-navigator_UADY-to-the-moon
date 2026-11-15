@@ -1,4 +1,4 @@
-"""Loads precomputed terrain evaluations from data/processed/terrain/ (contract 1.2)."""
+"""Loads precomputed terrain evaluations from data/processed/terrain/ (contract §1.2)."""
 
 import json
 import logging

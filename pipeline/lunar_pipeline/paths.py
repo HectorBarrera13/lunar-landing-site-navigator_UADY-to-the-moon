@@ -9,6 +9,7 @@ DATA_DIR = REPO_ROOT / "data"
 CATALOG_FILE = DATA_DIR / "catalog" / "sites.json"
 PROCESSED_DIR = DATA_DIR / "processed"
 INTERIM_DIR = DATA_DIR / "interim"
+RAW_RASTER_DIR = DATA_DIR / "raw" / "raster"
 
 
 def load_verified_sites() -> list[dict[str, Any]]:
