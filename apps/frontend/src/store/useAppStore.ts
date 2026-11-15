@@ -5,11 +5,19 @@ import { centralAngleDegrees } from '@/lib/geo'
 import { DEFAULT_MISSION_WINDOW } from '@/lib/mission'
 import { NOTICE_STRINGS } from '@/lib/notices'
 import { bodiesForSeries } from '@/lib/orientation'
-import type { FocusedLocation, ScreenAnchor, SiteListItem, SiteTimeSeries } from '@/types'
+import type {
+  ComparedLocation,
+  FocusedLocation,
+  FocusOrigin,
+  ScreenAnchor,
+  SiteListItem,
+  SiteTimeSeries,
+} from '@/types'
 
 export type LoadStatus = 'idle' | 'loading' | 'ready' | 'error'
 
-export const MAX_COMPARED = 4
+/** FR-14 / SRS RF-20: compare up to 3 site x window scenarios. */
+export const MAX_COMPARED = 3
 
 export interface MissionState {
   t0: string | null
@@ -44,11 +52,13 @@ export interface AppState {
   moonMapView: MoonMapView
   /** Location shown in the info card/sidebar. Written by 2D and 3D, read by both. */
   focus: FocusedLocation | null
+  /** How `focus` was chosen; null when nothing is focused. */
+  focusOrigin: FocusOrigin | null
   /** Screen position of `focus`, written by the 3D layer every frame it changes. */
   anchor: ScreenAnchor | null
   sidebarOpen: boolean
-  /** Pinned locations shown in the compare sidebar (max 4, stored as copies). */
-  compared: FocusedLocation[]
+  /** Pinned locations shown in the compare sidebar (max `MAX_COMPARED`, stored as copies). */
+  compared: ComparedLocation[]
   /** Educational message for a blocked selection (e.g. far side, R-10); null when none. */
   blockedNotice: string | null
   setMissionWindow: (t0: string, tf: string) => void
@@ -86,8 +96,18 @@ function hasCoordinates(site: SiteListItem): site is LocatedSite {
   return site.lat !== null && site.lon !== null
 }
 
+function focusStateFor(site: LocatedSite, origin: FocusOrigin): Partial<AppState> {
+  return {
+    focus: { kind: 'site', id: site.id, name: site.name, latDeg: site.lat, lonDeg: site.lon },
+    focusOrigin: origin,
+    anchor: null,
+    cameraView: 'moon',
+    selection: { kind: 'site', siteId: site.id },
+  }
+}
+
 export const useAppStore = create<AppState>()((set, get) => ({
-  // Demo window until the FR-03 calendar exists; it matches the precomputed artifacts.
+  // Initial value only; the FR-03 mission window picker calls `setMissionWindow`.
   mission: {
     t0: DEFAULT_MISSION_WINDOW.startUtc,
     tf: DEFAULT_MISSION_WINDOW.endUtc,
@@ -105,6 +125,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   activeLayer: 'illumination',
   moonMapView: 'albedo',
   focus: null,
+  focusOrigin: null,
   anchor: null,
   sidebarOpen: false,
   compared: [],
@@ -143,8 +164,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       }
     }
     if (nearest === null) return
-    set({ blockedNotice: null })
-    get().focusSite(nearest)
+    set({ ...focusStateFor(nearest, 'nearest-site'), blockedNotice: null })
   },
   setSiteSeries: (series) =>
     set((s) => ({
@@ -157,24 +177,23 @@ export const useAppStore = create<AppState>()((set, get) => ({
   selectSite: (siteId) => set({ selection: { kind: 'site', siteId } }),
   selectPoint: (latDeg, lonDeg) => set({ selection: { kind: 'point', latDeg, lonDeg } }),
   clearSelection: () =>
-    set({ selection: { kind: 'none' }, focus: null, anchor: null, sidebarOpen: false }),
-  focusSite: (site) =>
-    set(() => {
-      if (site.lat === null || site.lon === null) return {}
-      return {
-        focus: { kind: 'site', id: site.id, name: site.name, latDeg: site.lat, lonDeg: site.lon },
-        anchor: null,
-        cameraView: 'moon',
-        selection: { kind: 'site', siteId: site.id },
-      }
+    set({
+      selection: { kind: 'none' },
+      focus: null,
+      focusOrigin: null,
+      anchor: null,
+      sidebarOpen: false,
     }),
+  focusSite: (site) =>
+    set(() => (hasCoordinates(site) ? focusStateFor(site, 'marker') : {})),
   setAnchor: (anchor) => set({ anchor }),
   addToCompare: () =>
     set((s) => {
       if (s.focus === null) return {}
       const id = s.focus.id
       if (s.compared.length >= MAX_COMPARED || s.compared.some((c) => c.id === id)) return {}
-      return { compared: [...s.compared, { ...s.focus }], focus: s.focus, sidebarOpen: true }
+      const pinned: ComparedLocation = { ...s.focus, origin: s.focusOrigin ?? 'marker' }
+      return { compared: [...s.compared, pinned], sidebarOpen: true }
     }),
   removeFromCompare: (id) =>
     set((s) => ({ compared: s.compared.filter((c) => c.id !== id) })),

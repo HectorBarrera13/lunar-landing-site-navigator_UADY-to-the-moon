@@ -7,13 +7,6 @@
  * (icons, text, strokes) and are never used as backgrounds. Palette is PD-05 (provisional).
  */
 @theme {
-  /* Legacy tokens, removed once every component uses the DESIGN.md tokens below. */
-  --color-space-950: #050510;
-  --color-space-900: #0a0a1a;
-  --color-space-800: #12122b;
-  --color-star-100: #e8ecff;
-  --color-accent-400: #4cc9f0;
-
   /* Elevation layers */
   --color-base: #0d1013;
   --color-chassis: #15181d;

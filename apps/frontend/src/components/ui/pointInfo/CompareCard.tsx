@@ -1,112 +1,129 @@
+import { ICON_BUTTON, LABEL, MONO_NUM } from '@/components/ui/common/styles'
 import { pointColor, pointLabel } from '@/lib/pointColors'
 import { useAppStore } from '@/store'
-import type { FocusedLocation } from '@/types'
+import type { ComparedLocation } from '@/types'
 import { formatLat, formatLon } from './formatCoords'
+import IndexDelta from './IndexDelta'
+import NearestSiteNote from './NearestSiteNote'
+import ScoreCell from './ScoreCell'
 import { POINT_INFO_STRINGS as S } from './strings'
-import { LIGHT_ICON } from './trafficLight'
 import type { CompareResult } from './useCompareResults'
 
 interface CompareCardProps {
-  location: FocusedLocation
+  location: ComparedLocation
   result: CompareResult | undefined
-  /** 1-based position by Suitability Index; null while loading or failed. */
+  /** Shifted-window evaluation for the "+N days" delay; null when the delay is off. */
+  shift: { days: number; result: CompareResult | undefined } | null
+  /** 1-based position by base Suitability Index; null while loading or failed. */
   rank: number | null
 }
 
-export default function CompareCard({ location, result, rank }: CompareCardProps) {
+export default function CompareCard({ location, result, shift, rank }: CompareCardProps) {
   const removeFromCompare = useAppStore((s) => s.removeFromCompare)
   const color = pointColor(location.colorIndex)
   const title = location.name ?? pointLabel(location.colorIndex)
   const headingId = `cc-${location.id}`
   const data = result?.data ?? null
+  const shiftedData = shift?.result?.data ?? null
 
   return (
-    <article aria-labelledby={headingId} className="rounded-lg border border-star-100/15 bg-space-800/60 p-3 text-sm">
-      <div className="flex items-start justify-between gap-2">
-        <h3 id={headingId} className="flex items-center gap-2 font-semibold">
-          {rank !== null && <span className="text-star-100/70">#{rank}</span>}
+    <article aria-labelledby={headingId} className="border border-line bg-panel text-sm">
+      <div className="flex h-8 items-center justify-between gap-2 border-b border-line pr-1 pl-3">
+        <h3
+          id={headingId}
+          className="flex min-w-0 items-center gap-2 font-display text-xs font-semibold uppercase tracking-[0.14em]"
+        >
+          {rank !== null && <span className={`text-primary ${MONO_NUM}`}>#{rank}</span>}
           {color !== null && (
-            <span
-              aria-hidden="true"
-              style={{ backgroundColor: color }}
-              className="inline-block size-3 rounded-full ring-1 ring-star-100/60"
-            />
+            <span aria-hidden="true" style={{ backgroundColor: color }} className="inline-block size-2 shrink-0" />
           )}
-          {title}
+          <span className="truncate">{title}</span>
         </h3>
         <button
           type="button"
           onClick={() => removeFromCompare(location.id)}
           aria-label={`${S.remove}: ${title}`}
-          className="-m-1 rounded p-1 hover:bg-star-100/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
+          className={ICON_BUTTON}
         >
-          <span aria-hidden="true">&#x2715;</span>
+          <span aria-hidden="true">{'✕'}</span>
         </button>
       </div>
-      <p className="mt-1 text-xs text-star-100/70">
-        {formatLat(location.latDeg)}, {formatLon(location.lonDeg)}
-      </p>
 
-      {result === undefined && <p className="mt-3" role="status">{S.loading}</p>}
-      {result?.failed === true && <p className="mt-3" role="alert">{S.error}</p>}
+      <div className="space-y-3 p-3">
+        {location.origin === 'nearest-site' && location.name !== null && <NearestSiteNote name={location.name} />}
+        <p className={`text-[11px] text-ink-muted ${MONO_NUM}`}>
+          {formatLat(location.latDeg)}, {formatLon(location.lonDeg)}
+        </p>
 
-      {data !== null && (
-        <div className="mt-3 space-y-3">
-          <p className="flex flex-wrap items-center gap-2">
-            <span className="text-star-100/70">{S.suitabilityIndex}</span>
-            <span className="text-2xl font-semibold">{data.suitability_index}</span>
-            <span className="inline-flex items-center gap-1 rounded border border-star-100/40 px-1.5 py-0.5 text-xs">
-              <span aria-hidden="true">{LIGHT_ICON[data.traffic_light]}</span>
-              {S.trafficLight[data.traffic_light]}
-            </span>
-          </p>
+        <div>
+          <p className={LABEL}>{S.suitabilityIndex}</p>
+          <div className={`mt-1 grid gap-2 ${shift === null ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            <ScoreCell label={shift === null ? null : S.base} result={result} />
+            {shift !== null && <ScoreCell label={`+${shift.days} ${S.days}`} result={shift.result} />}
+          </div>
+          {shift !== null && data !== null && shiftedData !== null && (
+            <IndexDelta base={data.suitability_index} shifted={shiftedData.suitability_index} days={shift.days} />
+          )}
+        </div>
 
-          <section aria-labelledby={`${headingId}-criteria`}>
-            <h4 id={`${headingId}-criteria`} className="font-semibold">{S.criteria}</h4>
-            <ul className="mt-1 space-y-2">
-              {data.criteria.map((c) => (
-                <li key={c.code}>
-                  <div className="flex justify-between">
-                    <span>{c.label}</span>
-                    <span>{c.contribution}</span>
-                  </div>
-                  <div className="text-xs text-star-100/70">
-                    {S.weight} {c.weight} &middot; {c.detail}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section aria-labelledby={`${headingId}-vetoes`}>
-            <h4 id={`${headingId}-vetoes`} className="font-semibold">{S.vetoes}</h4>
-            {data.vetoes.length === 0 ? (
-              <p className="mt-1 text-xs">{S.noVetoes}</p>
-            ) : (
-              <ul className="mt-1 space-y-1">
-                {data.vetoes.map((v) => (
-                  <li key={v.code} className="flex gap-2 text-xs">
-                    <span aria-hidden="true">&#x26D4;</span>
-                    <span>{v.message}</span>
+        {data !== null && (
+          <>
+            <section aria-labelledby={`${headingId}-criteria`}>
+              <h4 id={`${headingId}-criteria`} className={LABEL}>
+                {S.criteria}
+                {shift !== null && <span className="text-ink-subtle"> · {S.baseDetails}</span>}
+              </h4>
+              <ul className="mt-1 space-y-1.5">
+                {data.criteria.map((c) => (
+                  <li key={c.code}>
+                    <div className="flex justify-between gap-2 text-xs">
+                      <span>{c.label}</span>
+                      <span className={MONO_NUM}>{c.contribution}</span>
+                    </div>
+                    <div className="text-[11px] text-ink-subtle">
+                      {S.weight} <span className={MONO_NUM}>{c.weight}</span> · {c.detail}
+                    </div>
                   </li>
                 ))}
               </ul>
-            )}
-          </section>
-          <p className="text-xs text-star-100/70">{S.precision[data.precision]}</p>
-
-          {data.warnings.length > 0 && (
-            <section aria-label={S.warnings} className="text-xs text-star-100/70">
-              <h4 className="font-semibold">{S.warnings}</h4>
-              <ul className="mt-1 space-y-1">
-                {data.warnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
-                ))}
-              </ul>
             </section>
-          )}
-        </div>
-      )}
+
+            <section aria-labelledby={`${headingId}-vetoes`}>
+              <h4 id={`${headingId}-vetoes`} className={LABEL}>
+                {S.vetoes}
+              </h4>
+              {data.vetoes.length === 0 ? (
+                <p className="mt-1 text-xs text-ink-muted">{S.noVetoes}</p>
+              ) : (
+                <ul className="mt-1 space-y-1">
+                  {data.vetoes.map((v) => (
+                    <li key={v.code} className="flex gap-2 text-xs">
+                      <span aria-hidden="true" className="text-ink-muted">
+                        {'⛔'}
+                      </span>
+                      <span>{v.message}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+            <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-ink-subtle">
+              {S.precision[data.precision]}
+            </p>
+
+            {data.warnings.length > 0 && (
+              <section aria-label={S.warnings} className="text-[11px] text-ink-muted">
+                <h4 className={LABEL}>{S.warnings}</h4>
+                <ul className="mt-1 space-y-1">
+                  {data.warnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </>
+        )}
+      </div>
     </article>
   )
 }

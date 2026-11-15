@@ -1,23 +1,24 @@
 import { useEffect, useState } from 'react'
 import { evaluate } from '@/lib/api'
 import { useAppStore } from '@/store'
-import type { EvaluateResponse, FocusedLocation } from '@/types'
+import type { FocusedLocation } from '@/types'
+import { failureFor } from './useCompareResults'
+import type { CompareResult } from './useCompareResults'
 
-export type FocusResult = { data: EvaluateResponse | null; failed: boolean }
+export type FocusResult = CompareResult
+
+const EMPTY: FocusResult = { data: null, failed: false, noData: false }
 
 /** Evaluates the focused location for the current mission window. */
 export function useFocusEvaluation(focus: FocusedLocation | null): FocusResult {
   const t0 = useAppStore((s) => s.mission.t0)
   const tf = useAppStore((s) => s.mission.tf)
-  const [result, setResult] = useState<FocusResult>({ data: null, failed: false })
+  const [result, setResult] = useState<FocusResult>(EMPTY)
 
   useEffect(() => {
-    if (focus === null || t0 === null || tf === null) {
-      setResult({ data: null, failed: false })
-      return
-    }
+    setResult(EMPTY)
+    if (focus === null || t0 === null || tf === null) return
     let cancelled = false
-    setResult({ data: null, failed: false })
     evaluate({
       site_id: focus.kind === 'site' ? focus.id : null,
       lat_deg: focus.kind === 'point' ? focus.latDeg : null,
@@ -26,10 +27,10 @@ export function useFocusEvaluation(focus: FocusedLocation | null): FocusResult {
       end_utc: tf,
     })
       .then((data) => {
-        if (!cancelled) setResult({ data, failed: false })
+        if (!cancelled) setResult({ data, failed: false, noData: false })
       })
-      .catch(() => {
-        if (!cancelled) setResult({ data: null, failed: true })
+      .catch((error: unknown) => {
+        if (!cancelled) setResult(failureFor(error))
       })
     return () => {
       cancelled = true
