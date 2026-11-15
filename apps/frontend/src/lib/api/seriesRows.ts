@@ -1,6 +1,6 @@
 import type { SeriesPoint, SiteSeriesResponse, SiteTimeSeries } from '@/types'
 
-/** Contract 1.1: Earth is visible when its center is above the horizon, i.e. fraction >= 0.5. */
+/** Contract §1.1: Earth is visible when its center is above the horizon, i.e. fraction >= 0.5. */
 const EARTH_VISIBLE_MIN_FRACTION = 0.5
 
 function optionalColumnValue(column: number[] | null | undefined, index: number, name: string): number | null {
@@ -11,7 +11,7 @@ function optionalColumnValue(column: number[] | null | undefined, index: number,
   return column[index]
 }
 
-/** Columnar series (contract 1.1) to UI rows, deriving the visibility booleans once. */
+/** Columnar series (contract §1.1, version 1.2) to UI rows, deriving the visibility booleans once. */
 export function toSiteTimeSeries(response: SiteSeriesResponse): SiteTimeSeries {
   const series: SeriesPoint[] = response.time_utc.map((time_utc, i) => {
     const sunFraction = response.sun_visible_fraction[i]

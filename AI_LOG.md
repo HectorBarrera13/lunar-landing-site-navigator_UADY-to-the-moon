@@ -603,6 +603,38 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
   - Frontend: Node repro of the adapter with `null`, `undefined`, an array, and a short column (error kept); `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning only). No browser check was done.
 - **Risks or pending items:** Contract still silent on absent vs. `null` for optional columns. Pipeline validated on Python 3.14 only (declared 3.11+). Horizons comparison for the radii was not repeated (geometry columns are unchanged).
 
+### 2026-11-15 — Proposed contract version 1.2
+
+- **Agent:** contracts-steward
+- **Requested task:** Prepare and, after explicit approval, apply the version 1.2 contract clarification without committing or pushing.
+- **Change description:** Section 1.1 now identifies version 1.2 as proposed, records `pipeline/sites` as the producer, and documents optional angular-radius columns with legacy omission or `null` behavior. Section 1.1 defines the four transition metrics at `time_step_minutes` resolution, and section 2.1 documents the two possible `detail` shapes for HTTP 422 responses. Backend and frontend contract comments were updated to version 1.2.
+- **Files created/modified:** `docs/contracts/README.md`, `apps/backend/app/models/series.py`, `apps/frontend/src/types/contracts.ts`, `apps/frontend/src/lib/api/seriesRows.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The general contract status remains approved while version 1.2 is explicitly proposed pending project-owner approval. Existing local frontend and regenerated artifact changes were preserved and not folded into the contract proposal.
+- **Verification performed:** Run later by Claude Code during the version 1.2 approval task: `python -m compileall app`, `npm run typecheck`, and `npm run build` pass (existing >500 kB chunk warning only).
+- **Risks or pending items:** The proposed contract still requires project-owner approval before version 1.2 can be treated as approved or merged.
+
+### 2026-11-15 — Single resolved-site rule
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Align free-point resolution between backend and frontend by exposing the preset site used by `POST /api/evaluate`.
+- **Change description:** Contract response revision 1.3 adds `resolved_site_id`. The backend returns the site selected by the artifact-aware resolver, and the frontend now asks the backend to resolve free points instead of calculating the nearest coordinate-only site locally. Resolution failures use the existing notice channel; no styles or layout were changed.
+- **Files created/modified:** `docs/contracts/README.md`, `apps/backend/app/models/evaluate.py`, `apps/backend/app/services/evaluate.py`, `apps/frontend/src/types/contracts.ts`, `apps/frontend/src/store/useAppStore.ts`, `apps/frontend/src/lib/notices.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The frontend retains its local far-side guard before calling the API, but all successful nearest-site selection comes from `resolved_site_id`. The response field is required for successful evaluations and is absent from errors.
+- **Verification performed:** Temporary Uvicorn `/api/health` returned HTTP 200. `POST /api/evaluate` for `(0, 0)` and `(-86.1, 0.5)` returned HTTP 200 with `resolved_site_id=malapert-massif` and `precision=date_specific`. `python -m compileall app`, `npm run typecheck`, and `npm run build` passed; Vite reported the existing >500 kB chunk warning.
+- **Risks or pending items:** Contract response revision 1.3 remains approval-gated until the updated contract is accepted and merged.
+
+### 2026-11-15 — Contract version 1.2 approved; section vs. version references disambiguated
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** The project owner approved a single contract version 1.2 covering the proposed "version 1.2" (optional angular-radius columns, transition metrics, 422 `detail` shapes) and the proposed "response revision 1.3" (`resolved_site_id`). Update the contract status, fix references that confused section numbers with version numbers, and close the pending verification of the version 1.2 entry.
+- **Change description:**
+  - `docs/contracts/README.md`: header now reads "APPROVED — version 1.2" with a version history (1.0, 1.1, 1.2) and a note that `§` denotes sections; §1.1 "Version 1.2 — approved 2026-11-15"; the separate "Response revision 1.3 — proposed" marker is removed (it is part of version 1.2).
+  - Comments and docstrings only: references now use `§1.1` (site time series), `§1.2` (terrain evaluation) and `§2.0` (series endpoint) for sections and "version 1.2" for the version. Fixed two wrong ones introduced earlier: `apps/backend/app/models/series.py` and `apps/frontend/src/lib/api/seriesRows.ts` cited "contracts 1.2" (the terrain section) for the time series.
+- **Files created/modified:** `docs/contracts/README.md`; `apps/backend/app/{api/series.py,models/series.py,models/terrain.py,services/evaluate.py,services/series.py,services/terrain.py}`; `apps/frontend/src/{lib/api/seriesRows.ts,types/contracts.ts,types/series.ts,components/ui/horizon/BodyReadout.tsx}` (comment only); `pipeline/lunar_pipeline/{ephemeris/config.py,ephemeris/steps.py,sites/__init__.py,sites/join.py,sites/steps.py,terrain/steps.py}`; `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The assumption string `"Visible fractions (contract 1.1, R3-2) ..."` in `pipeline/lunar_pipeline/sites/join.py` is left unchanged because it is written into `horizon.json`; changing it would alter a committed artifact. Update it at the next artifact regeneration.
+- **Verification performed:** `python -m compileall app` passes; `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning only); uvicorn on port 8000: `POST /api/evaluate` returns `resolved_site_id = malapert-massif` for `site_id`, for the free points (0, 0) and (−86.1, 0.5), with Index 21 and the three vetoes; far side → 422; `/series` returns angular-radius arrays. No browser check was done.
+- **Risks or pending items:** The assumption string above; `REQUIREMENTS.md` does not list contract versions (none needed).
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]

@@ -1,4 +1,4 @@
-"""`data/processed/terrain/<site_id>.json` model (docs/contracts 1.2)."""
+"""`data/processed/terrain/<site_id>.json` model (docs/contracts §1.2)."""
 
 from pydantic import BaseModel, Field
 

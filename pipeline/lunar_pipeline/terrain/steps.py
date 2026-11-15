@@ -1,7 +1,7 @@
 """Pipeline step `terrain`: slope stats and horizon profile for verified sites with a PGDA 78 tile.
 
 Writes:
-- data/processed/terrain/<site_id>.json (docs/contracts 1.2; `terrain_roughness_index`
+- data/processed/terrain/<site_id>.json (docs/contracts §1.2; `terrain_roughness_index`
   and `nearest_ice_deposit_meters` omitted until REQUIREMENTS 5.5 defines them)
 - data/interim/horizon/<site_id>.json (360-value profile, joined into sites/<id>.json later)
 """

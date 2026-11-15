@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import type { ActiveLayer, CameraView, MoonMapView, Selection, ViewMode } from '@/store/types'
-import { getSites } from '@/lib/api'
-import { centralAngleDegrees } from '@/lib/geo'
+import { ApiError, evaluate, getSites } from '@/lib/api'
 import { DEFAULT_MISSION_WINDOW } from '@/lib/mission'
 import { NOTICE_STRINGS } from '@/lib/notices'
 import { bodiesForSeries } from '@/lib/orientation'
@@ -64,7 +63,7 @@ export interface AppState {
   setMissionWindow: (t0: string, tf: string) => void
   setTimeCursor: (timeUtc: string) => void
   loadSites: () => Promise<void>
-  focusNearestSite: (latDeg: number, lonDeg: number) => void
+  focusNearestSite: (latDeg: number, lonDeg: number) => Promise<void>
   setSiteSeries: (series: SiteTimeSeries | null) => void
   setSeriesStatus: (status: LoadStatus) => void
   selectSite: (siteId: string) => void
@@ -147,24 +146,35 @@ export const useAppStore = create<AppState>()((set, get) => ({
       set({ sitesStatus: 'error' })
     }
   },
-  focusNearestSite: (latDeg, lonDeg) => {
+  focusNearestSite: async (latDeg, lonDeg) => {
     // R-10/R-11: the far side has no direct-to-Earth communication.
     if (latDeg > -80 && Math.abs(lonDeg) > 90) {
       set({ blockedNotice: NOTICE_STRINGS.farSide })
       return
     }
-    const candidates = get().sites.filter(hasCoordinates)
-    let nearest: LocatedSite | null = null
-    let nearestAngle = Number.POSITIVE_INFINITY
-    for (const site of candidates) {
-      const angle = centralAngleDegrees(latDeg, lonDeg, site.lat, site.lon)
-      if (angle < nearestAngle) {
-        nearest = site
-        nearestAngle = angle
-      }
+    const { t0, tf } = get().mission
+    if (t0 === null || tf === null) {
+      set({ blockedNotice: NOTICE_STRINGS.nearestSiteUnavailable })
+      return
     }
-    if (nearest === null) return
-    set({ ...focusStateFor(nearest, 'nearest-site'), blockedNotice: null })
+    try {
+      const evaluation = await evaluate({
+        site_id: null,
+        lat_deg: latDeg,
+        lon_deg: lonDeg,
+        start_utc: t0,
+        end_utc: tf,
+      })
+      const resolved = get().sites.find((site) => site.id === evaluation.resolved_site_id)
+      if (resolved === undefined || !hasCoordinates(resolved)) {
+        set({ blockedNotice: NOTICE_STRINGS.nearestSiteUnavailable })
+        return
+      }
+      set({ ...focusStateFor(resolved, 'nearest-site'), blockedNotice: null })
+    } catch (error: unknown) {
+      const message = error instanceof ApiError ? error.message : NOTICE_STRINGS.nearestSiteUnavailable
+      set({ blockedNotice: message })
+    }
   },
   setSiteSeries: (series) =>
     set((s) => ({

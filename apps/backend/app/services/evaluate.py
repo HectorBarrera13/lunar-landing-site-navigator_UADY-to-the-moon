@@ -29,7 +29,7 @@ from app.services.terrain import get_terrain
 SOUTH_POLE_LAT_DEG = -80.0
 NEAR_SIDE_LON_LIMIT_DEG = 90.0
 
-# Contract 1.1: Earth visible equals center above horizon, i.e. visible fraction >= 0.5.
+# Contract §1.1: Earth visible equals center above horizon, i.e. visible fraction >= 0.5.
 EARTH_VISIBLE_MIN_FRACTION = 0.5
 
 CRITERION_LABELS = {
@@ -90,7 +90,7 @@ def _aggregate(series: SiteTimeSeries) -> WindowAggregates:
     if total == 0:
         raise EvaluationUnavailableError("No series points in the requested window.")
     sun_fraction = series.sun_visible_fraction
-    # Contract 1.1: Earth counts as visible when its center is above the horizon (fraction >= 0.5).
+    # Contract §1.1: Earth counts as visible when its center is above the horizon (fraction >= 0.5).
     earth = [fraction >= EARTH_VISIBLE_MIN_FRACTION for fraction in series.earth_visible_fraction]
     sun_visible = [fraction > 0 for fraction in sun_fraction]
 
@@ -274,6 +274,7 @@ def evaluate(request: EvaluateRequest) -> EvaluateResponse:
     suitability_index = int(round(100 * sum(criterion.contribution for criterion in criteria)))
 
     return EvaluateResponse(
+        resolved_site_id=site.id,
         suitability_index=suitability_index,
         traffic_light=traffic_light_for(suitability_index, vetoes),
         precision="date_specific",
