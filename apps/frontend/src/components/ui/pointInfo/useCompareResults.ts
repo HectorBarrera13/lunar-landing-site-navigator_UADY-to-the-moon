@@ -1,20 +1,37 @@
 import { useEffect, useState } from 'react'
-import { evaluate } from '@/lib/api'
-import { useAppStore } from '@/store'
+import { ApiError, evaluate } from '@/lib/api'
 import type { EvaluateResponse, FocusedLocation } from '@/types'
 
-export type CompareResult = { data: EvaluateResponse | null; failed: boolean }
+export type CompareResult = {
+  data: EvaluateResponse | null
+  failed: boolean
+  /** The backend answered 404/422: no precomputed data (or no points) for this window. */
+  noData: boolean
+}
 
-/** Evaluates each compared location for the current mission window. */
-export function useCompareResults(compared: FocusedLocation[]): Record<string, CompareResult> {
+export interface EvaluationWindow {
+  t0: string
+  tf: string
+}
+
+export function failureFor(error: unknown): CompareResult {
+  const noData = error instanceof ApiError && (error.status === 404 || error.status === 422)
+  return { data: null, failed: true, noData }
+}
+
+/** Evaluates each compared location for the given window; `null` skips the requests. */
+export function useCompareResults(
+  compared: readonly FocusedLocation[],
+  evaluationWindow: EvaluationWindow | null,
+): Record<string, CompareResult> {
   const [results, setResults] = useState<Record<string, CompareResult>>({})
-  const t0 = useAppStore((s) => s.mission.t0)
-  const tf = useAppStore((s) => s.mission.tf)
+  const t0 = evaluationWindow?.t0 ?? null
+  const tf = evaluationWindow?.tf ?? null
 
   useEffect(() => {
+    setResults({})
     if (t0 === null || tf === null) return
     let cancelled = false
-    setResults({})
     const settle = (id: string, result: CompareResult) => {
       if (cancelled) return
       setResults((prev) => ({ ...prev, [id]: result }))
@@ -27,8 +44,8 @@ export function useCompareResults(compared: FocusedLocation[]): Record<string, C
         start_utc: t0,
         end_utc: tf,
       })
-        .then((data) => settle(loc.id, { data, failed: false }))
-        .catch(() => settle(loc.id, { data: null, failed: true }))
+        .then((data) => settle(loc.id, { data, failed: false, noData: false }))
+        .catch((error: unknown) => settle(loc.id, failureFor(error)))
     }
     return () => {
       cancelled = true

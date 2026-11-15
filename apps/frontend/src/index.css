@@ -1,15 +1,44 @@
 @import 'tailwindcss';
 
+/*
+ * Design tokens from DESIGN.md ("Lunar Aerospace Telemetry"): flat matte surfaces,
+ * 1px hairline borders, square corners, three font roles.
+ * Traffic-light colors are reserved for the Suitability Index traffic light
+ * (icons, text, strokes) and are never used as backgrounds. Palette is PD-05 (provisional).
+ */
 @theme {
-  --color-space-950: #050510;
-  --color-space-900: #0a0a1a;
-  --color-space-800: #12122b;
-  --color-star-100: #e8ecff;
-  --color-accent-400: #4cc9f0;
+  /* Elevation layers */
+  --color-base: #0d1013;
+  --color-chassis: #15181d;
+  --color-panel: #1c2026;
+  --color-floating: #2b3842;
 
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Structure */
+  --color-line: #33434e;
+  --color-line-strong: #48616f;
+
+  /* Brand */
+  --color-primary: #88b3c7;
+  --color-secondary: #b2d2db;
+  --color-on-primary: #0d1013;
+
+  /* Text */
+  --color-ink: #e1e2e7;
+  --color-ink-muted: #c1c7cc;
+  --color-ink-subtle: #8b9296;
+
+  /* Traffic light only (Suitability Index) */
+  --color-light-green: #52997c;
+  --color-light-orange: #c8933e;
+  --color-light-red: #c75450;
+
+  /* Celestial glyphs (not traffic-light colors) */
+  --color-sun: #f2e6c4;
+  --color-earth: #a9b8ff;
+
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Public Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 html,
@@ -20,7 +49,7 @@ body,
 
 body {
   margin: 0;
-  background-color: var(--color-space-950);
-  color: var(--color-star-100);
+  background-color: var(--color-base);
+  color: var(--color-ink);
   font-family: var(--font-sans);
 }

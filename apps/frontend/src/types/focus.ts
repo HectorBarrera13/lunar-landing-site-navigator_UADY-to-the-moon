@@ -12,6 +12,17 @@ export interface FocusedLocation {
   colorIndex?: number
 }
 
+/**
+ * How the current focus was chosen: `marker` for a preset marker (or a direct site pick),
+ * `nearest-site` for a free globe click resolved by `focusNearestSite` to the nearest preset site.
+ */
+export type FocusOrigin = 'marker' | 'nearest-site'
+
+/** A pinned location in the compare sidebar, with how it was focused when pinned. */
+export interface ComparedLocation extends FocusedLocation {
+  origin: FocusOrigin
+}
+
 /** Screen-space position (CSS px, viewport origin) of the focused location. */
 export interface ScreenAnchor {
   x: number

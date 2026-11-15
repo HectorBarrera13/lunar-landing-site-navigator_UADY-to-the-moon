@@ -5,11 +5,10 @@ import type { OrbitControls } from '@react-three/drei'
 import { MathUtils, Quaternion, Vector3 } from 'three'
 import { useAppStore } from '@/store'
 import { setSurfaceVector } from './surface'
-import { MOON_VIEW_DISTANCE, PERSPECTIVE_DISTANCE } from './scale'
+import { FOCUS_DISTANCE, MOON_VIEW_DISTANCE, PERSPECTIVE_DISTANCE } from './scale'
 
 type Controls = ComponentRef<typeof OrbitControls>
 
-const FOCUS_DISTANCE = 2.4
 // Angle between the Moon->Sun direction and the Moon->camera-opposite axis in Perspective,
 // chosen so the Sun's disc edge sits about 20 deg off axis, so the whole disc fits a 16:9 frame (fov 45).
 const PERSPECTIVE_SUN_ANGLE = (22 * Math.PI) / 180
@@ -23,6 +22,9 @@ export default function CameraRig() {
   const camera = useThree((s) => s.camera)
   const controls = useThree((s) => s.controls) as Controls | null
   const animating = useRef(false)
+  // Armed by a new focus; when that focus animation settles, the app switches to the 2D view.
+  // Cleared by any other retarget or by a user drag/zoom (OrbitControls 'start').
+  const pending2d = useRef(false)
   const targetDir = useRef(new Vector3(0, 0, 1))
   const targetDist = useRef(MOON_VIEW_DISTANCE)
   const tmpDir = useRef(new Vector3())
@@ -37,9 +39,21 @@ export default function CameraRig() {
     let prevFocus = useAppStore.getState().focus
     let prevView = useAppStore.getState().cameraView
     let prevMap = useAppStore.getState().moonMapView
+    let prevMode = useAppStore.getState().mode
     return useAppStore.subscribe((state) => {
-      const { focus, cameraView, moonMapView } = state
-      if (focus === prevFocus && cameraView === prevView && moonMapView === prevMap) return
+      const { focus, cameraView, moonMapView, mode } = state
+      const backTo3d = mode !== prevMode && mode === '3d'
+      prevMode = mode
+      if (focus === prevFocus && cameraView === prevView && moonMapView === prevMap) {
+        if (backTo3d) {
+          // Returning from the 2D view: pull back along the current (focus) direction.
+          targetDir.current.copy(camera.position).normalize()
+          targetDist.current = MOON_VIEW_DISTANCE
+          pending2d.current = false
+          animating.current = true
+        }
+        return
+      }
       const mapChanged = moonMapView !== prevMap
       prevMap = moonMapView
       const refocusForMap = mapChanged && cameraView === 'moon'
@@ -53,6 +67,7 @@ export default function CameraRig() {
         setSurfaceVector(targetDir.current, focus.latDeg, focus.lonDeg)
         targetDir.current.normalize()
         targetDist.current = FOCUS_DISTANCE
+        pending2d.current = true
         animating.current = true
       } else if (viewChanged || hadFocus || refocusForMap) {
         if (cameraView === 'perspective') {
@@ -71,6 +86,7 @@ export default function CameraRig() {
           targetDir.current.copy(camera.position).normalize()
           targetDist.current = MOON_VIEW_DISTANCE
         }
+        pending2d.current = false
         animating.current = true
       }
     })
@@ -80,6 +96,7 @@ export default function CameraRig() {
     if (!controls) return
     const stop = () => {
       animating.current = false
+      pending2d.current = false
     }
     controls.addEventListener('start', stop)
     return () => controls.removeEventListener('start', stop)
@@ -98,7 +115,14 @@ export default function CameraRig() {
     camera.position.setLength(MathUtils.lerp(len, dist, k))
     controls.update()
     const angle = 2 * Math.acos(Math.min(1, Math.abs(qFull.current.w)))
-    if (angle < DONE_ANGLE && Math.abs(len - dist) < DONE_DIST) animating.current = false
+    if (angle < DONE_ANGLE && Math.abs(len - dist) < DONE_DIST) {
+      animating.current = false
+      if (pending2d.current) {
+        pending2d.current = false
+        const store = useAppStore.getState()
+        if (store.mode !== '2d') store.setMode('2d')
+      }
+    }
   })
 
   return null

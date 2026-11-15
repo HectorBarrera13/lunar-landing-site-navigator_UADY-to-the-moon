@@ -1,3 +1,4 @@
+import { INPUT, LABEL, PANEL } from '@/components/ui/common/styles'
 import { MOON_MAP_VIEWS } from '@/lib/moonMapViews'
 import { useAppStore } from '@/store'
 import type { MoonMapView } from '@/store'
@@ -8,8 +9,8 @@ export default function MapViewSelect(): React.JSX.Element {
   const setMoonMapView = useAppStore((s) => s.setMoonMapView)
 
   return (
-    <div className="w-64 rounded-lg bg-space-900/80 p-3 text-sm backdrop-blur">
-      <label htmlFor="map-view" className="block text-xs font-medium">
+    <div className={`${PANEL} w-56 p-2.5 text-sm`}>
+      <label htmlFor="map-view" className={`block ${LABEL}`}>
         {t.label}
       </label>
       <select
@@ -17,7 +18,7 @@ export default function MapViewSelect(): React.JSX.Element {
         value={view}
         aria-describedby="map-view-hint"
         onChange={(e) => setMoonMapView(e.target.value as MoonMapView)}
-        className="mt-1 w-full rounded-md border border-star-100/30 bg-space-800 px-2 py-1.5 text-star-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
+        className={`${INPUT} mt-1 w-full`}
       >
         {MOON_MAP_VIEWS.map((id) => (
           <option key={id} value={id}>
@@ -25,7 +26,7 @@ export default function MapViewSelect(): React.JSX.Element {
           </option>
         ))}
       </select>
-      <p id="map-view-hint" className="mt-1 text-xs opacity-70">
+      <p id="map-view-hint" className="mt-1 text-[11px] text-ink-subtle">
         {t.hints[view]}
       </p>
     </div>

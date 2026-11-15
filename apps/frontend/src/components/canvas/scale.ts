@@ -22,5 +22,7 @@ export const SUN_DISTANCE = 1400
 export const CAMERA_FAR = 20000
 export const MOON_VIEW_DISTANCE = 3.2
 export const PERSPECTIVE_DISTANCE = 120
+/** Camera distance from the Moon center when a site is focused (0.8 Moon radii above the surface). */
+export const FOCUS_DISTANCE = 1.8
 export const CAMERA_MIN_DISTANCE = 1.6
 export const CAMERA_MAX_DISTANCE = 400
