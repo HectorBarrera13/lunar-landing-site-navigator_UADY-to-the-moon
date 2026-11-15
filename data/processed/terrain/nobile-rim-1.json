@@ -1,0 +1,9 @@
+{
+  "site_id": "nobile-rim-1",
+  "safety_radius_meters": 100,
+  "center_elevation_meters": 6720.218,
+  "max_slope_degrees": 12.74,
+  "mean_slope_degrees": 10.093,
+  "p95_slope_degrees": 12.169,
+  "is_slope_safe": false
+}
