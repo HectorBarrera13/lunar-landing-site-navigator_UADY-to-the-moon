@@ -645,6 +645,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** Reviewed the documentation diff, searched the targeted documents for stale free-click/average-layer and pending-decision references, and `git diff --check` passed. No code or contract behavior was changed.
 - **Risks or pending items:** Existing local frontend/backend/data changes were preserved and remain outside this documentation audit.
 
+### 2026-11-15 — Local PGDA 78 tile fallback
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Make the terrain pipeline read local PGDA 78 tiles when present and use the registered HTTPS URL otherwise, without committing or pushing.
+- **Change description:** Added the configured `data/raw/raster/` root and PGDA 78 local-path builder. Terrain evaluation now selects existing local `<Site>_final_adj_5mpp_{surf,slp}.tif` files before falling back to the remote source. Updated the data source registry to remove the temporary-runner note.
+- **Files created/modified:** `pipeline/lunar_pipeline/paths.py`, `pipeline/lunar_pipeline/terrain/sources.py`, `pipeline/lunar_pipeline/terrain/site_terrain.py`, `data/README.md`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The local layout is derived from `paths.py`; the source resolver keeps the existing URL behavior when either local tile is absent, preserving reproducibility with legacy environments.
+- **Verification performed:** `python -m compileall -q lunar_pipeline` passed; `python -m lunar_pipeline terrain` completed using the HTTPS fallback because no local PGDA 78 tile is present; SHA-256 comparison confirmed `data/processed/terrain/malapert-massif.json` is identical before and after the run; `git diff --check` passed.
+- **Risks or pending items:** No local PGDA 78 tiles are currently present in `data/raw/raster/`; the local branch will be exercised when the ignored input files are supplied.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
