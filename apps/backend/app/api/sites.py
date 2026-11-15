@@ -10,7 +10,7 @@ router = APIRouter(tags=["sites"])
     "/sites",
     response_model=list[SiteSummary],
     summary="List preset sites",
-    description="Reads data/catalog/sites.json. lat/lon are null until QA verifies them (PD-01).",
+    description="Reads data/catalog/sites.json. All 13 preset coordinates are approved (PD-01 resolved 2026-11-15).",
 )
 def get_sites() -> list[SiteSummary]:
     return list_sites()

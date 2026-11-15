@@ -2,7 +2,7 @@
 
 NASA Space Apps Challenge 2026. A desktop web tool to compare lunar south pole landing sites and dates by showing the Sun and the Earth relative to the local horizon, evaluating solar power and direct-to-Earth communication, and summarizing each option as a Suitability Index.
 
-> Status: working end to end for one site. Malapert Massif has precomputed Sun/Earth series (2025–2035, hourly), a LOLA horizon profile and terrain slope; the FastAPI backend evaluates the Suitability Index over a mission window; the frontend shows the 3D globe and the 2D decision views. The other 12 preset sites are listed but have no data until QA verifies their coordinates (PD-01).
+> Status: working end to end for all 13 preset sites. Every preset has precomputed Sun/Earth series (2025–2035, hourly, contract 1.2 with angular radii) and a horizon: LOLA for the 9 south-pole sites (PGDA 78 tile where QA-confirmed, otherwise the PGDA 90 20 m mosaic) and the idealized 0° sphere for the 4 historical sites (R-15); terrain slope files exist for the 9 polar sites. The FastAPI backend evaluates the Suitability Index over a mission window; the frontend shows the 3D globe and the 2D decision views. Coordinates were PO-approved in `data/catalog/sites.json` (PD-01 resolved 2026-11-15). Regional layers, ice proximity and roughness remain open (Round 4 items pending decisions).
 
 ## Repository layout
 

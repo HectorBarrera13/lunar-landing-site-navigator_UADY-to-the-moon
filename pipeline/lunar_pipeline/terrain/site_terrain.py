@@ -17,10 +17,17 @@ from lunar_pipeline.terrain.slope import SlopeStats, slope_stats
 from lunar_pipeline.terrain.sources import (
     LDEM_60S_240MPP_ADJ_URL,
     LDEM_80S_20MPP_ADJ_URL,
-<<<<<<< HEAD
     LDSM_80S_20MPP_ADJ_URL,
+    pgda78_local_path,
     pgda78_url,
+    pgda90_local_path,
 )
+
+
+def _pgda90_source(url: str) -> str:
+    """Prefer a local copy of a PGDA 90 mosaic and fall back to its registered URL."""
+    local_path = pgda90_local_path(url)
+    return str(local_path) if local_path.is_file() else url
 
 
 def terrain_source_urls(pgda78_tile: str | None) -> dict[str, str]:
@@ -38,11 +45,6 @@ def terrain_source_urls(pgda78_tile: str | None) -> dict[str, str]:
         "horizon_near": LDEM_80S_20MPP_ADJ_URL,
         "horizon_far": LDEM_60S_240MPP_ADJ_URL,
     }
-=======
-    pgda78_local_path,
-    pgda78_url,
-)
->>>>>>> 72a0baff068b05d61b547101bdd8f182e15bbb0e
 
 
 @dataclass(frozen=True)
@@ -104,14 +106,15 @@ def evaluate_site_terrain(
     config: TerrainConfig,
 ) -> SiteTerrain:
     radius = config.landing_radius_m
-<<<<<<< HEAD
     sources = terrain_source_urls(pgda78_tile)
-    slope_url = sources["slope"]
-    surf_url = sources["center_elevation"]
-=======
-    slope_url = _pgda78_source(pgda78_tile, "slp")
-    surf_url = _pgda78_source(pgda78_tile, "surf")
->>>>>>> 72a0baff068b05d61b547101bdd8f182e15bbb0e
+    # Read from a local copy of the QA-confirmed PGDA 78 tile when present (remote reads
+    # can be slow); otherwise use the registered PGDA 90 URLs.
+    if pgda78_tile is not None:
+        slope_url = _pgda78_source(pgda78_tile, "slp")
+        surf_url = _pgda78_source(pgda78_tile, "surf")
+    else:
+        slope_url = _pgda90_source(sources["slope"])
+        surf_url = _pgda90_source(sources["center_elevation"])
 
     # Use the QA-confirmed 5 m tile when available; otherwise use the registered
     # PGDA 90 20 m products for verified polar sites.
@@ -124,8 +127,8 @@ def evaluate_site_terrain(
 
     # Horizon: near part from the 20 m mosaic, far part from the 240 m mosaic.
     max_radius = max(max(config.test_radii_m), config.horizon_max_radius_m)
-    near_win = read_window(LDEM_80S_20MPP_ADJ_URL, lat_deg, lon_deg, half_size_m=config.near_radius_m + 200)
-    far_win = read_window(LDEM_60S_240MPP_ADJ_URL, lat_deg, lon_deg, half_size_m=max_radius + 2_000)
+    near_win = read_window(_pgda90_source(LDEM_80S_20MPP_ADJ_URL), lat_deg, lon_deg, half_size_m=config.near_radius_m + 200)
+    far_win = read_window(_pgda90_source(LDEM_60S_240MPP_ADJ_URL), lat_deg, lon_deg, half_size_m=max_radius + 2_000)
     _, geod, body_radius = _body(near_win)
     _, _, far_radius = _body(far_win)
     if far_radius != body_radius:

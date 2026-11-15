@@ -73,7 +73,7 @@ Mission planners and engineers (primary), educators, general public.
 | R-11 | South pole exception: any longitude is selectable for lat ≤ -80°. | Agreed (SRS) |
 | R-12 | Shadowed points are selectable; darkness triggers a veto/penalty with an explanation popup, not a click block. | Agreed (SRS) |
 | R-13 | Three selection modes: free click, manual lat/lon entry, 13 preset markers. Presets have date-precise data; free points resolve to the nearest preset with a precomputed series; average layers remain future work in `pipeline/layers`. | Agreed (SRS) |
-| R-14 | 13 presets: 9 Artemis III regions (Peak near Cabeus B, Haworth, Malapert Massif, Mons Mouton Plateau, Mons Mouton, Nobile Rim 1, Nobile Rim 2, de Gerlache Rim 2, Slater Plain) + Apollo 11, Apollo 17, Chang'e 3, Chandrayaan-3. Coordinates verified by QA in `data/catalog/sites.json`. | Proposed (PD-01) |
+| R-14 | 13 presets: 9 Artemis III regions (Peak near Cabeus B, Haworth, Malapert Massif, Mons Mouton Plateau, Mons Mouton, Nobile Rim 1, Nobile Rim 2, de Gerlache Rim 2, Slater Plain) + Apollo 11, Apollo 17, Chang'e 3, Chandrayaan-3. Coordinates approved by the PO in `data/catalog/sites.json` (PD-01 resolved 2026-11-15; Malapert Massif additionally QA-verified against two independent sources). | Agreed (PD-01, 2026-11-15) |
 | R-15 | Historical sites without terrain data use `horizon_source: "sphere"` with a constant 0° profile across 360 azimuth bins; omit terrain criteria from evaluation and renormalize the remaining applicable weights. | Agreed (2026-11-15) |
 
 ### 4.3 2D view geometry
@@ -82,13 +82,8 @@ Mission planners and engineers (primary), educators, general public.
 |---|---|---|
 | R-20 | Polar stereographic projection for lat ≤ -80°; equirectangular/orthographic for mid latitudes. | Agreed (SRS) |
 | R-21 | Fixed (non-editable) landing circle and error margin drawn on the 2D view. | Agreed (SRS) |
-<<<<<<< HEAD
-| R-22 | Landing zone 200 m diameter + 100 m error margin, as a documented assumption. | Agreed (PD-02, 2026-11-15) |
-| R-23 | Grid cell 60 m (85°S–90°S) and 120 m (80°S–85°S), matching NASA layers. | Agreed (PD-03, 2026-11-15) |
-=======
 | R-22 | Landing zone 200 m diameter (radius 100 m). The 100 m error margin is spread across the diameter, so the dotted margin ring is 300 m in diameter (radius 150 m). Slope statistics, `is_slope_safe` and the slope veto are evaluated inside the 100 m radius. | Agreed (2026-11-15, PD-02) |
 | R-23 | Grid cell 60 m (85°S–90°S) and 120 m (80°S–85°S), matching NASA layers. | Proposed (PD-03) |
->>>>>>> 72a0baff068b05d61b547101bdd8f182e15bbb0e
 
 ---
 
@@ -278,8 +273,4 @@ Public app tested from another computer; public repository with an English READM
 
 ## 13. Open items summary
 
-<<<<<<< HEAD
-PD-01 site list and coordinates · PD-04 vetoes and normalization · PD-05 palette · PD-06 modes and comparison table details · PD-07 LOLA resolution and horizon radius (radius 150 km Agreed 2026-11-15) · PD-08 initial-load validation and hosting · PD-09 near field 100 m and observer height 0 m (Agreed 2026-11-15) · weights choice (5.2) · D1, D4, D5, D6 approval · hosting.
-=======
-PD-01 site list and coordinates · PD-03 grid cell size · PD-05 palette · PD-06 modes and comparison table details · PD-07 LOLA resolution and horizon radius (radius 150 km Agreed 2026-11-15) · PD-08 load budget · PD-09 near field 100 m and observer height 0 m (Agreed 2026-11-15) · D1, D4, D5 approval · hosting.
->>>>>>> 72a0baff068b05d61b547101bdd8f182e15bbb0e
+PD-03 grid cell size · PD-05 palette · PD-06 modes and comparison table details · PD-07 LOLA resolution per region (horizon radius 150 km Agreed 2026-11-15) · PD-08 initial-load validation (artifact budget Agreed 2026-11-15) · D1, D4, D5 approval · hosting. Closed: PD-01 site coordinates (PO-approved 2026-11-15) · PD-02 landing zone and margin (Agreed 2026-11-15) · PD-04 vetoes (Agreed 2026-11-14) · weights 5.2 (Agreed 2026-11-14/15) · PD-09 near field and observer height (Agreed 2026-11-15) · D6 contracts (Agreed 2026-11-15).

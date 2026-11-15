@@ -21,6 +21,15 @@ LDEM_60S_240MPP_ADJ_URL = PGDA90_BASE_URL + "LDEM_60S_240MPP_ADJ.TIF"
 # File pattern: <base><Site>/<Site>_final_adj_5mpp_{surf,slp}.tif.
 PGDA78_BASE_URL = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/"
 
+# Local fallback directory for PGDA 90 mosaics (pipeline/AGENTS.md: if a remote read
+# fails or takes too long, download the file once here and read it locally).
+PGDA90_LOCAL_DIR = RAW_RASTER_DIR / "PGDA90"
+
+
+def pgda90_local_path(url: str) -> Path:
+    """Local path for a registered PGDA 90 URL (same file name under PGDA90_LOCAL_DIR)."""
+    return PGDA90_LOCAL_DIR / url.rsplit("/", 1)[-1]
+
 
 def pgda78_url(site_folder: str, product: str) -> str:
     """URL of a PGDA 78 GeoTIFF; `product` is e.g. "surf" or "slp"."""
