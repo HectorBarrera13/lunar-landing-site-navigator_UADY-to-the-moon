@@ -174,6 +174,123 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
   - Panel temporarily calls `setMissionWindow` with `MOCK_WINDOW` when the window is null, until a real calendar exists.
   - Browser check pending.
 
+### 2026-11-14 — PGDA data sources and remote window reader
+
+- **Agent:** Claude Code (Opus 5.5), following `.claude/agents/terrain-engineer.md` rules inline
+- **Requested task:** Runbook Compu 1 · Round 1 · Session B: (1) "Data sources" section in `pipeline/AGENTS.md` from the team's data-architecture notes with the runbook corrections (20 m mosaic = PGDA 90, no AstroPy, JSON/PNG outputs only, PGDA 78 site mappings pending QA, horizon radius PD-07); (2) register PGDA 78 and PGDA 90 in `data/README.md`; (3) a pure function that reads a window around lat/lon by URL using the file's own projection, adding pyproj; (4) a test command that reads a small window of `LDEM_80S_20MPP_ADJ` and prints shape, min, max without saving anything. Extra: check whether a PGDA 78 `_surf.tif` is a COG.
+- **Change description:**
+  - `pipeline/AGENTS.md`: new "Data sources" section (libraries per task, GeoTIFF per zone, remote reads and precompute).
+  - `data/README.md`: PGDA 78 and PGDA 90 rows (URLs, DOIs, resolution, frame, projection, units, license note) plus format notes from the files themselves. URLs and metadata come from the official product pages https://pgda.gsfc.nasa.gov/products/78 and https://pgda.gsfc.nasa.gov/products/90 and `LOLA_5mpp/README`.
+  - `lunar_pipeline/terrain/sources.py`: URL constants. `remote_window.py`: `lonlat_to_xy` (pyproj, file's own geodetic → projected CRS) and `read_window` (rasterio window read over HTTPS, nodata → NaN, error if outside coverage). `probe_remote.py`: test command `python -m lunar_pipeline.terrain.probe_remote`.
+  - Test point: **lat -88.0, lon 0.0, 2 km × 2 km — "test point, not a landing site"**, given by the user; not written to `data/catalog/sites.json`. To be repeated with Malapert Massif once QA verifies it.
+- **Files created/modified:** `pipeline/lunar_pipeline/terrain/sources.py`, `remote_window.py`, `probe_remote.py` (created); `pipeline/AGENTS.md`, `pipeline/requirements.txt`, `data/README.md`, `AI_LOG.md` (modified).
+- **Technical decisions / trade-offs:**
+  - New dependency `pyproj==3.8.0`: rasterio has no public lat/lon → arbitrary-CRS point transform; pyproj (PROJ, already used by GDAL) uses each file's own CRS, so no Moon radius or projection constants are hard-coded. Native alternative (hand-written polar stereographic math) would need a recalled radius, which the rules forbid.
+  - The PGDA server answers multi-range requests with the full 2.6 GB file and intermittently returns 403/503 on valid range requests. GDAL is configured with serial single-range requests, retries on 403/429/5xx, and a 60 s timeout.
+  - The probe is not registered in `python -m lunar_pipeline` because it writes nothing.
+  - No AstroPy; time handling will use SPICE.
+- **Verification performed:**
+  - `python -m lunar_pipeline.terrain.probe_remote` (3 runs): shape (100, 100), pixel 20 m, min -3958.03 m, max -3409.40 m, 0 NaN cells, **0.71–1.29 s** per read. CRS from the file: "Moon (2015) - Sphere / Ocentric / South Polar" (`+lat_ts=-90 +R=1737400`). Center y = 60652.9 m, consistent with 2R·tan(1°) for lat -88°.
+  - Out-of-coverage point (lat -70) → clear `ValueError`.
+  - `LDEM_80S_20MPP_ADJ.TIF` confirmed COG (`LAYOUT=COG`, 512 tiles, overviews 2–64). PGDA 78 `Site23_final_adj_5mpp_surf.tif` is **not** a COG (1-row strips, no overviews, 70.6 MB) → download site tiles to `data/raw/` instead of remote reads.
+  - `python -m compileall lunar_pipeline` OK; `python -m lunar_pipeline` runs (no steps yet). Python 3.14.7, rasterio 1.5.2 (GDAL 3.12.2), pyproj 3.8.0, numpy 2.5.4.
+- **Risks or pending items:** QA must map Peak near Cabeus B, Mons Mouton, Mons Mouton Plateau, de Gerlache Rim 2 (and the rest) to PGDA 78 files; Malapert coordinate still unverified (PD-01); horizon radius PD-07; PGDA server flakiness could slow round 2 (fallback: download to `data/raw/`). Licenses are not stated on the PGDA pages.
+
+### 2026-11-14 — Malapert Massif coordinate verified (PD-01)
+
+- **Agent:** Claude Code (Opus 5.5), research by the `data-curator` subagent plus the team's verification notes
+- **Requested task:** Verify the Malapert Massif coordinate for `data/catalog/sites.json` (runbook QA task, prerequisite for Compu 1 round 2).
+- **Change description:** `malapert-massif` now has `lat -86.0`, `lon 0.3` with a full source string; first stored with `"verified": false`, then set to `"verified": true` by user/QA decision (two independent sources within the 8 km region tolerance).
+- **Files created/modified:** `data/catalog/sites.json`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:**
+  - No NASA page publishes numeric centers for the Artemis III regions (checked: NASA releases 2022 and 2024, NTRS 20250011660 full text, NASA SVS 5013, NASA Science). The closest official numeric value is the LROC NAC_ROI_MALAPERTLO1 region mosaic center (Henriksen et al. 2023), confirmed on https://data.lroc.im-ldi.com/lroc/view_rdr/NAC_ROI_MALAPERTLO1: center -86.0, 0.3; bounds lat -86.33..-85.63, lon -5.66..5.15; absolute accuracy 5–20 m. It is a region mosaic center (0.1° precision), not a landing point.
+  - Not used as the primary value: IAU/USGS Gazetteer "Mons Malapert" (-85.98, -1.67) is the 67 km mountain center; LROC post 1294 "86°S, 0°E" is rounded to whole degrees.
+  - Kept the existing catalog schema (string `source`); the richer schema proposed in the team notes (`coord_type`, `cross_checks`, ...) would change the catalog format and needs a team decision.
+- **Verification performed:** WebFetch of the LROC page (values above). With the pipeline reader: the point projects to x=635.3 m, y=121341.0 m in the PGDA 78 Site23 CRS and is inside `Site23_final_adj_5mpp_surf.tif` (9.4 km from the edge); 100 m window around it has no NaN (elevation 4810–4848 m). Haversine distances (R = 1737.4 km): 4.22 km to the Gazetteer center, 1.14 km to the Site23 tile center, 0.63 km to LROC post 1294. `sites.json` parses as valid JSON.
+- **Risks or pending items:** The LROC page does not state the reference frame or longitude convention for the mosaic center (negative bounds imply -180..180 east). Marked verified, so round 2 (terrain and ephemeris for Malapert) is unblocked; the value is a region center, so round 2 results describe that point, not an official landing site. Better landing points may come from Wueller et al. 2026 (Table A1, MMA01), not yet extracted.
+
+### 2026-11-14 — Malapert slope stats and horizon profile
+
+- **Agent:** Claude Code (Opus 5.5), following `.claude/agents/terrain-engineer.md` rules inline
+- **Requested task:** Runbook Compu 1 · Round 2 · Session A: for Malapert Massif, slope inside the landing circle (mean, max, p95) from PGDA 78 `_slp.tif` (QA-confirmed tile) with a provisional configurable 100 m radius (PD-02); 360-value horizon profile (0 = local north, clockwise) with lunar curvature, near from the 20 m mosaic and far from `LDEM_60S_240MPP_ADJ`, configurable max radius (PD-07); compare 25/75/150 km; write `data/processed/terrain/malapert-massif.json` (contract 1.2) and `data/interim/horizon/malapert-massif.json`; ignore `data/interim/`; register the step in `python -m lunar_pipeline`.
+- **Change description:**
+  - `lunar_pipeline/__main__.py`: step discovery from `<package>.steps.STEPS`; `python -m lunar_pipeline [step ...] [--list]`. `lunar_pipeline/paths.py`: repo paths, verified-site loader, deterministic JSON writer.
+  - `terrain/config.py` (all provisional values in one dataclass), `slope.py` and `horizon.py` (pure math), `site_terrain.py` (window reads + bilinear sampling), `steps.py` (step `terrain`), `sources.py` (`PGDA78_SITE_TILES`: Malapert Massif → Site23).
+  - Horizon geometry: rays built with `Geod.fwd` on the raster's own sphere (R = 1737400 m read from the CRS), so azimuths are true local azimuths in polar stereographic (R-05). Elevation angle uses exact spherical geometry `atan2((R+h)cosθ − (R+h0), (R+h)sinθ)`, θ = d/R. No refraction.
+- **Files created/modified:** `pipeline/lunar_pipeline/paths.py`, `terrain/config.py`, `terrain/slope.py`, `terrain/horizon.py`, `terrain/site_terrain.py`, `terrain/steps.py`, `data/processed/terrain/malapert-massif.json` (created); `pipeline/lunar_pipeline/__main__.py`, `terrain/sources.py`, `.gitignore`, `pipeline/AGENTS.md`, `data/README.md`, `AI_LOG.md` (modified).
+- **Technical decisions / trade-offs (user decisions marked):**
+  - Slope and center elevation from PGDA 78 Site23 (5 m; user). Mapping Malapert → Site23 recorded as QA-confirmed.
+  - `terrain_roughness_index` and `nearest_ice_deposit_meters` are **omitted** from the terrain file (user) because REQUIREMENTS 5.5 has no agreed metric; the file does not fully match contract 1.2 until round 3.
+  - Near/far switch at 10 km (user); written profile uses 150 km until PD-07 (user).
+  - Observer at the DEM surface (0 m) and terrain counted from the first sample at 20 m (user, after reviewing the sensitivity below).
+  - Contract 1.2 is still DRAFT (D6); producing against it follows the runbook's Leader decision allowing work against the draft contract.
+  - `is_slope_safe` = mean slope < 10° (REQUIREMENTS 5.4, Agreed). Landing radius 100 m is PD-02 (Proposed).
+  - DEM heights have no stated reference radius in the file metadata; treated as heights above the CRS sphere. A constant reference offset cancels between observer and target.
+  - Remote reads only (Site23 is not a COG, but a 140 m window reads fine); the step takes ~30 s.
+- **Verification performed:**
+  - `python -m lunar_pipeline --list` → `terrain`; `python -m lunar_pipeline` runs end to end (~29 s). `python -m compileall lunar_pipeline` OK.
+  - Malapert Massif (lat -86.0, lon 0.3): center elevation 4830.756 m; slope over 1261 px inside 100 m: mean 8.732°, p95 12.754°, max 19.988° → `is_slope_safe: true` (note: p95 > 10°, so the Proposed PD-04 slope veto would trigger).
+  - Horizon (150 km): 360 finite values, min -4.857°, max 8.552°, all within [-90, 90].
+  - Azimuth check: a 1 km ray at az 0 increases latitude (north), az 90 increases longitude (east), az 180 decreases latitude.
+  - **PD-07 3-radius test** (max / mean increase of the profile, azimuths changed > 0.1°): 25 → 75 km: 3.286° (az 225) / 0.466° / 83; 75 → 150 km: 2.968° (az 185) / 0.255° / 59; 25 → 150 km: 4.230° (az 203) / 0.721° / 92. The profile still changes between 75 and 150 km toward the south (az ~185–225), so a radius below 150 km would lose real blocking terrain there.
+  - **Near-field sensitivity** (not adopted; input for the team): the max 8.55° comes from the local slope 20 m away. Counting terrain only beyond 100 m → max 7.35°, mean 1.67°; beyond 200 m → 6.04°, 1.31°; observer at 2 m → 6.41°, 1.34°; at 10 m → 5.39°, 0.34° (current mean 2.09°). Terrain beyond 10 km alone peaks at 0.08°.
+  - Determinism: two runs give byte-identical outputs. `data/interim/` is ignored; terrain file is 232 bytes.
+- **Risks or pending items:** PD-07 (radius) and the near-field setting (observer height / minimum distance) strongly affect sunlight results and need a team decision; roughness and ice distance pending (5.5); contract 1.2 still DRAFT; only Malapert has a QA-confirmed tile.
+
+### 2026-11-14 — Provisional horizon near-field configuration and sensitivity
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Use configurable provisional values for horizon evaluation and run the requested near-field sensitivity test.
+- **Change description:** Added `min_distance_m` to the terrain configuration, set provisionally to `100 m`, retained `observer_height_m=0`, and applied the minimum distance when building the written horizon profile. Added sensitivity output for observer heights `0 m` and `2 m` with minimum distances `0 m`, `60 m`, and `100 m`, using the 150 km horizon.
+- **Files created/modified:** `pipeline/lunar_pipeline/terrain/config.py`, `terrain/horizon.py`, `terrain/site_terrain.py`, `terrain/steps.py`, `AI_LOG.md`; regenerated ignored `data/interim/horizon/malapert-massif.json`.
+- **Technical decisions / trade-offs:** The 100 m exclusion matches the provisional landing-zone radius; slope evaluation remains responsible for terrain inside that zone. The 150 km maximum radius remains provisional and configurable. `REQUIREMENTS.md` was intentionally not changed.
+- **Verification performed:** `python -m compileall lunar_pipeline` passed; `python -m lunar_pipeline terrain` passed. Sensitivity results (maximum / mean elevation at 150 km): observer 0 m and min distance 0/60/100 m → `8.552° / 2.091°`, `8.024° / 1.801°`, `7.458° / 1.701°`; observer 2 m and min distance 0/60/100 m → `6.414° / 1.342°`, `6.414° / 1.342°`, `6.414° / 1.333°`.
+- **Risks or pending items:** These values remain provisional pending Leader confirmation; contract 1.2 and the formal REQUIREMENTS decisions remain unchanged.
+
+### 2026-11-14 — SPICE Sun and Earth series for Malapert
+
+- **Agent:** Claude Code (Opus 5.5), following `.claude/agents/ephemeris-engineer.md` rules inline
+- **Requested task:** Runbook Compu 1 · Round 2 · Session B: (1) propose NAIF SPICE kernels consistent with MOON_ME of DE421, show official URLs, wait for confirmation, download to `pipeline/kernels/`, register in `data/README.md`; (2) pure function: Sun and Earth azimuth (0 = local north, clockwise) and elevation for a MOON_ME lat/lon and UTC times, no refraction, documented light-time correction; (3) 30-day hourly test series for Malapert Massif saved to `data/interim/ephemeris/malapert-massif.json`; (4) print 3 instants for QA to compare with JPL Horizons. No AstroPy.
+- **Change description:**
+  - `ephemeris/kernels.py`: kernel list + idempotent download (stdlib `urllib`) + ordered `furnsh`. Kernel list confirmed by the user (plan approval): `naif0012.tls`, `pck00011.tpc`, `de421.bsp`, `moon_pa_de421_1900-2050.bpc`, `moon_080317.tf`, `moon_assoc_me.tf`.
+  - `ephemeris/spice_geometry.py`: `body_az_el()` with SPICE `azlcpo` (method `ELLIPSOID`, azimuth clockwise from north, elevation positive up, observer fixed in `MOON_ME` on the Moon reference surface from `pck00011.tpc`).
+  - `ephemeris/config.py`, `ephemeris/steps.py` (step `ephemeris`). Shared `lunar_pipeline/paths.py`, `__main__.py` (step discovery) and the `.gitignore` `data/interim/` lines are byte-identical to the terrain branch, so both merge cleanly.
+- **Files created/modified:** `pipeline/lunar_pipeline/paths.py`, `ephemeris/config.py`, `ephemeris/kernels.py`, `ephemeris/spice_geometry.py`, `ephemeris/steps.py` (created); `pipeline/lunar_pipeline/__main__.py`, `.gitignore`, `data/README.md` (SPICE kernels section), `AI_LOG.md` (modified).
+- **Technical decisions / trade-offs:**
+  - **Light-time correction: `LT+S`** (one-way light time + stellar aberration), i.e. the apparent direction, the same quantity JPL Horizons reports as apparent azimuth/elevation. SPICE applies no refraction.
+  - DE421 (not DE440) because the LOLA products are in MOON_ME of DE421; `de421.bsp` covers 1899-07-29 to 2053-10-09 (NAIF `aa_summaries.txt`).
+  - Observer on the 1737.4 km reference sphere (height 0 m, configurable). The site's ~4.8 km terrain height changes Sun/Earth directions by < 0.001° (parallax); terrain blocking is handled by the horizon profile.
+  - Test window start `2027-03-15T00:00:00Z` = mock mission window start used by the contract (2.1) and the frontend `MOCK_WINDOW` (user decision); 30 days, 60 min step. The full 2025–2035 series and `*_visible` come in round 3.
+- **Verification performed:**
+  - `python -m lunar_pipeline ephemeris`: kernels downloaded once (18.7 MB), run takes ~7 s; second run reuses kernels and gives a byte-identical file. `compileall` OK; `python -m lunar_pipeline --list` shows the `ephemeris` step.
+  - 720 points, hourly, 2027-03-15T00:00:00Z .. 2027-04-13T23:00:00Z. Moon body-fixed frame reported by SPICE: `MOON_ME`.
+  - Sanity: Sun elevation -5.298° .. 2.918° (stays near the horizon at 86°S), Sun azimuth sweeps 365° over the period; Earth azimuth 354.25°–5.11° over the 30 days (near local north), Earth elevation -2.972° .. 10.326° (libration).
+  - Independent cross-check (`spkcpo` + hand-built east/north/up axes) matches `azlcpo` within 0.00005° at the 3 instants.
+  - **Instants for the JPL Horizons check** (observer lat -86.0, lon 0.3 on the Moon, refraction off, apparent az/el):
+    - 2027-03-15T00:00:00Z — Sun az 94.3800, el -1.1598; Earth az 355.7250, el 9.8064
+    - 2027-03-30T00:00:00Z — Sun az 272.0712, el -1.0841; Earth az 1.5165, el -0.6040
+    - 2027-04-13T23:00:00Z — Sun az 89.2339, el -1.3351; Earth az 359.5640, el 6.4419
+- **Risks or pending items:** **JPL Horizons comparison pending (QA, human)**; record the result here and in the PR. Contract 1.1 is DRAFT (Leader allowed working against it); visibility criterion (center vs. limb) still Pending. Only Malapert has verified coordinates.
+
+### 2026-11-14 — JPL Horizons comparison for Malapert ephemeris
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Complete the QA comparison of the three Malapert SPICE instants against JPL Horizons.
+- **Change description:** Queried the official Horizons API for an observer at `coord@301`, geodetic coordinates lon `0.3`, lat `-86.0`, height `0 km`, with `AIRLESS` apparent azimuth/elevation and compared all three timestamps for the Sun and Earth against the generated series.
+- **Files created/modified:** `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The comparison preserves the existing `DE421`/`MOON_ME` SPICE configuration and does not invent an acceptance tolerance. Horizons reports its current DE441-based result and includes gravitational light deflection; the observed differences are recorded as evidence for QA/Lead.
+- **Verification performed:** Horizons API comparison passed for all six values. Maximum absolute difference was `0.000045°` in azimuth and `0.000031°` in elevation (less than `0.2` arcseconds). The three timestamp pairs matched the artifact values to the reported precision.
+- **Risks or pending items:** QA/Lead must still choose and document the formal tolerance. Weights/vetoes and PD-07 horizon-radius selection remain team decisions.
+
+### 2026-11-14 — Repair AI_LOG after round 2 merges
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Check that the user's latest changes follow the repository rules after PRs #11 and #12 were merged.
+- **Change description:** PR #12 was merged before the follow-up commit that removed the conflict markers, so `main` had `<<<<<<<`/`=======`/`>>>>>>>` lines in this file. Removed them, restored the blank lines between entries, and added the JPL Horizons comparison entry (commit `7ef9513`), which was pushed to `feat/pipeline-ephemeris-malapert` after PR #11 was merged and therefore never reached `main`.
+- **Files created/modified:** `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Log entries are kept as written. The terrain entry says the near field counts terrain from 20 m; the later near-field entry changed the default to `min_distance_m = 100` (PD-02, Proposed). The later entry wins and is still pending Leader confirmation.
+- **Verification performed:** No conflict markers left in the repository (`git grep`). `python -m compileall lunar_pipeline` OK; `python -m lunar_pipeline --list` shows `terrain` and `ephemeris`.
+- **Risks or pending items:** The formal Horizons tolerance (QA/Lead), PD-07 and the near-field setting are still team decisions.
 ### 2026-11-14 — Moon map view dropdown (normal / relief / ice)
 
 - **Agent:** Claude Code (Sonnet 5.5, Frontend 2 + Frontend 1 files, user-requested)

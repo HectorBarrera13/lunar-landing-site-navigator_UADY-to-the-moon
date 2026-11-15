@@ -4,7 +4,7 @@
   "sites": [
     { "id": "peak-near-cabeus-b", "name": "Peak near Cabeus B", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
     { "id": "haworth", "name": "Haworth", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
-    { "id": "malapert-massif", "name": "Malapert Massif", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "malapert-massif", "name": "Malapert Massif", "group": "artemis-iii-region", "lat": -86.0, "lon": 0.3, "verified": true, "source": "LROC NAC_ROI_MALAPERTLO1_P860S0003, Malapert Massif low-Sun controlled NAC mosaic: center lat -86.0, lon 0.3 (region mosaic center, not a landing point; 0.1 deg precision; frame not stated on the page), https://data.lroc.im-ldi.com/lroc/view_rdr/NAC_ROI_MALAPERTLO1 (Henriksen et al. 2023, ELS). Cross-checks: IAU/USGS Gazetteer Mons Malapert (Feature 16338) -85.98, -1.67, 4.2 km away; LROC post 1294 '86S, 0E' 0.6 km away; inside PGDA 78 Site23_final_adj_5mpp_surf.tif. Accessed 2026-11-14. Verified by QA on 2026-11-14 (two independent sources within tolerance)." },
     { "id": "mons-mouton-plateau", "name": "Mons Mouton Plateau", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
     { "id": "mons-mouton", "name": "Mons Mouton", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
     { "id": "nobile-rim-1", "name": "Nobile Rim 1", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
