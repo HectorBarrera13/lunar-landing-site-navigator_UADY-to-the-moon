@@ -44,7 +44,7 @@ Mission planners and engineers (primary), educators, general public.
 | D3 | Architecture | Offline `pipeline/` (SpiceyPy, NumPy, Rasterio, SciPy) precomputes artifacts; lightweight FastAPI backend (stdlib + Pydantic only) serves and scores them; React frontend renders | Agreed (2026-11-14) |
 | D4 | Work area | See Scope | Proposed |
 | D5 | Out of hackathon | See Scope | Proposed |
-| D6 | Data contract and vetoes | Close in the first hour; draft in `docs/contracts/` | Pending |
+| D6 | Data contract and vetoes | `docs/contracts/` is the approved source of truth for pipeline, backend, and frontend | Agreed (2026-11-15) |
 | D7 | Mission window input | The mission window `[t0, tf]` is the first thing the user enters | Agreed |
 | D8 | Frontend stack | React 19 + Vite + TypeScript + Tailwind v4 + React Three Fiber/drei + Zustand | Agreed (repository) |
 | D9 | Tests / CI | None for now; to be revisited during development | Agreed |
@@ -149,6 +149,12 @@ Normalization functions (0–1), evaluated over `[t0, tf]`:
 
 **Horizon parameters (R3-4) — Agreed 2026-11-15.** PD-07: horizon search radius 150 km. PD-09: near field 100 m and observer height 0 m.
 
+**Round 3 decisions — Agreed 2026-11-15.**
+
+- **R3-5:** The landing zone is filled with the Suitability Index traffic-light color. The error margin is a neutral dotted ring. Icons and text accompany the color; color is never the only status indicator.
+- **R3-6:** Comparison supports up to three site/window scenarios, including the `+N days` shift. A free-point selection continues to resolve silently to the nearest precomputed preset site; the UI may identify that preset without changing the evaluation precision.
+- **Horizons validation tolerance:** the maximum absolute difference accepted for the current QA comparison is `0.000045°` for azimuth or elevation, with refraction disabled.
+
 Open (not blocking the hackathon core): distance-to-ice function, roughness metric, zone-vs-margin formula beyond the binary `is_slope_safe`.
 
 ---
@@ -231,7 +237,7 @@ Exact URLs, versions, and licenses must be registered in `data/README.md` before
 
 ## 9. Data contracts
 
-Drafts live in `docs/contracts/` (D6, Pending). Agents must not implement against a contract until it is marked `Approved`.
+The approved contracts live in `docs/contracts/` (D6, Agreed 2026-11-15). Contract changes must follow the repository protocol: approve the change first, then update the contract, producer, consumers, and `AI_LOG.md`.
 
 ---
 

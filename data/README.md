@@ -40,3 +40,7 @@ Downloaded by `python -m lunar_pipeline ephemeris` into `pipeline/kernels/` (nev
 | `moon_assoc_me.tf` (FK) | https://naif.jpl.nasa.gov/pub/naif/generic_kernels/fk/satellites/moon_assoc_me.tf | 8 KB | Sets `MOON_ME` as the Moon's body-fixed frame |
 
 DE421 matches the `MOON_ME` (DE421) frame of the LOLA data (PGDA 78 and 90).
+
+SPICE correction note: `abcorr = LT+S` means one-way light-time correction plus stellar
+aberration for the apparent direction. It is not atmospheric refraction; lunar calculations
+use no refraction.

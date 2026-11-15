@@ -91,6 +91,7 @@ def build_year_series(ephemeris: dict[str, Any], profile_deg: np.ndarray) -> dic
         out[f"{key}_elevation_deg"] = _round(el, 4)
         out[f"{key}_visible_fraction"] = _round(fraction, 4)
         out[f"{key}_distance_km"] = _round(dist, 3)
+        out[f"{key}_angular_radius_deg"] = _round(radius, 6)
         out[f"{key}_dir_me"] = _round(direction, 6)
     return out
 

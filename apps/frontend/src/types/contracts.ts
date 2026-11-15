@@ -1,4 +1,4 @@
-// Mirrors docs/contracts/README.md (approved 2026-11-14; section 1.1 version 1.1, 2026-11-15). Do not diverge.
+// Mirrors docs/contracts/README.md (approved 2026-11-14; section 1.1 version 1.1 and API 2.0, 2026-11-15). Do not diverge.
 
 export type HorizonSource = 'lola' | 'sphere'
 
@@ -44,12 +44,16 @@ export interface SiteSeriesResponse {
   /** Fraction (0-1) of the solar disc above the horizon (R3-2). */
   sun_visible_fraction: number[]
   sun_distance_km: number[]
+  /** Optional while legacy processed artifacts are being regenerated. */
+  sun_angular_radius_deg?: number[]
   sun_dir_me: DirectionMe[]
   earth_azimuth_deg: number[]
   earth_elevation_deg: number[]
   /** Fraction (0-1) of the Earth disc above the horizon (R3-2). */
   earth_visible_fraction: number[]
   earth_distance_km: number[]
+  /** Optional while legacy processed artifacts are being regenerated. */
+  earth_angular_radius_deg?: number[]
   earth_dir_me: DirectionMe[]
 }
 
@@ -96,7 +100,9 @@ export interface EvaluationMetrics {
   earth_visible_percent: number
   longest_darkness_hours: number
   next_sunset_utc: string | null
+  next_sunrise_utc: string | null
   next_earthset_utc: string | null
+  next_earthrise_utc: string | null
 }
 
 export interface EvaluateResponse {

@@ -557,6 +557,26 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
   - Before this change, the same flow passed on `main` with the 1.0 backend (demo window Index 21 red with 3 vetoes; sunlit example 52 red, Earth visibility veto).
 - **Risks or pending items:** This branch must merge right after `feat/round3-data-series`; against a 1.0 backend the series request fails (shown as "No precomputed data for this window"). Body radii are missing from the contract (see above). R3-5, R3-6 and PD-05 are still provisional in the UI.
 
+### 2026-11-15 — Contract and backend alignment after R3 audit
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Resolve the R3 documentation contradictions and align the approved contract, pipeline producer, and backend consumer without modifying the frontend.
+- **Change description:** D6 is recorded as approved. R3-5, R3-6, and the formal Horizons tolerance are recorded in `REQUIREMENTS.md`. The contract now specifies angular-radius columns, sunrise/earthrise metrics, the current silent nearest-preset behavior, the no-series-points response, and the unimplemented layers endpoint. The pipeline join writes angular-radius columns, while the backend reads them when available and computes sunrise/earthrise transitions.
+- **Files created/modified:** `REQUIREMENTS.md`, `docs/contracts/README.md`, `data/README.md`, `pipeline/lunar_pipeline/sites/join.py`, `apps/backend/app/models/series.py`, `apps/backend/app/models/evaluate.py`, `apps/backend/app/services/series.py`, `apps/backend/app/services/evaluate.py`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Existing processed artifacts without angular-radius columns remain readable during regeneration; newly produced artifacts include the columns. Free-point evaluation remains the current silent nearest-preset redirection by product decision. Frontend files were intentionally not modified.
+- **Verification performed:** `git diff --check` passed; `python -m compileall -q apps/backend/app pipeline/lunar_pipeline` passed; backend dependencies installed in `apps/backend/.venv`; temporary Uvicorn integration passed for `/api/health` (200), `/api/sites` (13 sites), `/api/sites/malapert-massif/series` (337 points), the nocturnal evaluation (Index 21 with `earth_visibility_low`, `sunlight_low`, `darkness_exceeded`), and the sunlit evaluation (Index 50 with `earth_visibility_low`). Existing artifacts remain readable, but do not yet expose the new angular-radius columns.
+- **Risks or pending items:** Existing processed artifacts must be regenerated with the updated pipeline before the frontend can consume angular radii or the new series fields. The frontend remains intentionally out of scope for this task.
+
+### 2026-11-15 — Frontend contract integration without visual changes
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Apply frontend changes that do not alter visual design after the R3 backend and contract alignment.
+- **Change description:** The frontend contract mirror now includes optional Sun/Earth angular-radius columns and sunrise/earthrise evaluation metrics. The columnar-to-row adapter carries angular radii into `SeriesPoint`, using `null` for legacy artifacts and reporting a malformed shorter optional column instead of silently producing misaligned data. Existing three-scenario comparison and `+N days` logic was reviewed and left unchanged because it already satisfies R3-6.
+- **Files created/modified:** `apps/frontend/src/types/contracts.ts`, `apps/frontend/src/types/series.ts`, `apps/frontend/src/lib/api/seriesRows.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Angular-radius fields remain optional at the frontend boundary until processed artifacts are regenerated. No component markup, Tailwind class, layout, copy, or scene geometry was changed.
+- **Verification performed:** From `apps/frontend`, `npm run typecheck` passed and `npm run build` passed. Vite reported the existing warning for a JavaScript chunk larger than 500 kB.
+- **Risks or pending items:** Existing processed artifacts may still provide `null` angular radii until the pipeline is rerun; no visual consumer has been added in this non-design phase.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
