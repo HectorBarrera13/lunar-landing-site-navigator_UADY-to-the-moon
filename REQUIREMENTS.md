@@ -72,7 +72,7 @@ Mission planners and engineers (primary), educators, general public.
 | R-10 | Near side only: lon ∈ [-90°, +90°]. Far side shown dimmed/blocked with an educational message (no direct communication without relays). | Agreed (SRS) |
 | R-11 | South pole exception: any longitude is selectable for lat ≤ -80°. | Agreed (SRS) |
 | R-12 | Shadowed points are selectable; darkness triggers a veto/penalty with an explanation popup, not a click block. | Agreed (SRS) |
-| R-13 | Three selection modes: free click, manual lat/lon entry, 13 preset markers. Presets have date-precise data; free points use average layers. | Agreed (SRS) |
+| R-13 | Three selection modes: free click, manual lat/lon entry, 13 preset markers. Presets have date-precise data; free points are intended to use average layers when those artifacts are available. Until then, they resolve to the nearest preset with precomputed series under R3-6. | Agreed (SRS; interim behavior R3-6 agreed 2026-11-15) |
 | R-14 | 13 presets: 9 Artemis III regions (Peak near Cabeus B, Haworth, Malapert Massif, Mons Mouton Plateau, Mons Mouton, Nobile Rim 1, Nobile Rim 2, de Gerlache Rim 2, Slater Plain) + Apollo 11, Apollo 17, Chang'e 3, Chandrayaan-3. Coordinates verified by QA in `data/catalog/sites.json`. | Proposed (PD-01) |
 
 ### 4.3 2D view geometry
@@ -155,6 +155,11 @@ Normalization functions (0–1), evaluated over `[t0, tf]`:
 - **R3-6:** Comparison supports up to three site/window scenarios, including the `+N days` shift. A free-point selection continues to resolve silently to the nearest precomputed preset site; the UI may identify that preset without changing the evaluation precision.
 - **Demo defaults:** The initial Malapert mission window is `2027-03-15T00:00:00Z` to `2027-03-29T00:00:00Z`. The **"Sunlit example"** shortcut selects `2027-03-31T00:00:00Z` to `2027-04-03T00:00:00Z` to demonstrate a window with sunlight.
 - **Horizons validation tolerance:** the maximum absolute difference accepted for the current QA comparison is `0.000045°` for azimuth or elevation, with refraction disabled.
+
+**Round 5 decisions — Agreed 2026-11-15.**
+
+- Free-point average evaluation remains deferred until regional average-layer artifacts are available and the transition is approved. The current R3-6 nearest-preset, date-specific behavior remains in effect.
+- JSON/CSV evaluation export is deferred. This round does not add an export endpoint or change the approved contract; revisit after defining the CSV shape and approving any contract change.
 
 Open (not blocking the hackathon core): distance-to-ice function, roughness metric, zone-vs-margin formula beyond the binary `is_slope_safe`.
 
