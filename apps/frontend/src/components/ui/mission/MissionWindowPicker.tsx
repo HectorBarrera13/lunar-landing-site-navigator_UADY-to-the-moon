@@ -104,7 +104,7 @@ function MissionWindowForm({ t0, tf }: FormProps) {
           aria-label={S.startHour}
           value={draft.startHour}
           onChange={(e) => update({ startHour: e.target.value })}
-          className={`${INPUT} w-14`}
+          className={`${INPUT} w-20`}
         >
           {HOURS.map((h) => (
             <option key={h} value={h}>
@@ -133,7 +133,7 @@ function MissionWindowForm({ t0, tf }: FormProps) {
           aria-label={S.endHour}
           value={draft.endHour}
           onChange={(e) => update({ endHour: e.target.value })}
-          className={`${INPUT} w-14`}
+          className={`${INPUT} w-20`}
         >
           {HOURS.map((h) => (
             <option key={h} value={h}>
