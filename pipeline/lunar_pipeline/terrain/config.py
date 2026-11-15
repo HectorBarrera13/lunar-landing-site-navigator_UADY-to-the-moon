@@ -5,17 +5,17 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class TerrainConfig:
-    # PD-02 (Proposed): landing zone 200 m diameter -> 100 m radius.
+    # PD-02 (Approved): landing circle is 200 m in diameter.
     landing_radius_m: float = 100.0
     # REQUIREMENTS 5.4 (Agreed): mean slope inside the landing circle < 10 deg.
     mean_slope_safe_max_deg: float = 10.0
-    # Not defined in REQUIREMENTS; observer at the DEM surface.
+    # PD-09 (Agreed): observer at the DEM surface (height 0 m).
     observer_height_m: float = 0.0
-    # PD-02 (Proposed): exclude the landing zone from horizon blocking; slope covers it.
+    # PD-09 (Agreed): exclude the 100 m landing circle from horizon blocking.
     min_distance_m: float = 100.0
     # Near horizon from the 20 m mosaic up to this distance; 240 m mosaic beyond (team decision 2026-11-14).
     near_radius_m: float = 10_000.0
-    # PD-07 (Pending): written profile uses this max radius until the team decides.
+    # PD-07 (Agreed): written profile uses this maximum search radius.
     horizon_max_radius_m: float = 150_000.0
     # PD-07 test: profiles compared across these max radii.
     test_radii_m: tuple[float, ...] = (25_000.0, 75_000.0, 150_000.0)

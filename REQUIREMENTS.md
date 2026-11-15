@@ -74,6 +74,7 @@ Mission planners and engineers (primary), educators, general public.
 | R-12 | Shadowed points are selectable; darkness triggers a veto/penalty with an explanation popup, not a click block. | Agreed (SRS) |
 | R-13 | Three selection modes: free click, manual lat/lon entry, 13 preset markers. Presets have date-precise data; free points use average layers. | Agreed (SRS) |
 | R-14 | 13 presets: 9 Artemis III regions (Peak near Cabeus B, Haworth, Malapert Massif, Mons Mouton Plateau, Mons Mouton, Nobile Rim 1, Nobile Rim 2, de Gerlache Rim 2, Slater Plain) + Apollo 11, Apollo 17, Chang'e 3, Chandrayaan-3. Coordinates verified by QA in `data/catalog/sites.json`. | Proposed (PD-01) |
+| R-15 | Historical sites without terrain data use `horizon_source: "sphere"` with a constant 0° profile across 360 azimuth bins; omit terrain criteria from evaluation and renormalize the remaining applicable weights. | Agreed (2026-11-15) |
 
 ### 4.3 2D view geometry
 
@@ -81,8 +82,8 @@ Mission planners and engineers (primary), educators, general public.
 |---|---|---|
 | R-20 | Polar stereographic projection for lat ≤ -80°; equirectangular/orthographic for mid latitudes. | Agreed (SRS) |
 | R-21 | Fixed (non-editable) landing circle and error margin drawn on the 2D view. | Agreed (SRS) |
-| R-22 | Landing zone 200 m diameter + 100 m error margin, as a documented assumption. | Proposed (PD-02) |
-| R-23 | Grid cell 60 m (85°S–90°S) and 120 m (80°S–85°S), matching NASA layers. | Proposed (PD-03) |
+| R-22 | Landing zone 200 m diameter + 100 m error margin, as a documented assumption. | Agreed (PD-02, 2026-11-15) |
+| R-23 | Grid cell 60 m (85°S–90°S) and 120 m (80°S–85°S), matching NASA layers. | Agreed (PD-03, 2026-11-15) |
 
 ---
 
@@ -108,7 +109,7 @@ Baseline (SRS, agreed) vs. adjustment (master document, proposed). The proposal 
 | Radiation | 5% | 5% | 0% (informative) | 0% (informative) | Future work |
 | Roughness / other | 5% | 0% | 5% | 5% | LOLA roughness (optional) |
 
-**Status:** Agreed (2026-11-14): proposed adjustment, south-pole column (30/20/15/10/20/0/0/5). Criteria at 0% are informative and not scored. Weights live in configuration, not in code.
+**Status:** Agreed (2026-11-14): proposed adjustment, south-pole column (30/20/15/10/20/0/0/5). Agreed (2026-11-15): use the SRS near-side baseline column (25/15/20/15/0/15/5) for historical near-side sites. Criteria at 0% are informative and not scored. Weights live in configuration, not in code.
 
 ### 5.3 Vetoes — Agreed (2026-11-14, PD-04)
 
@@ -217,6 +218,8 @@ If the core is late at H12, build only SF-1 with fixed requirements.
 | NFR-07 | No live heavy computation during the demo; the app must work with precomputed data only. | Agreed (D3) |
 | NFR-08 | Public app and public repository, accessible without login. | Agreed (Space Apps rules) |
 
+**PD-08 artifact budget (2026-11-15):** retain the full 2025–2035 range for all 13 sites (estimated aggregate: ~190 MB), using yearly artifacts fetched on demand; do not reduce the year range or time step. This does not establish NFR-04 compliance: browser startup transfer still requires measurement, and hosting remains undecided.
+
 ---
 
 ## 8. Data sources
@@ -269,4 +272,4 @@ Public app tested from another computer; public repository with an English READM
 
 ## 13. Open items summary
 
-PD-01 site list and coordinates · PD-02 landing zone and margin · PD-03 grid cell size · PD-04 vetoes and normalization · PD-05 palette · PD-06 modes and comparison table details · PD-07 LOLA resolution and horizon radius (radius 150 km Agreed 2026-11-15) · PD-08 load budget · PD-09 near field 100 m and observer height 0 m (Agreed 2026-11-15) · weights choice (5.2) · D1, D4, D5, D6 approval · hosting.
+PD-01 site list and coordinates · PD-04 vetoes and normalization · PD-05 palette · PD-06 modes and comparison table details · PD-07 LOLA resolution and horizon radius (radius 150 km Agreed 2026-11-15) · PD-08 initial-load validation and hosting · PD-09 near field 100 m and observer height 0 m (Agreed 2026-11-15) · weights choice (5.2) · D1, D4, D5, D6 approval · hosting.
