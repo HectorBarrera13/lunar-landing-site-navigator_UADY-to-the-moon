@@ -73,7 +73,7 @@ export default function BodyReadout({ body, reading, events, cursorMs }: BodyRea
           <span aria-hidden="true">{reading.visible ? '▲' : '▽'}</span>
           {reading.visible ? S.visible : S.hidden}
           <span className={MONO_NUM}>
-            {reading.visiblePercent}% {S.visiblePercent}
+            · {reading.visiblePercent}%<span className="sr-only"> {S.visiblePercent}</span>
           </span>
         </span>
       </div>
