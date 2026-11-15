@@ -21,6 +21,8 @@ export default function PointInfoCard() {
   const compared = useAppStore((s) => s.compared)
   const addToCompare = useAppStore((s) => s.addToCompare)
   const clearSelection = useAppStore((s) => s.clearSelection)
+  const horizonOpen = useAppStore((s) => s.horizonPanelOpen)
+  const setHorizonPanelOpen = useAppStore((s) => s.setHorizonPanelOpen)
   const { data, failed, noData } = useFocusEvaluation(focus)
   const layerRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
@@ -102,6 +104,14 @@ export default function PointInfoCard() {
             className={`mt-3 w-full ${inCompare ? BUTTON_SECONDARY : BUTTON_PRIMARY}`}
           >
             {full ? S.comparisonFull : inCompare ? S.viewComparison : S.compare}
+          </button>
+          <button
+            type="button"
+            onClick={() => setHorizonPanelOpen(true)}
+            disabled={horizonOpen}
+            className={`mt-2 w-full ${BUTTON_SECONDARY}`}
+          >
+            {S.showHorizon}
           </button>
         </div>
       </div>

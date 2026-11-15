@@ -16,6 +16,7 @@ export default function App() {
   const mode = useAppStore((s) => s.mode)
   const introActive = useAppStore((s) => s.introActive)
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
+  const horizonPanelOpen = useAppStore((s) => s.horizonPanelOpen)
 
   useEffect(() => {
     void loadSites()
@@ -33,7 +34,7 @@ export default function App() {
         <div className="animate-reveal">
           <LandingView />
           <TopBar />
-          <HorizonPanel />
+          {horizonPanelOpen && <HorizonPanel />}
           {/* Globe-only controls: the map texture and the anchored card have no meaning in the 2D view. */}
           {mode === '3d' && (
             <>
