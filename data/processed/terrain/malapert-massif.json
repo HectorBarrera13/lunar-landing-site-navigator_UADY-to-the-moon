@@ -1,0 +1,9 @@
+{
+  "site_id": "malapert-massif",
+  "safety_radius_meters": 100,
+  "center_elevation_meters": 4830.756,
+  "max_slope_degrees": 19.988,
+  "mean_slope_degrees": 8.732,
+  "p95_slope_degrees": 12.754,
+  "is_slope_safe": true
+}

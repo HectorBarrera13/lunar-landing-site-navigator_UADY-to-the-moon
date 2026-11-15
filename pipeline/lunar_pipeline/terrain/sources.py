@@ -22,3 +22,11 @@ PGDA78_BASE_URL = "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/"
 def pgda78_url(site_folder: str, product: str) -> str:
     """URL of a PGDA 78 GeoTIFF; `product` is e.g. "surf" or "slp"."""
     return f"{PGDA78_BASE_URL}{site_folder}/{site_folder}_final_adj_5mpp_{product}.tif"
+
+# Landing site -> PGDA 78 tile folder. Only QA-confirmed entries (point inside the
+# tile with valid data); every other site is still pending QA.
+# malapert-massif -> Site23 ("Malapert massif"): confirmed 2026-11-14, lat -86.0,
+# lon 0.3 projects inside Site23_final_adj_5mpp_surf.tif, 9.4 km from the edge.
+PGDA78_SITE_TILES: dict[str, str] = {
+    "malapert-massif": "Site23",
+}
