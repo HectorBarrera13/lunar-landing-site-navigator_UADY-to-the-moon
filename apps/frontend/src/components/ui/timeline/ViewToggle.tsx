@@ -1,4 +1,5 @@
 import type { KeyboardEvent } from 'react'
+import { segmentClass } from '@/components/ui/common/styles'
 import { useAppStore } from '@/store'
 import type { CameraView } from '@/store'
 import { TIMELINE_STRINGS } from './strings'
@@ -28,7 +29,7 @@ export default function ViewToggle() {
       role="radiogroup"
       aria-label={TIMELINE_STRINGS.viewGroupLabel}
       onKeyDown={onKeyDown}
-      className="pointer-events-auto flex shrink-0 rounded border border-star-100/30 bg-space-800 p-0.5 text-xs text-star-100"
+      className="pointer-events-auto flex shrink-0 border border-line-strong"
     >
       {OPTIONS.map((o) => {
         const active = o.value === cameraView
@@ -41,7 +42,7 @@ export default function ViewToggle() {
             tabIndex={active ? 0 : -1}
             data-view={o.value}
             onClick={() => setCameraView(o.value)}
-            className={`rounded px-3 py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400 ${active ? 'bg-accent-400/20 font-bold underline decoration-2 underline-offset-4 ring-2 ring-accent-400' : 'font-normal hover:bg-star-100/10'}`}
+            className={`${segmentClass(active)} px-3`}
           >
             {o.label}
           </button>

@@ -1,4 +1,11 @@
-import type { EvaluateRequest, EvaluateResponse, SiteListItem, SiteTimeSeries } from '@/types'
+import type {
+  EvaluateRequest,
+  EvaluateResponse,
+  SiteListItem,
+  SiteSeriesResponse,
+  SiteTimeSeries,
+} from '@/types'
+import { toSiteTimeSeries } from './seriesRows'
 
 /** Backend API root, matching `ARCHITECTURE.md` (`VITE_API_URL`). */
 const DEFAULT_API_URL = 'http://localhost:8000/api'
@@ -55,9 +62,15 @@ export async function evaluate(body: EvaluateRequest): Promise<EvaluateResponse>
 /** GET /api/sites/{site_id}/series?start=&end= */
 export async function getSiteSeries(
   siteId: string,
-  startUtc: string,
-  endUtc: string,
+  startUtc?: string,
+  endUtc?: string,
 ): Promise<SiteTimeSeries> {
-  const params = new URLSearchParams({ start: startUtc, end: endUtc })
-  return request<SiteTimeSeries>(`/sites/${encodeURIComponent(siteId)}/series?${params.toString()}`)
+  const params = new URLSearchParams()
+  if (startUtc !== undefined) params.set('start', startUtc)
+  if (endUtc !== undefined) params.set('end', endUtc)
+  const query = params.toString()
+  const response = await request<SiteSeriesResponse>(
+    `/sites/${encodeURIComponent(siteId)}/series${query === '' ? '' : `?${query}`}`,
+  )
+  return toSiteTimeSeries(response)
 }
