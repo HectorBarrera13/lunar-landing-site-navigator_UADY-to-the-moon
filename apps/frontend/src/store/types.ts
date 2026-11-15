@@ -2,6 +2,8 @@ export type ViewMode = '3d' | '2d'
 
 export type CameraView = 'moon' | 'perspective'
 
+export type MoonMapView = 'albedo' | 'relief'
+
 export type ActiveLayer = 'illumination' | 'earth_visibility' | 'slope' | 'permanent_shadow'
 
 export type Selection =

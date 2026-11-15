@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { ActiveLayer, CameraView, Selection, ViewMode } from '@/store/types'
+import type { ActiveLayer, CameraView, MoonMapView, Selection, ViewMode } from '@/store/types'
 import { PREVIEW_COLOR_INDEX } from '@/lib/pointColors'
 import type { FocusedLocation, ScreenAnchor, SiteListItem } from '@/types'
 
@@ -31,6 +31,7 @@ export interface AppState {
   /** Camera framing: Moon close-up or wide Perspective (Sun, Earth and Moon). */
   cameraView: CameraView
   activeLayer: ActiveLayer
+  moonMapView: MoonMapView
   /** Compared points plus at most one temporary preview (the latest pick if not compared). */
   pickedPoints: FocusedLocation[]
   /** Location shown in the info card/sidebar. Written by 2D and 3D, read by both. */
@@ -57,6 +58,7 @@ export interface AppState {
   setMode: (mode: ViewMode) => void
   setCameraView: (view: CameraView) => void
   setActiveLayer: (layer: ActiveLayer) => void
+  setMoonMapView: (view: MoonMapView) => void
 }
 
 function clampCursor(cursor: string | null, t0: string, tf: string): string {
@@ -87,6 +89,7 @@ export const useAppStore = create<AppState>()((set) => ({
   mode: '3d',
   cameraView: 'moon',
   activeLayer: 'illumination',
+  moonMapView: 'albedo',
   pickedPoints: [],
   focus: null,
   anchor: null,
@@ -167,4 +170,5 @@ export const useAppStore = create<AppState>()((set) => ({
   setMode: (mode) => set({ mode }),
   setCameraView: (cameraView) => set({ cameraView }),
   setActiveLayer: (activeLayer) => set({ activeLayer }),
+  setMoonMapView: (moonMapView) => set({ moonMapView }),
 }))

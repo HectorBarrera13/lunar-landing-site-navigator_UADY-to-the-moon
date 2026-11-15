@@ -10,6 +10,7 @@ import AnchorProjector from './AnchorProjector'
 import SunLight from './SunLight'
 import EarthBody from './EarthBody'
 import SunBody from './SunBody'
+import StarBackground from './StarBackground'
 import {
   CAMERA_FAR,
   CAMERA_MAX_DISTANCE,
@@ -28,6 +29,7 @@ export default function MoonScene() {
       <ambientLight intensity={0.08} />
       <SunLight />
       <Suspense fallback={<SceneFallback />}>
+        <StarBackground />
         <MoonGlobe />
         <SiteMarkers />
         <PickedPointMarkers />

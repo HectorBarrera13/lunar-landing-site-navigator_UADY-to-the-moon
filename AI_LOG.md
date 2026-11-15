@@ -291,6 +291,88 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Technical decisions / trade-offs:** Log entries are kept as written. The terrain entry says the near field counts terrain from 20 m; the later near-field entry changed the default to `min_distance_m = 100` (PD-02, Proposed). The later entry wins and is still pending Leader confirmation.
 - **Verification performed:** No conflict markers left in the repository (`git grep`). `python -m compileall lunar_pipeline` OK; `python -m lunar_pipeline --list` shows `terrain` and `ephemeris`.
 - **Risks or pending items:** The formal Horizons tolerance (QA/Lead), PD-07 and the near-field setting are still team decisions.
+### 2026-11-14 — Moon map view dropdown (normal / relief / ice)
+
+- **Agent:** Claude Code (Sonnet 5.5, Frontend 2 + Frontend 1 files, user-requested)
+- **Requested task:** Dropdown to switch the Moon texture between the normal map, a relief map (LROC WAC topographic map) and an ice map completed to a full global texture, based on the NASA Trek south-pole ice depth layer.
+- **Change description:** New store field `moonMapView` (`albedo | relief | ice`) and `setMoonMapView`. New `MapViewSelect` (native `<select>`, label, per-option hint) mounted top-right in `App.tsx`. `MoonGlobe` reads the view with a granular selector and loads the matching texture through `useTexture` (inside the existing `Suspense`). Texture URLs live in `src/lib/moonMapViews.ts`.
+- **Files created/modified:** `src/components/ui/mapview/{MapViewSelect.tsx,strings.ts,index.ts}`, `src/lib/moonMapViews.ts`, `public/textures/moon_relief_4k.jpg` (3 MB), `public/textures/moon_ice_8k.jpg` (5.3 MB) created; `src/store/{types.ts,useAppStore.ts,index.ts}`, `src/components/canvas/MoonGlobe.tsx`, `src/App.tsx` modified; `AI_LOG.md`.
+- **Technical decisions / trade-offs:**
+  - Relief: LROC "WAC Topographic Map" (WAC_CSHADE_EQUI75NS_CENTERNEAR_GRID_300dpi.tif, 24000x10000, equirectangular, only +-75 deg latitude) resized to 4096x2048. The polar caps beyond 75 deg come from NASA Trek `LRO_LOLA_ClrShade_Global_128ppd_v04` (zoom 4), blended over 3 deg. The two products use DIFFERENT color palettes, so the caps show a visible palette change.
+  - Ice: Trek layer `sp_ice_depth_new_240m.mat_paleo_27-Oct-2016` (south polar stereographic, +-300 km, Trek zoom 4 tiles, about 530 m/px) reprojected to equirectangular and composited over `2k_moon.jpg` upscaled to 8192x4096. Outside the +-300 km square the normal map is shown, so the texture is complete; square corners are visible near 80 deg S.
+  - Reprojection assumes the standard south polar stereographic convention (lon 0 toward image up, 90 E to the right, sphere R = 1737.4 km, IAU2000:30120). I could NOT confirm this orientation against an independent dataset (correlation against LOLA was inconclusive); it needs a visual check against Trek.
+  - Textures were generated once with a throwaway script (not committed); sources are not yet registered in `data/README.md` (outside this task scope).
+  - No new dependencies.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass (existing chunk-size warning). Texture previews inspected visually; browser check of the dropdown not done.
+- **Risks or pending items:** Ice orientation unverified. Register both datasets (URL, version, resolution, license) in `data/README.md` (data-curator). The 8k ice texture is heavy (5.3 MB, 8192x4096 GPU texture; may exceed limits on some devices). Relief/ice textures are not a contract artifact; the Trek and LROC licenses/attribution still need checking.
+
+### 2026-11-14 — Replace apps/frontend with the c2-c frontend (incl. map view dropdown)
+
+- **Agent:** Claude Code (Sonnet 5.5)
+- **Requested task:** Replace this checkout's `apps/frontend` with the `c2-c` frontend (branch `feat/frontend-show-sun-earth`) that already contains the map view dropdown.
+- **Change description:** `apps/frontend` synchronized from `c2-c` with `rsync --delete` (excluding `node_modules`, `dist`). This supersedes the earlier dropdown entry in this file: the dropdown now sits bottom-left in its own container.
+- **Files created/modified:** all of `apps/frontend/` (see `git status`); `src/components/ui/horizon/` (local horizon panel and time slider from FR-01) was deleted because `c2-c` does not have it.
+- **Technical decisions / trade-offs:** Replacement was requested explicitly by the user; the removed horizon panel remains recoverable from git history on `main`.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass.
+- **Risks or pending items:** The horizon panel must be re-integrated if still wanted. Uncommitted; this checkout is on `main`, so create a branch before committing. Ice-layer orientation unverified; texture sources not yet in `data/README.md`.
+
+### 2026-11-14 — Verify ice map orientation against Trek
+
+- **Agent:** Claude Code (Sonnet 5.5)
+- **Requested task:** Verify the orientation of the reprojected Trek ice layer.
+- **Change description:** No code or texture changes. Used Trek's own `jpl/config/config.json` (projection `Moon2000_sp`, Stereographic_South_Pole, central meridian 0, sphere R = 1737400 m) and its ArcGIS ImageServer `LRO_LOLA_DEM_SPole45_100mp_v04` (same projection, 100 m/px) as reference.
+- **Verification performed:** (a) DEM exported for +-300 km and compared with the equirectangular LOLA color-shade (Trek `LRO_LOLA_ClrShade_Global_128ppd_v04`) under 16 orientation candidates: the convention used (lon 0 toward image up, 90 E to the right) gives r = 0.968; all others <= 0.06. (b) Ice layer vs DEM pits on the shared grid: identity orientation r = 0.246; all 7 rotations/flips <= 0.03. (c) Scale/shift scan: best r = 0.276 at 0.96 scale vs 0.246 at 1.0, a marginal difference; no evidence against the +-300 km extent, but not a sharp confirmation.
+- **Risks or pending items:** Orientation is now verified; scale/extent only loosely (about 4 percent). Sources still to be registered in `data/README.md`.
+
+### 2026-11-14 — Soft ice layer edge and south-pole camera lock
+
+- **Agent:** Claude Code (Sonnet 5.5)
+- **Requested task:** Soften the edge of the south-pole ice layer; when "Ice map" is selected, focus the camera on the south pole with camera movement disabled; restore normal behavior on selecting another option.
+- **Change description:** Ice texture regenerated: the Trek layer now fades radially (full opacity within 225 km of the pole, zero at 300 km, smoothstep), which also removes the square corners. `CameraRig` animates the camera to lat -89, lon 0 (distance 2.2) when `moonMapView` becomes `ice` and ignores focus/view changes while locked; `MoonScene` sets `OrbitControls enabled={moonMapView !== 'ice'}`. Leaving "Ice map" re-enables controls and leaves the camera where it is.
+- **Files created/modified:** `public/textures/moon_ice_8k.jpg` (regenerated), `src/components/canvas/CameraRig.tsx`, `src/components/canvas/MoonScene.tsx`.
+- **Technical decisions / trade-offs:** Lat -89 instead of -90 because OrbitControls is degenerate on the Y axis; lon 0 puts lon 0 toward screen up. While locked, clicking the globe still picks points but the camera does not move. Camera does not return to the previous view when leaving the ice option.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass; texture edge inspected visually. Browser check pending.
+- **Risks or pending items:** Pole may look dark under the mock Sun direction (south pole unlit). Behavior in the browser not yet confirmed.
+
+### 2026-11-14 — Camera faces the lit side on Moon view / normal and relief maps
+
+- **Agent:** Claude Code (Sonnet 5.5)
+- **Requested task:** When "Moon" is selected, or the dropdown changes to normal map or relief map, point the camera at the illuminated face of the Moon.
+- **Change description:** `CameraRig` now aims the camera along `bodies.sunDir` at `MOON_VIEW_DISTANCE` when the camera view changes to `moon`, and when the map view changes to `albedo`/`relief` while in Moon view or when leaving the ice option (if in Perspective view, leaving ice restores the Perspective framing). Focusing a site or point still takes priority for focus events.
+- **Files created/modified:** `apps/frontend/src/components/canvas/CameraRig.tsx`; `AI_LOG.md`.
+- **Technical decisions / trade-offs:** "Lit face" = camera on the Sun side of the Moon (`sunDir` is a MOCK default until real ephemerides drive it). Switching between normal and relief in Perspective view does not move the camera. Clearing a focus without a view change keeps the current direction as before.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Browser check pending.
+- **Risks or pending items:** Depends on the mock `sunDir`.
+
+### 2026-11-14 — Light the south pole in Ice map view
+
+- **Agent:** Claude Code (Sonnet 5.5)
+- **Requested task:** When "Ice map" is selected, light the face the camera is framing; restore the usual lighting when leaving that option.
+- **Change description:** `SunLight` reads `moonMapView`; in `ice` the directional light comes from the south-pole camera direction instead of `bodies.sunDir`; any other option restores `sunDir`. The ice framing constants (`ICE_VIEW_*`) moved to `canvas/scale.ts` and are shared with `CameraRig`.
+- **Files created/modified:** `apps/frontend/src/components/canvas/SunLight.tsx`, `scale.ts`, `CameraRig.tsx`; `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Only the light changes; `bodies.sunDir`, the Sun body and Earth are untouched, so in Ice map view the visible Sun is no longer consistent with the lighting (it is a data-inspection view, not a physical illumination).
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Browser check pending.
+- **Risks or pending items:** Illumination in Ice map view is not physical and should not be read as the real lighting of the pole.
+
+### 2026-11-14 — Remove the Ice map option
+
+- **Agent:** Claude Code (Sonnet 5.5)
+- **Requested task:** Remove the "Ice map" option from the map view dropdown.
+- **Change description:** `MoonMapView` is now `'albedo' | 'relief'`. Removed the ice option and hint from the dropdown strings and texture map, the camera lock (`OrbitControls enabled`), the south-pole camera framing in `CameraRig`, the south-pole lighting in `SunLight` (back to `bodies.sunDir` only) and the `ICE_VIEW_*` constants. The camera still faces the lit side on Moon view and when switching between normal and relief maps in Moon view.
+- **Files created/modified:** `src/store/types.ts`, `src/lib/moonMapViews.ts`, `src/components/ui/mapview/strings.ts`, `src/components/canvas/{CameraRig,MoonScene,SunLight,scale}.ts(x)`; `AI_LOG.md`.
+- **Technical decisions / trade-offs:** `public/textures/moon_ice_8k.jpg` (5.3 MB) was left on disk, unreferenced; delete it if the feature is not coming back. Earlier log entries about the ice map are kept as history.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass.
+- **Risks or pending items:** Unused 5.3 MB texture ships in `public/` until removed.
+
+### 2026-11-14 — NASA Deep Star Maps 2020 as scene background
+
+- **Agent:** Claude Code (Sonnet 5.5)
+- **Requested task:** Realistic space background from an official NASA resource (option A: download once, convert, ship as a static texture).
+- **Change description:** Downloaded NASA SVS "Deep Star Maps 2020" (`starmap_2020_8k.exr`, 125 MB, not committed), averaged 2x2 in linear light to 4096x2048, applied gain 4 and a 1/2.2 gamma, and saved `public/textures/starmap_2020_4k.jpg` (2.2 MB). New `StarBackground` (inverted sphere, radius 8000, follows the camera, `MeshBasicMaterial`, `depthWrite` off, `toneMapped` off, mirrored in X so it reads correctly from inside) mounted in `MoonScene`. Source registered in `data/README.md`.
+- **Files created/modified:** `public/textures/starmap_2020_4k.jpg`, `src/components/canvas/StarBackground.tsx` (created); `src/components/canvas/MoonScene.tsx`, `data/README.md` (modified); `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The SVS server only allows CORS from another origin, so runtime loading is not possible; the texture is bundled. 8k JPG was 7.5-10 MB, so 4k was used. EXR conversion used a throwaway venv (OpenEXR, NumPy, Pillow), not added to any requirements file. The conversion is not scripted in the repo (option C pending).
+- **Verification performed:** `npm run typecheck` and `npm run build` pass; converted map inspected visually (Milky Way, LMC/SMC visible). Browser check pending.
+- **Risks or pending items:** The sky is NOT rotated from ICRF to `MOON_ME`/scene axes, so star positions are realistic in appearance only, not for a given date and site (needs SPICE frame transform). License/credit for the SVS image not verified. Mirror and RA orientation in the sphere unverified in the browser.
 
 ## Template for future entries
 
