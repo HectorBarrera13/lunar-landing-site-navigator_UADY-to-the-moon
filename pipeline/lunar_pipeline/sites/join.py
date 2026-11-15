@@ -8,7 +8,7 @@ import numpy as np
 HORIZON_SOURCES = ("lola", "sphere")
 
 VISIBILITY_APPROXIMATION = (
-    "Visible fractions (contract 1.1, R3-2): the horizon elevation is read at the azimuth of the body "
+    "Visible fractions (contract §1.1, R3-2): the horizon elevation is read at the azimuth of the body "
     "center by linear interpolation between whole-degree bins (periodic in azimuth) and treated as a "
     "straight horizontal line across the whole disc width. The visible fraction is the area of the "
     "circular segment of the disc above that line divided by the disc area (disc radius from the SPICE "

@@ -81,7 +81,7 @@ Mission planners and engineers (primary), educators, general public.
 |---|---|---|
 | R-20 | Polar stereographic projection for lat ≤ -80°; equirectangular/orthographic for mid latitudes. | Agreed (SRS) |
 | R-21 | Fixed (non-editable) landing circle and error margin drawn on the 2D view. | Agreed (SRS) |
-| R-22 | Landing zone 200 m diameter + 100 m error margin, as a documented assumption. | Proposed (PD-02) |
+| R-22 | Landing zone 200 m diameter (radius 100 m). The 100 m error margin is spread across the diameter, so the dotted margin ring is 300 m in diameter (radius 150 m). Slope statistics, `is_slope_safe` and the slope veto are evaluated inside the 100 m radius. | Agreed (2026-11-15, PD-02) |
 | R-23 | Grid cell 60 m (85°S–90°S) and 120 m (80°S–85°S), matching NASA layers. | Proposed (PD-03) |
 
 ---
@@ -270,4 +270,4 @@ Public app tested from another computer; public repository with an English READM
 
 ## 13. Open items summary
 
-PD-01 site list and coordinates · PD-02 landing zone and margin · PD-03 grid cell size · PD-05 palette · PD-06 modes and comparison table details · PD-07 LOLA resolution and horizon radius (radius 150 km Agreed 2026-11-15) · PD-08 load budget · PD-09 near field 100 m and observer height 0 m (Agreed 2026-11-15) · D1, D4, D5 approval · hosting.
+PD-01 site list and coordinates · PD-03 grid cell size · PD-05 palette · PD-06 modes and comparison table details · PD-07 LOLA resolution and horizon radius (radius 150 km Agreed 2026-11-15) · PD-08 load budget · PD-09 near field 100 m and observer height 0 m (Agreed 2026-11-15) · D1, D4, D5 approval · hosting.

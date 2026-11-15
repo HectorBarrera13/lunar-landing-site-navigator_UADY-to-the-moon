@@ -655,6 +655,46 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `python -m compileall -q lunar_pipeline` passed; `python -m lunar_pipeline terrain` completed using the HTTPS fallback because no local PGDA 78 tile is present; SHA-256 comparison confirmed `data/processed/terrain/malapert-massif.json` is identical before and after the run; `git diff --check` passed.
 - **Risks or pending items:** No local PGDA 78 tiles are currently present in `data/raw/raster/`; the local branch will be exercised when the ignored input files are supplied.
 
+### 2026-11-15 — Frontend validation error details
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Show useful validation messages when the backend returns a Pydantic 422 response with `detail` as a list.
+- **Change description:** Added strict runtime guards in the frontend API client to extract validation `msg` fields, remove the `Value error, ` prefix, and join multiple messages. Text details and existing HTTP fallbacks remain unchanged.
+- **Files created/modified:** `apps/frontend/src/lib/api/client.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The parser accepts only list entries with a string `msg`; malformed entries are ignored rather than converted through an unsafe cast or broad fallback.
+- **Verification performed:** From `apps/frontend`, `npm run typecheck` passed and `npm run build` passed with the existing Vite warning for a JavaScript chunk larger than 500 kB; `git diff --check` passed.
+- **Risks or pending items:** No visual or design changes were made.
+
+### 2026-11-15 — README status, NASA data sources and env guidance (audit task 6)
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Audit task 6: environment example and README.
+- **Change description:** `README.md` status now describes the current end-to-end state (Malapert Massif only; other presets pending PD-01). "NASA data used" summarizes the sources registered in `data/README.md` (NAIF SPICE kernels, PGDA 78, PGDA 90, SVS Deep Star Maps 2020) with citations, and flags as pending QA the unverified Deep Star Maps license and its ICRF/J2000 (not `MOON_ME`) orientation. The `.env` sentence now says which file each variable is read from.
+- **Files created/modified:** `README.md`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The root `.env.example` was left unchanged: the audit claimed it defined `VITE_API_URL`, but it does not (that line belongs to `apps/frontend/.env.example`; the audit misread two concatenated outputs). Every README fact is taken from `data/README.md` or `apps/backend/app/core/config.py`.
+- **Verification performed:** Manual review of the README diff against `data/README.md` and `config.py` (lookup order root `.env` then `apps/backend/.env`); `git diff --check`.
+- **Risks or pending items:** Deep Star Maps license (QA).
+
+### 2026-11-15 — PD-02 landing zone and margin agreed
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Record the team decision on PD-02 (300 m), confirmed with the user as: landing zone 200 m diameter (radius 100 m); the 100 m error margin is spread across the diameter, so the margin ring is 300 m in diameter (radius 150 m); slope keeps being evaluated inside the 100 m radius.
+- **Change description:** `REQUIREMENTS.md` R-22 rewritten with that geometry and marked Agreed (2026-11-15, PD-02); PD-02 removed from the open items. `terrain/config.py` comment updated (value 100 m unchanged). Frontend 2D map: `MARGIN_M` is now the 50 m radial width, so the margin ring sits at 150 m; the "provisional" chip text and the screen-reader summary now say the values are agreed.
+- **Files created/modified:** `REQUIREMENTS.md`, `pipeline/lunar_pipeline/terrain/config.py`, `apps/frontend/src/components/ui/map/{landingZone.ts,strings.ts}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** No terrain regeneration: `safety_radius_meters`, slope statistics, `is_slope_safe` and the slope veto already use 100 m. The `provisional` string key is kept to avoid touching `LandingView.tsx` markup; only its text changed. The legend and scale derive from the constants (now "+50 m" and 150 m).
+- **Verification performed:** `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning only). No browser check was done.
+- **Risks or pending items:** SF-2/SF-8 (margin-aware slope) are not implemented; if the margin should also be slope-checked, that is a new decision.
+
+### 2026-11-15 — Horizon assumption string uses §1.1
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Close the leftover from the contract version 1.2 task: the visibility assumption written into `horizon.json` still said "contract 1.1".
+- **Change description:** `pipeline/lunar_pipeline/sites/join.py` now writes "Visible fractions (contract §1.1, R3-2) ..."; `data/processed/sites/malapert-massif/horizon.json` regenerated with `python -m lunar_pipeline sites` from the existing git-ignored `data/interim/` (offline).
+- **Files created/modified:** `pipeline/lunar_pipeline/sites/join.py`, `data/processed/sites/malapert-massif/horizon.json`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Only the `sites` step was rerun; terrain and ephemeris inputs are unchanged.
+- **Verification performed:** `horizon.json` differs from the committed one only in that assumption string (all other keys equal); the 11 year files were rewritten byte-identical (no git diff); `python -m compileall` passes for the pipeline and backend; uvicorn: `/series` returns the new assumption text and the demo window is still Index 21 red with `earth_visibility_low`, `sunlight_low`, `darkness_exceeded`.
+- **Risks or pending items:** None.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
