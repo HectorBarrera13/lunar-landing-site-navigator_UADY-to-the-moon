@@ -89,6 +89,14 @@ def has_series_artifacts(site_id: str) -> bool:
     return (site_dir(site_id) / "horizon.json").is_file()
 
 
+def get_horizon_source(site_id: str) -> str | None:
+    """`horizon_source` ("lola" or "sphere") from `horizon.json`; None when missing."""
+    path = site_dir(site_id) / "horizon.json"
+    if not path.is_file():
+        return None
+    return _load(path).get("horizon_source")
+
+
 def validate_window(start: datetime, end: datetime) -> tuple[datetime, datetime]:
     start_utc, end_utc = start.astimezone(UTC), end.astimezone(UTC)
     if end_utc <= start_utc:
@@ -152,6 +160,7 @@ __all__ = [
     "SeriesWindowError",
     "SiteNotFoundError",
     "get_site_series",
+    "get_horizon_source",
     "has_series_artifacts",
     "validate_window",
 ]

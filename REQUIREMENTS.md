@@ -115,6 +115,7 @@ Baseline (SRS, agreed) vs. adjustment (master document, proposed). The proposal 
 
 | Veto | Rule | Rationale |
 |---|---|---|
+| Landing sunlight | No sunlight at the start of the mission window `t0`: visible solar fraction at `t0` < 0.5 (Sun center below the local horizon) | PO decision 2026-11-15: the lander must arrive in sunlight for power and thermal safety |
 | Communication | Earth visible < 25% of the mission window | NASA excluded zones with Earth visibility < 25% when selecting Artemis III regions |
 | Power | Continuous darkness longer than the battery limit (48 h), or light < 5% | NASA excluded zones with solar visibility < 5%; continuous darkness drains batteries |
 | Slope | Mean slope inside the landing circle > 10° | SRS rule (5.4). The 95th percentile > 10° is a warning, not a veto |
