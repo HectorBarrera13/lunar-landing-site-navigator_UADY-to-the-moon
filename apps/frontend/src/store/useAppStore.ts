@@ -3,6 +3,7 @@ import type { ActiveLayer, CameraView, MoonMapView, Selection, ViewMode } from '
 import { getSites } from '@/lib/api'
 import { centralAngleDegrees } from '@/lib/geo'
 import { DEFAULT_MISSION_WINDOW } from '@/lib/mission'
+import { NOTICE_STRINGS } from '@/lib/notices'
 import { bodiesForSeries } from '@/lib/orientation'
 import type { FocusedLocation, ScreenAnchor, SiteListItem, SiteTimeSeries } from '@/types'
 
@@ -48,6 +49,8 @@ export interface AppState {
   sidebarOpen: boolean
   /** Pinned locations shown in the compare sidebar (max 4, stored as copies). */
   compared: FocusedLocation[]
+  /** Educational message for a blocked selection (e.g. far side, R-10); null when none. */
+  blockedNotice: string | null
   setMissionWindow: (t0: string, tf: string) => void
   setTimeCursor: (timeUtc: string) => void
   loadSites: () => Promise<void>
@@ -68,6 +71,7 @@ export interface AppState {
   setCameraView: (view: CameraView) => void
   setActiveLayer: (layer: ActiveLayer) => void
   setMoonMapView: (view: MoonMapView) => void
+  setBlockedNotice: (notice: string | null) => void
 }
 
 function clampCursor(cursor: string | null, t0: string, tf: string): string {
@@ -104,6 +108,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   anchor: null,
   sidebarOpen: false,
   compared: [],
+  blockedNotice: null,
   setMissionWindow: (t0, tf) =>
     set((s) => ({ mission: { t0, tf, timeCursor: clampCursor(s.mission.timeCursor, t0, tf) } })),
   setTimeCursor: (timeUtc) =>
@@ -123,7 +128,10 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
   focusNearestSite: (latDeg, lonDeg) => {
     // R-10/R-11: the far side has no direct-to-Earth communication.
-    if (latDeg > -80 && Math.abs(lonDeg) > 90) return
+    if (latDeg > -80 && Math.abs(lonDeg) > 90) {
+      set({ blockedNotice: NOTICE_STRINGS.farSide })
+      return
+    }
     const candidates = get().sites.filter(hasCoordinates)
     let nearest: LocatedSite | null = null
     let nearestAngle = Number.POSITIVE_INFINITY
@@ -134,7 +142,9 @@ export const useAppStore = create<AppState>()((set, get) => ({
         nearestAngle = angle
       }
     }
-    if (nearest !== null) get().focusSite(nearest)
+    if (nearest === null) return
+    set({ blockedNotice: null })
+    get().focusSite(nearest)
   },
   setSiteSeries: (series) =>
     set((s) => ({
@@ -175,4 +185,5 @@ export const useAppStore = create<AppState>()((set, get) => ({
   setCameraView: (cameraView) => set({ cameraView }),
   setActiveLayer: (activeLayer) => set({ activeLayer }),
   setMoonMapView: (moonMapView) => set({ moonMapView }),
+  setBlockedNotice: (blockedNotice) => set({ blockedNotice }),
 }))

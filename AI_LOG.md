@@ -450,6 +450,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** No conflict markers left. `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning only). Dev server serves `moon_relief_4k.jpg` (3.1 MB), `starmap_2020_4k.jpg` (2.2 MB) and `moon_ice_8k.jpg` (5.3 MB) with 200. Backend on `127.0.0.1:8001` still returns the real evaluation (unchanged by the merge).
 - **Risks or pending items:** Marker alignment on the relief texture is not visually verified (it uses a different projection source than `2k_moon.jpg`). The `CameraRig` re-aim on map change is untested in a browser. The repository grows by ~10 MB of textures, 5 MB of which are unused.
 
+### 2026-11-14 — Blocked notice in the store and DESIGN.md tokens (round 3, Compu 2 base)
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Round 3 Compu 2 kickoff: add `blockedNotice`/`setBlockedNotice` to the store as a small standalone change so session B can use it, and adopt the team design (DESIGN.md) for the frontend.
+- **Change description:** The store gains `blockedNotice: string | null` and `setBlockedNotice`. `focusNearestSite` now sets an educational far-side notice (R-10/R-11) instead of ignoring the click silently, and clears it when a valid site is focused. Notice copy lives in `src/lib/notices.ts`. `index.css` adds the DESIGN.md tokens (elevation layers, hairline line colors, Arctic primary, ink scale, traffic-light colors, Sun/Earth glyph colors, Space Grotesk / Public Sans / JetBrains Mono); `index.html` loads those fonts from Google Fonts. Legacy tokens stay until every component is restyled.
+- **Files created/modified:** `apps/frontend/src/lib/notices.ts` (created); `apps/frontend/src/store/useAppStore.ts`, `apps/frontend/src/index.css`, `apps/frontend/index.html`, `AI_LOG.md` (modified).
+- **Technical decisions / trade-offs:** The far-side check stays in the store (Frontend 2 owns `store/`), so the 3D layer does not need to touch the store. Per the owner, DESIGN.md governs everything (square corners, flat surfaces, 1px lines) and the green/orange/red colors are used only for the Suitability Index traffic light, never as backgrounds; the palette is still PD-05 and provisional. Fonts come from Google Fonts (no npm dependency; needs network on first load).
+- **Verification performed:** `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning only).
+- **Risks or pending items:** PD-05 palette not approved. Fonts fall back to system fonts offline.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
