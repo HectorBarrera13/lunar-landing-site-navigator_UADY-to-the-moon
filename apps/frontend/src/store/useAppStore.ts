@@ -2,7 +2,6 @@ import { create } from 'zustand'
 import type { ActiveLayer, CameraView, MoonMapView, Selection, ViewMode } from '@/store/types'
 import { ApiError, evaluate, getSites } from '@/lib/api'
 import { isSunlitSurfacePoint } from '@/lib/geo'
-import { withMockCoordinates } from '@/lib/mockSites'
 import { DEFAULT_MISSION_WINDOW } from '@/lib/mission'
 import { NOTICE_STRINGS } from '@/lib/notices'
 import { bodiesForSeries } from '@/lib/orientation'
@@ -146,7 +145,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     if (get().sitesStatus !== 'idle') return
     set({ sitesStatus: 'loading' })
     try {
-      const sites = withMockCoordinates(await getSites())
+      const sites = await getSites()
       set({ sites, sitesStatus: 'ready' })
     } catch {
       set({ sitesStatus: 'error' })

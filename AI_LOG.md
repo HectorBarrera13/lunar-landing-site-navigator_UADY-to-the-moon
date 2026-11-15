@@ -897,6 +897,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
 - **Risks or pending items:** On very short windows the title text (up to `text-8xl`) can be taller than the 35 % band; check in a browser.
 
+### 2026-11-15 — Front-end/back-end connection check and cleanup
+
+- **Agent:** Qwen3.8 Flash (OpenCode)
+- **Requested task:** Verify the front-end ↔ back-end connection, fix the remaining gaps and push (ports standardized on 8000).
+- **Change description:** Audited every contract v1.2 endpoint against the live backend: `/api/health`, `/api/sites` (13 sites, no null coordinates), `/api/sites/{id}/series` (columnar + horizon profile), `/api/evaluate` (preset site and free-point resolution via `resolved_site_id`), CORS preflight from `http://localhost:5173`. All pass. Removed `src/lib/mockSites.ts`: its null-coordinate backfill (PD-01) is dead code now that the catalog ships verified coordinates; `loadSites` calls `getSites()` directly. Standardized the backend port on 8000 (canonical, matching README/AGENTS/`.env.example`): local git-ignored `apps/backend/.env` (`PORT=8001→8000`) and `apps/frontend/.env` (`VITE_API_URL→http://localhost:8000/api`) updated, stale 8001 uvicorn instance stopped, backend restarted on 8000.
+- **Files created/modified:** deleted `apps/frontend/src/lib/mockSites.ts`; modified `apps/frontend/src/store/useAppStore.ts`, local `.env` files (git-ignored), `AI_LOG.md`.
+- **Technical decisions / trade-offs:** 8000 chosen because every committed document already declares it; the committed tree needed no port change, only the local `.env` files. `/api/layers/{region_id}` remains contract-reserved and out of scope (blocked on `pipeline/layers`); the 2D landing-zone geometry stays a non-georeferenced placeholder by design.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass; endpoint battery above against the restarted backend on 8000.
+- **Risks or pending items:** Users with an old local `apps/frontend/.env` pointing at 8001 must update it or the app will not reach the backend; PD-08 (committing the ~200 MB of `data/processed` artifacts) is resolved separately in the data branch/PR.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
