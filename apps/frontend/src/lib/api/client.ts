@@ -22,11 +22,34 @@ export class ApiError extends Error {
   }
 }
 
+type ValidationErrorItem = {
+  msg: string
+}
+
+function isValidationErrorItem(value: unknown): value is ValidationErrorItem {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'msg' in value &&
+    typeof value.msg === 'string'
+  )
+}
+
+function isErrorBody(value: unknown): value is { detail: unknown } {
+  return typeof value === 'object' && value !== null && 'detail' in value
+}
+
 async function errorDetail(response: Response): Promise<string> {
   try {
     const body: unknown = await response.json()
-    if (typeof body === 'object' && body !== null && 'detail' in body && typeof body.detail === 'string') {
-      return body.detail
+    if (isErrorBody(body)) {
+      if (typeof body.detail === 'string') return body.detail
+      if (Array.isArray(body.detail)) {
+        const messages = body.detail
+          .filter(isValidationErrorItem)
+          .map(({ msg }) => msg.replace(/^Value error, /, ''))
+        if (messages.length > 0) return messages.join('; ')
+      }
     }
   } catch {
     // Non-JSON error body; fall back to the HTTP status text below.

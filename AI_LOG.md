@@ -655,6 +655,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `python -m compileall -q lunar_pipeline` passed; `python -m lunar_pipeline terrain` completed using the HTTPS fallback because no local PGDA 78 tile is present; SHA-256 comparison confirmed `data/processed/terrain/malapert-massif.json` is identical before and after the run; `git diff --check` passed.
 - **Risks or pending items:** No local PGDA 78 tiles are currently present in `data/raw/raster/`; the local branch will be exercised when the ignored input files are supplied.
 
+### 2026-11-15 — Frontend validation error details
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Show useful validation messages when the backend returns a Pydantic 422 response with `detail` as a list.
+- **Change description:** Added strict runtime guards in the frontend API client to extract validation `msg` fields, remove the `Value error, ` prefix, and join multiple messages. Text details and existing HTTP fallbacks remain unchanged.
+- **Files created/modified:** `apps/frontend/src/lib/api/client.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The parser accepts only list entries with a string `msg`; malformed entries are ignored rather than converted through an unsafe cast or broad fallback.
+- **Verification performed:** From `apps/frontend`, `npm run typecheck` passed and `npm run build` passed with the existing Vite warning for a JavaScript chunk larger than 500 kB; `git diff --check` passed.
+- **Risks or pending items:** No visual or design changes were made.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
