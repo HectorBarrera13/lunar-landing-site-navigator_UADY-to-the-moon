@@ -72,7 +72,7 @@ Mission planners and engineers (primary), educators, general public.
 | R-10 | Near side only: lon ∈ [-90°, +90°]. Far side shown dimmed/blocked with an educational message (no direct communication without relays). | Agreed (SRS) |
 | R-11 | South pole exception: any longitude is selectable for lat ≤ -80°. | Agreed (SRS) |
 | R-12 | Shadowed points are selectable; darkness triggers a veto/penalty with an explanation popup, not a click block. | Agreed (SRS) |
-| R-13 | Three selection modes: free click, manual lat/lon entry, 13 preset markers. Presets have date-precise data; free points use average layers. | Agreed (SRS) |
+| R-13 | Three selection modes: free click, manual lat/lon entry, 13 preset markers. Presets have date-precise data; free points resolve to the nearest preset with a precomputed series; average layers remain future work in `pipeline/layers`. | Agreed (SRS) |
 | R-14 | 13 presets: 9 Artemis III regions (Peak near Cabeus B, Haworth, Malapert Massif, Mons Mouton Plateau, Mons Mouton, Nobile Rim 1, Nobile Rim 2, de Gerlache Rim 2, Slater Plain) + Apollo 11, Apollo 17, Chang'e 3, Chandrayaan-3. Coordinates verified by QA in `data/catalog/sites.json`. | Proposed (PD-01) |
 
 ### 4.3 2D view geometry
@@ -99,7 +99,7 @@ Baseline (SRS, agreed) vs. adjustment (master document, proposed). The proposal 
 
 | Criterion | SRS near side | SRS south pole | Proposed near side | Proposed south pole | Data source |
 |---|---:|---:|---:|---:|---|
-| Power / solar illumination | 25% | 25% | 30% | 30% | SpiceyPy series + horizon (presets); average map (free click) |
+| Power / solar illumination | 25% | 25% | 30% | 30% | SpiceyPy series + horizon for the resolved preset; regional average maps remain future work in `pipeline/layers` |
 | Direct-to-Earth communication | 15% | 15% | 20% | 20% | Same as power |
 | Terrain slope | 20% | 15% | 25% | 15% | LOLA LDSM slope |
 | Landing zone vs. error margin | 15% | 10% | 20% | 10% | Slope inside the circle |
@@ -229,7 +229,7 @@ If the core is late at H12, build only SF-1 with fixed requirements.
 | JPL Horizons | Validation and plan B (refraction off) | QA |
 | LOLA DEM (PGDA, 20 m/px for 80°S–90°S) | Terrain height for horizons | `pipeline/terrain` |
 | LOLA LDSM slope | Slope and safe zone | `pipeline/terrain`, `layers` |
-| PGDA average illumination and Earth visibility maps (60–240 m/px) | Free-click evaluation and Site Finder | `pipeline/layers` |
+| PGDA average illumination and Earth visibility maps (60–240 m/px) | Future regional overview and Site Finder | `pipeline/layers` |
 | Rasterio · NumPy · SciPy | Windowed raster reads, vector math, distance transform | `pipeline/` |
 
 Exact URLs, versions, and licenses must be registered in `data/README.md` before use. Resolution of LOLA data per region and the horizon search radius (150 km Agreed 2026-11-15, SRS PD-07; resolution per region still open).
@@ -246,7 +246,7 @@ The approved contracts live in `docs/contracts/` (D6, Agreed 2026-11-15). Contra
 
 | Hour | Milestone |
 |---|---|
-| H0–H1.5 | Approve D1–D6, data contract, site list, vetoes |
+| H0–H1.5 | Approve D1–D5, data contract, site list, vetoes |
 | H7 | End-to-end app with mock data |
 | H12 | Checkpoint: real data for ≥ 3 sites, first deployment, Site Finder go/no-go |
 | H18 | Feature freeze |
@@ -270,4 +270,4 @@ Public app tested from another computer; public repository with an English READM
 
 ## 13. Open items summary
 
-PD-01 site list and coordinates · PD-02 landing zone and margin · PD-03 grid cell size · PD-04 vetoes and normalization · PD-05 palette · PD-06 modes and comparison table details · PD-07 LOLA resolution and horizon radius (radius 150 km Agreed 2026-11-15) · PD-08 load budget · PD-09 near field 100 m and observer height 0 m (Agreed 2026-11-15) · weights choice (5.2) · D1, D4, D5, D6 approval · hosting.
+PD-01 site list and coordinates · PD-02 landing zone and margin · PD-03 grid cell size · PD-05 palette · PD-06 modes and comparison table details · PD-07 LOLA resolution and horizon radius (radius 150 km Agreed 2026-11-15) · PD-08 load budget · PD-09 near field 100 m and observer height 0 m (Agreed 2026-11-15) · D1, D4, D5 approval · hosting.

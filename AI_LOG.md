@@ -635,6 +635,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `python -m compileall app` passes; `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning only); uvicorn on port 8000: `POST /api/evaluate` returns `resolved_site_id = malapert-massif` for `site_id`, for the free points (0, 0) and (−86.1, 0.5), with Index 21 and the three vetoes; far side → 422; `/series` returns angular-radius arrays. No browser check was done.
 - **Risks or pending items:** The assumption string above; `REQUIREMENTS.md` does not list contract versions (none needed).
 
+### 2026-11-15 — Documentation consistency audit
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Align architecture, requirements, pipeline guidance, and terrain comments with the current nearest-preset behavior without changing contracts or runtime logic.
+- **Change description:** Free-point documentation now describes resolution to the nearest precomputed preset, with regional average layers reserved for future `pipeline/layers` work. `REQUIREMENTS.md` no longer lists agreed D6, PD-04, or the weights choice as open items. Architecture and pipeline maps now include `pipeline/sites`, `CATALOG_FILE`, and the repository name. Terrain comments identify PD-07 and PD-09 as agreed and cite the existing user decision for the 10 km near/far switch without treating it as a formal requirements decision.
+- **Files created/modified:** `REQUIREMENTS.md`, `ARCHITECTURE.md`, `pipeline/AGENTS.md`, `pipeline/lunar_pipeline/terrain/config.py`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The 10 km near/far switch remains documented as a user decision recorded in `AI_LOG.md:224`; it was not promoted to an agreed requirement.
+- **Verification performed:** Reviewed the documentation diff, searched the targeted documents for stale free-click/average-layer and pending-decision references, and `git diff --check` passed. No code or contract behavior was changed.
+- **Risks or pending items:** Existing local frontend/backend/data changes were preserved and remain outside this documentation audit.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
