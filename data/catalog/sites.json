@@ -1,5 +1,4 @@
 {
-  "status": "draft",
   "note": "PD-01. Coordinates are intentionally null until QA verifies them against official NASA sources. Do not fill them from memory or AI output.",
   "sites": [
     { "id": "peak-near-cabeus-b", "name": "Peak near Cabeus B", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },

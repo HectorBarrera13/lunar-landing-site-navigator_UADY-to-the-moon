@@ -156,7 +156,7 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning).
 - **Risks or pending items:** Browser check pending. Texture orientation vs. marker convention pending. Earth size/distance are visual placeholders.
 
-### 2026-11-15 — FR-01 horizon panel and time slider (mock data)
+### 2026-11-14 — FR-01 horizon panel and time slider (mock data)
 
 - **Agent:** Claude Code (Sonnet 5.5, Frontend 2 role)
 - **Requested task:** Implement FR-01 with fake data: mock `getSiteSeries`, a 2D Canvas horizon panel with Sun and Earth at the time cursor, a time slider, English strings in a resource file.
@@ -576,6 +576,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Technical decisions / trade-offs:** Angular-radius fields remain optional at the frontend boundary until processed artifacts are regenerated. No component markup, Tailwind class, layout, copy, or scene geometry was changed.
 - **Verification performed:** From `apps/frontend`, `npm run typecheck` passed and `npm run build` passed. Vite reported the existing warning for a JavaScript chunk larger than 500 kB.
 - **Risks or pending items:** Existing processed artifacts may still provide `null` angular radii until the pipeline is rerun; no visual consumer has been added in this non-design phase.
+
+### 2026-11-15 — Round 3 backend integration and QA closure
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Complete only the Round 3 Backend and Leader/QA items.
+- **Change description:** Recorded the agreed Malapert demo windows in `REQUIREMENTS.md`, removed the stale top-level `status: "draft"` from the partially verified site catalog, corrected the date of the FR-01 log entry, and recorded the Horizons validation tolerance alongside the measured comparison.
+- **Files created/modified:** `REQUIREMENTS.md`, `data/catalog/sites.json`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** No API or contract changes were needed; R3 contract/backend alignment was already present. The measured maximum absolute Horizons difference is `0.000045°` in azimuth and `0.000031°` in elevation, with refraction disabled. The demo window remains `2027-03-15..29`; the **"Sunlit example"** window is `2027-03-31..2027-04-03`.
+- **Verification performed:** `python -m pip install -r requirements.txt` and `python -m compileall -q apps/backend/app` passed in the temporary backend venv. A temporary Uvicorn run returned `/api/health` status `ok` and 13 sites. `/api/evaluate` returned Index 21 / red with `earth_visibility_low`, `sunlight_low`, and `darkness_exceeded` for the demo window; the Sunlit example returned 85.7% sunlight and Index 50 / red with `earth_visibility_low`. `data/README.md` already documents that `abcorr LT+S` is light-time plus stellar aberration, not refraction.
+- **Risks or pending items:** Deleting the merged remote branches for PRs #18 and #19 was attempted but GitHub rejected the operation because this checkout has no valid Git credentials. No stale worktrees exist. Frontend and pipeline changes remain out of scope.
 
 ## Template for future entries
 
