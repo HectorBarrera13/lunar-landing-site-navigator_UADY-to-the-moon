@@ -76,3 +76,4 @@ This project was developed collaboratively by the team members and with the assi
 ### AI Assistance
 
 - **Claude Code (Anthropic)** – Took charge of dividing the work into separate activities and supported the processing and organization of images and data. It assisted in code generation, which was always reviewed, tested, and approved by the team members, and supported general design tasks. Its contributions are acknowledged as authorship in this repository, while the team members remain responsible for all final decisions and for the quality of the code.
+- **GitHub Copilot** – Proved useful for reviewing commits, managing pull requests and branches, and other GitHub workflow functions, always under the supervision of the team members.
