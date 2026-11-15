@@ -665,6 +665,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** From `apps/frontend`, `npm run typecheck` passed and `npm run build` passed with the existing Vite warning for a JavaScript chunk larger than 500 kB; `git diff --check` passed.
 - **Risks or pending items:** No visual or design changes were made.
 
+### 2026-11-15 — README status, NASA data sources and env guidance (audit task 6)
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Audit task 6: environment example and README.
+- **Change description:** `README.md` status now describes the current end-to-end state (Malapert Massif only; other presets pending PD-01). "NASA data used" summarizes the sources registered in `data/README.md` (NAIF SPICE kernels, PGDA 78, PGDA 90, SVS Deep Star Maps 2020) with citations, and flags as pending QA the unverified Deep Star Maps license and its ICRF/J2000 (not `MOON_ME`) orientation. The `.env` sentence now says which file each variable is read from.
+- **Files created/modified:** `README.md`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The root `.env.example` was left unchanged: the audit claimed it defined `VITE_API_URL`, but it does not (that line belongs to `apps/frontend/.env.example`; the audit misread two concatenated outputs). Every README fact is taken from `data/README.md` or `apps/backend/app/core/config.py`.
+- **Verification performed:** Manual review of the README diff against `data/README.md` and `config.py` (lookup order root `.env` then `apps/backend/.env`); `git diff --check`.
+- **Risks or pending items:** Deep Star Maps license (QA).
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
