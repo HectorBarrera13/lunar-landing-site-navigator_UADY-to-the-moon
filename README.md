@@ -62,7 +62,7 @@ This project was developed collaboratively by the team members and with the assi
 - **Andrea Baeza** – Delegated work across the team and was responsible for both the development and the testing of backend and frontend commits.
 - **Daniela Villarino** – Designed the view layouts, mockups, interfaces, and user interface windows, and led the UX design.
 - **Deco Acierno** – Carried out the system requirements analysis and produced the project documents. Contributed to the design of the application and the system, and to backend development.
-- **Paulina Paredes** – Served as physics advisor to ensure a complete understanding of the problem. Contributed to the user interface design and to the storytelling, presentations, and graphic elements.
+- **Paulina Paredes** – Served as physics and chemistry advisor to ensure a complete understanding of the problem. Contributed to the user interface design and to the storytelling, presentations, and graphic elements.
 
 ### AI Assistance
 
