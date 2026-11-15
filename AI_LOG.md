@@ -685,6 +685,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning only). No browser check was done.
 - **Risks or pending items:** SF-2/SF-8 (margin-aware slope) are not implemented; if the margin should also be slope-checked, that is a new decision.
 
+### 2026-11-15 — Horizon assumption string uses §1.1
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Close the leftover from the contract version 1.2 task: the visibility assumption written into `horizon.json` still said "contract 1.1".
+- **Change description:** `pipeline/lunar_pipeline/sites/join.py` now writes "Visible fractions (contract §1.1, R3-2) ..."; `data/processed/sites/malapert-massif/horizon.json` regenerated with `python -m lunar_pipeline sites` from the existing git-ignored `data/interim/` (offline).
+- **Files created/modified:** `pipeline/lunar_pipeline/sites/join.py`, `data/processed/sites/malapert-massif/horizon.json`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Only the `sites` step was rerun; terrain and ephemeris inputs are unchanged.
+- **Verification performed:** `horizon.json` differs from the committed one only in that assumption string (all other keys equal); the 11 year files were rewritten byte-identical (no git diff); `python -m compileall` passes for the pipeline and backend; uvicorn: `/series` returns the new assumption text and the demo window is still Index 21 red with `earth_visibility_low`, `sunlight_low`, `darkness_exceeded`.
+- **Risks or pending items:** None.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
