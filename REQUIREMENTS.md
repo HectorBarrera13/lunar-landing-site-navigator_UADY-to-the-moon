@@ -157,6 +157,11 @@ Normalization functions (0–1), evaluated over `[t0, tf]`:
 - **Demo defaults:** The initial Malapert mission window is `2027-03-15T00:00:00Z` to `2027-03-29T00:00:00Z`. The **"Sunlit example"** shortcut selects `2027-03-31T00:00:00Z` to `2027-04-03T00:00:00Z` to demonstrate a window with sunlight.
 - **Horizons validation tolerance:** the maximum absolute difference accepted for the current QA comparison is `0.000045°` for azimuth or elevation, with refraction disabled.
 
+**Round 5 decisions — Agreed 2026-11-15.**
+
+- Free-point average evaluation remains deferred until regional average-layer artifacts are available and the transition is approved. The current R3-6 nearest-preset, date-specific behavior remains in effect.
+- JSON/CSV evaluation export is deferred. This round does not add an export endpoint or change the approved contract; revisit after defining the CSV shape and approving any contract change.
+
 Open (not blocking the hackathon core): distance-to-ice function, roughness metric, zone-vs-margin formula beyond the binary `is_slope_safe`.
 
 ---
