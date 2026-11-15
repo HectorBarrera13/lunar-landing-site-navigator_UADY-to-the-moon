@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data/processed")
     catalog_file: Path = Path("data/catalog/sites.json")
 
+    # South-pole region boundary (REQUIREMENTS R-11): sites at or below this latitude are `south_pole`.
+    south_pole_max_lat_deg: float = -80.0
+
     # Traffic-light thresholds on the Suitability Index (REQUIREMENTS 5.1, Agreed).
     traffic_light_green_min: int = 70
     traffic_light_orange_min: int = 40

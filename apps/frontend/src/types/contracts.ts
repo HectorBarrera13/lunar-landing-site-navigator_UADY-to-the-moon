@@ -6,11 +6,15 @@ export type TrafficLight = 'green' | 'orange' | 'red'
 
 export type Precision = 'date_specific' | 'average'
 
-/** GET /api/sites item. The group field format is not specified by the contract. */
+export type SiteRegion = 'south_pole' | 'other'
+
+/** GET /api/sites item (contract 2.2). The group field format is not specified by the contract. */
 export interface SiteListItem {
   id: string
   name: string
   group: string
+  /** South pole (lat <= -80, R-11) or elsewhere; picks the marker color. */
+  region: SiteRegion
   /** Null until QA verifies the coordinate (PD-01); consumers must skip such sites on the globe. */
   lat: number | null
   /** Null until QA verifies the coordinate (PD-01); consumers must skip such sites on the globe. */

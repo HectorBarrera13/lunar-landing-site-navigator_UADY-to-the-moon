@@ -69,7 +69,7 @@ Mission planners and engineers (primary), educators, general public.
 
 | ID | Rule | Status |
 |---|---|---|
-| R-10 | Near side only: lon ∈ [-90°, +90°]. Far side shown dimmed/blocked with an educational message (no direct communication without relays). | Agreed (SRS) |
+| R-10 | Near side only: lon ∈ [-90°, +90°]. Far side shown dimmed/blocked with an educational message (no direct communication without relays). **Update 2026-11-15 (project owner):** the blocked face is the one receiving no sunlight (point normal · Sun direction ≤ 0); a click on a selectable point redirects to the nearest preset site and zooms x1.6 on its coordinates. | Agreed (SRS), updated |
 | R-11 | South pole exception: any longitude is selectable for lat ≤ -80°. | Agreed (SRS) |
 | R-12 | Shadowed points are selectable; darkness triggers a veto/penalty with an explanation popup, not a click block. | Agreed (SRS) |
 | R-13 | Three selection modes: free click, manual lat/lon entry, 13 preset markers. Presets have date-precise data; free points use average layers. | Agreed (SRS) |
@@ -168,7 +168,7 @@ Priority: **Must** / **Should** / **Could** (from the master document, Proposed 
 | FR-05 | Suitability Index over the whole window `[t0, tf]` (SRS RF-16). | Must |
 | FR-06 | Breakdown panel: global %, color, per-criterion contribution in plain language, plus % sunlight, solar elevation, % Earth visible, longest continuous darkness (SRS RF-17). | Must |
 | FR-07 | Veto explanation popup with the exact cause (SRS RF-10). | Must |
-| FR-08 | 2D view of the zone with the traffic-light grid and the fixed landing circle and margin (SRS RF-11, RF-13). | Must |
+| FR-08 | 2D view of the zone with the traffic-light grid and the fixed landing circle and margin (SRS RF-11, RF-13). It opens from a bottom-centered "Show landing site" button after a point is selected (2026-11-15); fixed markers are pink (`#ff46af`) in south-pole regions and yellow (`#ffec46`) elsewhere, per the `region` field of `/api/sites`. | Must |
 | FR-09 | Adaptive projection for the 2D view (SRS RF-12). | Must |
 | FR-10 | Non-color indicators: icons, text, or patterns (SRS RF-18). | Must |
 | FR-11 | Timeline within the window with light and contact bands; scrubbing moves the Sun, Earth, and shadows (SRS RF-05). | Should |
