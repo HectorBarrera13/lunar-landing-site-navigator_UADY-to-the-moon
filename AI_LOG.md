@@ -976,6 +976,236 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** `npm run typecheck` and `npm run build` pass; `--color-sun/--color-earth` tokens confirmed in `index.css`. Not verified visually.
 - **Risks or pending items:** The achievement percent can exceed 100 or go negative if the pipeline ever emits unclamped `normalized`; the contract states 0–1 normalization. The optional composition bar (option B) remains available if wanted later.
 
+### 2026-11-15 — Landing view shows only its panel
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** In the landing zone (2D) view, display only the panel and remove the blue background that covered the Moon and most of the screen.
+- **Change description:** Removed the opaque `bg-base` from the `LandingView` overlay section, so only the panel is drawn and the 3D Moon stays visible behind it. Updated the component doc comment.
+- **Files created/modified:** `apps/frontend/src/components/ui/map/LandingView.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The section still spans the area below the top bar and keeps capturing pointer events, so the globe cannot be clicked or dragged while the landing view is open (no behavior change besides visuals).
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** The panel keeps its size and position (right of the 560 px horizon panel); if the owner wants it smaller or the globe interactive in 2D mode, that is a follow-up.
+
+### 2026-11-15 — Removed the "Nearest preset site" note from point info cards
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Remove the "Nearest preset site:" box from each point's information windows.
+- **Change description:** `PointInfoCard` (hover/click popover) and `CompareCard` (sidebar) no longer render `NearestSiteNote`; the spacing that only applied when the note was shown was removed.
+- **Files created/modified:** `apps/frontend/src/components/ui/pointInfo/{PointInfoCard.tsx,CompareCard.tsx}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** `NearestSiteNote` and its strings are kept because `LandingView` still uses it; only the two point-info windows were in scope.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** The landing view header still shows the note; remove it there too if wanted (then the component and its strings become dead code).
+
+### 2026-11-15 — Simplified the compare panel delay controls
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** In the compare panel keep the Delay stepper but remove the Off/+1/+3/+7/+14 presets, the Base / Shifted +d window readout and the coordinates; show the Suitability Index section only when the delay is not 0.
+- **Change description:** `WindowOffsetControl` keeps only the "− +N days +" stepper (presets and `OFFSET_PRESETS` removed; the end-of-2035 limit note now shows when the delay reaches its maximum). `PointSidebar` no longer renders the Base / Shifted date ranges. `CompareCard` no longer shows coordinates, and its Suitability Index section (Base and +N days cells plus the change) renders only when `shift !== null`, i.e. delay ≠ 0. Unused strings `offsetOff` and `shifted` removed.
+- **Files created/modified:** `apps/frontend/src/components/ui/pointInfo/{WindowOffsetControl.tsx,PointSidebar.tsx,CompareCard.tsx,strings.ts}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The base score is still evaluated (ranking and the traffic-light badge on the thumbnail depend on it); it is just not displayed as a number when delay is 0.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** With delay 0 the card shows no numeric index, only rank and traffic light; the user can no longer read the base index without setting a delay.
+
+### 2026-11-15 — Compare card Warnings replaced by an "Ice is Far Away." note
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Show the Warnings section only when the point is far from the south pole, with the message "Ice is Far Away."; otherwise show nothing.
+- **Change description:** `CompareCard` no longer lists the backend `warnings`. It renders the Warnings section with the new string `iceFarAway` only when `location.latDeg > -80`.
+- **Files created/modified:** `apps/frontend/src/components/ui/pointInfo/{CompareCard.tsx,strings.ts}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** "Far from the pole" was not defined; I reused the repo's own definition of sites outside the pole (`lat > -80°`, `pipeline/AGENTS.md`), kept as the constant `POLE_REGION_MAX_LAT_DEG`. Today that matches exactly the four historical sites. Backend warnings (excluded criteria, renormalized weights) are no longer shown in the compare cards.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** Free clicks use the clicked point's latitude, not the resolved preset's. If the owner wants a different threshold, change the constant.
+
+### 2026-11-15 — Custom SVG icon for vetoes in compare cards
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Replace the ⛔ emoji at the start of each veto line with an icon similar to a Flaticon "remove" icon: a red circle with an empty (cut-out) X.
+- **Change description:** New `VetoIcon` component: inline SVG, red disc with the X masked out (transparent), `aria-hidden`, using the existing `light-red` token via `currentColor`. `CompareCard` uses it in the Vetoes list.
+- **Files created/modified:** created `apps/frontend/src/components/ui/pointInfo/VetoIcon.tsx`; modified `CompareCard.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The Flaticon/Magnific files require a login to download, so the icon is an original drawing, not a copy (no third-party asset, no attribution needed). The red is the project token `#c75450`, not sampled from the reference. The mask id comes from `useId` so several cards do not collide.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** If the owner wants the exact reference red or the original icon, swap the token or the component.
+
+### 2026-11-15 — Descriptive criterion titles and collapsible details
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** In compare-card Criteria: descriptive titles (e.g. "Low Solar Power"/"High Solar Power"), remove the progress bar, and put the detailed info with the percent in one container shown only after pressing "More information".
+- **Change description:** `CriterionRow` now shows glyph + title `<Level> <Criterion>` and a "More information" toggle (`aria-expanded`/`aria-controls`, switches to "Less information"). The container holds contribution with achievement percent, weight and detail. The level bar was removed. Title strings live in `strings.ts`.
+- **Files created/modified:** `apps/frontend/src/components/ui/pointInfo/{CriterionRow.tsx,strings.ts}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The request names only Low/High, with no threshold. I reused the agreed traffic-light bands (REQUIREMENTS: green ≥ 70, orange 40–69) on `normalized`: High ≥ 0.70, Medium ≥ 0.40, Low below (an added "Medium" band). Titles for `slope` / `landing_zone` use "… Suitability" so High never reads as a steep slope. Unknown criterion codes fall back to the backend `label`.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** Expanded state is local per row and resets when the card remounts; the thresholds are a UI assumption pending PO confirmation.
+
+### 2026-11-15 — Hid the constant "Date-specific" label in compare cards
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Remove the "DATE-SPECIFIC" text shown in every compare card if it is not useful.
+- **Change description:** `CompareCard` renders the precision label only when `precision !== 'date_specific'`, so it disappears in the normal case and still flags an "Average over window" result.
+- **Files created/modified:** `apps/frontend/src/components/ui/pointInfo/CompareCard.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Kept the `average` case because it would change how the score should be read; hiding it entirely is a one-line change if the owner prefers.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** None known.
+
+### 2026-11-15 — Site markers: solid core with a translucent halo
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Make the surface selector points more aesthetic: a small solid-color circle in the center with a slightly larger, lower-opacity circle around it.
+- **Change description:** `SiteMarkers` now draws two `InstancedMesh` layers instead of one sphere layer: a solid core disc (radius 0.011) and a halo disc (radius 0.024, opacity 0.35, `depthWrite: false`). Both are flat `CircleGeometry` discs oriented along the surface normal, share the region color (pink south pole / yellow elsewhere) and the 1.8x selected scale, and both handle click and hover. The core is lifted 0.0006 along the normal to avoid z-fighting with the halo.
+- **Files created/modified:** `apps/frontend/src/components/canvas/SiteMarkers.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Discs instead of spheres so the halo reads as a ring on the surface rather than a translucent bubble; instancing kept (two draw calls for all markers); geometries and materials are memoized and disposed on unmount. Sizes and opacity are my picks, not from a design.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually (no browser check), so sizes, opacity and limb appearance are untested.
+- **Risks or pending items:** Discs are double-sided but look thin near the Moon's limb; halo is larger than the old 0.015 sphere, so overlapping markers in clustered regions (e.g. Nobile / Mons Mouton) may merge visually.
+
+### 2026-11-15 — Site markers scale with camera distance
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Make the surface markers grow or shrink a little depending on how close or far the camera is.
+- **Change description:** `SiteMarkers` computes a zoom factor `sqrt(cameraDistance / 3)` clamped to [0.6, 2.5] in `useFrame` and rewrites the instance matrices only when it changes by more than 0.01. Far camera → larger markers (they stay visible); near camera → smaller (they cover less terrain). It multiplies the existing 1.8x selected scale.
+- **Files created/modified:** `apps/frontend/src/components/canvas/SiteMarkers.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Interpreted "grow/shrink with distance" as compensating the perspective (a fixed world size already looks bigger when close). Square root keeps it "a little" instead of full constant screen size. Scratch objects are allocated once (`useMemo`), none inside `useFrame`; the matrix write is shared with the layout effect via `writeMatrices`.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** Reference distance (3), clamps (0.6–2.5) and the exponent are my picks. If the owner actually wanted markers to look bigger when the camera is close, invert the factor.
+
+### 2026-11-15 — South Pole camera view with lifted shadows
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Add a third option "South Pole" to the Moon / Perspective toggle that frames the bottom of the Moon, and make the shadow less black in that view so relief is visible while the shadow still reads.
+- **Change description:** `CameraView` gains `'south_pole'`; `ViewToggle` shows the third segment (string in `timeline/strings.ts`). `CameraRig` flies the camera to a point below the Moon, tilted 25° off the -Y axis, at the Moon view distance. `MoonScene` raises the ambient fill light from 0.08 to 0.35 only while that view is active.
+- **Files created/modified:** `apps/frontend/src/store/types.ts`, `components/ui/timeline/{ViewToggle.tsx,strings.ts}`, `components/canvas/{CameraRig.tsx,MoonScene.tsx}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The tilt avoids OrbitControls' pole singularity (camera exactly on the Y axis). The south pole direction is -Y per `surface.ts`, whose convention is marked UNVERIFIED against the texture. Ambient is switched with the view (no animated transition), not a global change, so the other views keep their darker shadows.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually, so tilt, distance and the 0.35 ambient value are untested.
+- **Risks or pending items:** If the texture orientation differs from the convention, the camera could frame the wrong region; the ambient step is abrupt when toggling.
+
+### 2026-11-15 — Removed "Nearest preset site" from the landing view
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Delete the "Nearest preset site" box in the landing zone module.
+- **Change description:** `LandingView` no longer renders `NearestSiteNote` (nor reads `focusOrigin`). The component had no remaining users, so `NearestSiteNote.tsx` and its two strings (`nearestPreset`, `nearestPresetHint`) were deleted.
+- **Files created/modified:** `apps/frontend/src/components/ui/map/LandingView.tsx`, `components/ui/pointInfo/strings.ts`, deleted `components/ui/pointInfo/NearestSiteNote.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Dead code removed instead of left behind, as flagged in the earlier entry for the point info cards.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass; `grep` shows no remaining references. Not verified visually.
+- **Risks or pending items:** Users no longer see that a free click was resolved to a preset site.
+
+### 2026-11-15 — Landing view: no Suitability Index, no top-left chips, thicker zone line
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** In the landing zone module remove the Suitability Index, remove the information at the top-left of the image, and make the landing zone diameter line a bit thicker.
+- **Change description:** `LandingView` header no longer shows the index readout with its traffic-light badge (nor its loading / no-data message); the three chips over the image (imagery source, "not georeferenced", "zone and margin agreed") were removed along with their strings. The zone circle stroke goes from 2 to 3.5 px in `LandingCanvas`, and the matching legend glyph from 2 to 3.
+- **Files created/modified:** `apps/frontend/src/components/ui/map/{LandingView.tsx,LandingCanvas.tsx,MapLegend.tsx,strings.ts}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The zone stroke is still colored by the traffic light, and the footer note and the screen-reader summary still mention the index, so only the visible readout is gone. The imagery credit link stays in the footer.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** The "not georeferenced / illustrative" disclaimers are no longer shown on the image itself; they remain in the screen-reader summary and the data registry. Say if the PO wants them elsewhere.
+
+### 2026-11-15 — Landing view: plain background for sites without imagery
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** The Chang'e 3 landing zone image looked glitchy; fix it.
+- **Change description:** Chang'e 3 and Nobile Rim 1 have no official LROC mosaic and were drawn over a synthetic gray-noise tile that looked like a broken image (worse after the explanatory chips were removed). `LandingCanvas` now paints a plain `base` background when no image is available; the noise-tile generator (`createPlaceholderTile` and helpers) was deleted from `landingZone.ts`. `LandingView` footer shows "No official imagery available for this site yet." only for those sites; the screen-reader base note was updated.
+- **Files created/modified:** `apps/frontend/src/components/ui/map/{LandingCanvas.tsx,LandingView.tsx,landingZone.ts,strings.ts}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Plain background chosen over keeping fake terrain; the note lives in the footer, not over the image, since the owner asked to clear the top-left. A real image for these two sites still needs an approved source (QuickMap export or a PGDA 90 hillshade).
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** The two sites remain without imagery; the zone drawing still works to scale on the dark background.
+
+### 2026-11-15 — Chang'e 3 landing image
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Use the image the owner added (`public/images/sites/change-3.png`) as the Chang'e 3 landing view base.
+- **Change description:** Registered `change-3` in `lib/siteImages.ts` with the team-provided PNG (568x513 grayscale, looks like an LROC NAC crop). `SiteImage.productUrl` became `string | null`; the landing view footer shows the credit as plain text when there is no product page.
+- **Files created/modified:** `apps/frontend/src/lib/siteImages.ts`, `apps/frontend/src/components/ui/map/LandingView.tsx`, `AI_LOG.md` (the PNG was added by the owner).
+- **Technical decisions / trade-offs:** The credit reads "Image provided by the team (source pending)" because the origin and license were not given; I did not guess LROC attribution or a product URL. Not registered in `data/README.md` (QA-owned) yet.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass; the image was viewed directly (real lunar terrain). Not verified in the browser.
+- **Risks or pending items:** Source and license must be recorded in `data/README.md` before this ships. The image is cover-fitted around its center, so the zone only matches the site if the landing point is at the image center.
+
+### 2026-11-15 — Renamed the "Show local horizon" button
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** In the point info panel, replace "Show local horizon" with "Technical information".
+- **Change description:** Changed the `showHorizon` string in `pointInfo/strings.ts`; behavior is unchanged (it still opens the local horizon panel).
+- **Files created/modified:** `apps/frontend/src/components/ui/pointInfo/strings.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The horizon panel's own title ("Local horizon") and its close label were left as they are.
+- **Verification performed:** `npm run typecheck` passes.
+- **Risks or pending items:** The button label no longer says what opens; the panel title still reads "Local horizon".
+
+### 2026-11-15 — Start guide window after the intro
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** After clicking the Moon in the initial view, show a small window on one side with "Click somewhere on the moon to start planning your moon landing!" and a button ("Go" or "Start") the user can press.
+- **Change description:** New `StartGuide` component (`ui/intro`): a card flush against the right edge, vertically centered (moved there on the owner's follow-up request; first version was left-side under the top bar), with an inverted palette on request: light `ink` background, latest layout on the owner's request: centered on screen (horizontally and vertically) with centered content, background `#16181d`, white text, outline-only button with a thin `#88b3c7` border with the message and a "Start" button that dismisses it. It also disappears on its own once a point is selected. Rendered from `App` after the intro, only in 3D mode. Strings added to `INTRO_STRINGS`.
+- **Files created/modified:** created `apps/frontend/src/components/ui/intro/StartGuide.tsx`; modified `ui/intro/{index.ts,strings.ts}`, `App.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The request did not say what the button does, nor which side. Assumption: the intro's Moon click already ends the intro, so the card appears then and "Start" only dismisses it (no extra state in the store); placed on the left. Dismissal is local state and the card does not return in the same session.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** If the horizon panel (bottom-left) is open the card may sit above it on short screens. If "Start" should do something else (e.g. focus a default site), that needs a decision.
+
+### 2026-11-15 — Default mission window changed to a sunlit date
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** On startup, set the WINDOW selector default to a day on which some points can be seen on the Moon's illuminated side.
+- **Change description:** `DEFAULT_MISSION_WINDOW` is now `2027-10-20T00:00:00Z` to `2027-11-03T00:00:00Z` (14 days, same length as before). The date was picked by scanning the committed 2027 series (`sun_visible_fraction >= 0.5` at the window start) for all 13 preset sites.
+- **Files created/modified:** `apps/frontend/src/lib/mission.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Best start day found: 9 of 13 sites sunlit at `t0` (5 of the 9 south pole regions), and a mean sunlit fraction of ~29% across the pole sites over the window; the top candidates were all within a few days (2027-10-20/21, 11-19, 09-21). Kept 2027 because the artifacts and the demo already live there. `/api/evaluate` checked for this window: Malapert Massif 99.9% sunlight (index 59, red), Haworth 0%, Apollo 11 4.9%, Slater Plain 20%.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass; evaluate calls above. Not verified visually.
+- **Risks or pending items:** `REQUIREMENTS.md` (Demo defaults, line 158) still says the initial window is 2027-03-15..29; that file belongs to the Lead/PO and was not touched, so it now disagrees with the code. Most sites are still red in this window (vetoes such as Earth visibility), so "sunlit" does not mean "good".
+
+### 2026-11-15 — "STARTING DATE" label and 27 Aug 2026 default
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Rename the "WINDOW" text to "STARTING DATE" and make 27 August 2026 the default start date; the user can still pick any date.
+- **Change description:** The mission picker title string is now "Starting date" (displayed uppercase by the label style). `DEFAULT_MISSION_WINDOW` is now `2026-08-27T00:00:00Z` to `2026-09-10T00:00:00Z`, replacing the 2027-10-20 default from the previous entry; the window keeps its 14-day length. The picker and bounds are unchanged.
+- **Files created/modified:** `apps/frontend/src/components/ui/mission/strings.ts`, `apps/frontend/src/lib/mission.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The end date (10 Sep 2026) is my choice (start + 14 days); the request gave only the start. The previous "sunlit" criterion no longer drives the default, since the owner chose the date.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass; `/api/evaluate` accepts the window (Malapert Massif: index 50, red, with a `landing_in_darkness` veto). Not verified visually.
+- **Risks or pending items:** `REQUIREMENTS.md` (Demo defaults) still lists 2027-03-15..29 and the "Sunlit example" shortcut still points to 2027-03-31..04-03; both are PO-owned and unchanged. The aria group label ("Mission window") was left as is.
+
+### 2026-11-15 — Removed the "Sunlit example" button
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Remove the "Sunlit example" button and its functionality.
+- **Change description:** Deleted the button and its screen-reader hint from `MissionWindowPicker`, the `sunlitExample` / `sunlitExampleHint` strings, and the `SUNLIT_EXAMPLE_WINDOW` constant (2027-03-31..2027-04-03) from `lib/mission.ts`, plus the unused `BUTTON_SECONDARY` import. The picker's inputs, Apply button and bounds are unchanged.
+- **Files created/modified:** `apps/frontend/src/components/ui/mission/{MissionWindowPicker.tsx,strings.ts}`, `apps/frontend/src/lib/mission.ts`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** `isSunlitSurfacePoint` (lib/geo.ts) is unrelated (it blocks clicks on the dark face) and stays.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass; `grep` shows no remaining references. Not verified visually.
+- **Risks or pending items:** `REQUIREMENTS.md` (Demo defaults, FR-03 area) still describes the "Sunlit example" shortcut; it is PO-owned and was not edited, so the document now lists a feature that no longer exists.
+
+### 2026-11-15 — "International" font file installed for the intro title
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Use the "International" font from 1001fonts.com for the "Lunar Mission" title.
+- **Change description:** No code change: `index.css` already declares `@font-face 'International'` (`/fonts/International.ttf`) and `--font-title`, and the intro title already uses `font-title`, but the TTF was missing, so the title fell back to Space Grotesk. I downloaded the zip from the link on the font's 1001fonts page into a scratch directory, confirmed it contains only `International.ttf` (valid TrueType, by Vladimir Nikolic, 2018), and copied it to `apps/frontend/public/fonts/International.ttf`.
+- **Files created/modified:** `apps/frontend/public/fonts/International.ttf` (git-ignored, not committed), `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The font stays out of git on purpose (`.gitignore` line 44: the "Free for commercial use" license does not allow publishing it in a public repo without the author's written permission). The page lists the license as "Free for commercial use"; the zip carries no license text.
+- **Verification performed:** the dev server serves `/fonts/International.ttf` (HTTP 200). Not checked visually.
+- **Risks or pending items:** Each teammate (and any deploy) must place the file at that path or the title falls back to Space Grotesk; the font is not registered in `data/README.md` (QA-owned).
+
+### 2026-11-15 — Slightly rounded buttons
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** Make the borders of the interface buttons slightly rounded.
+- **Change description:** Added Tailwind `rounded` (0.25 rem) to the shared `BUTTON_PRIMARY`, `BUTTON_SECONDARY` and `ICON_BUTTON` classes in `common/styles.ts`, which covers the primary/secondary buttons and the close/step icon buttons across the app, and to the Start guide button. Segmented controls (view toggle, hour control, delay stepper) got `rounded overflow-hidden` on their bordered container so the group rounds as one piece instead of each segment.
+- **Files created/modified:** `apps/frontend/src/components/ui/common/styles.ts`, `timeline/{HourControl.tsx,ViewToggle.tsx}`, `pointInfo/WindowOffsetControl.tsx`, `intro/StartGuide.tsx`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** Left unchanged: panels, chips, inputs and the compare-card thumbnail button, which are not "buttons" in the request; the day cards were already `rounded-sm`. `overflow-hidden` on segmented groups can clip the keyboard focus outline of the segments at the outer edge.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** The existing design is deliberately rectangular (see the CHIP comment citing DESIGN.md); buttons now differ from chips, inputs and panels. If the owner wants everything rounded, that is a separate pass.
+
+### 2026-11-15 — "Returning date" label replaces the arrow in the mission picker
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** In the Starting date component, replace the arrow before the end of the mission with text in the same format as "STARTING DATE" reading "RETURNING DATE".
+- **Change description:** `MissionWindowPicker` now renders the `LABEL` style (same as the "Starting date" title) with the new string `returningTitle` ("Returning date") where the `→` was. It is `aria-hidden` because the end fieldset already has a screen-reader legend ("End").
+- **Files created/modified:** `apps/frontend/src/components/ui/mission/{MissionWindowPicker.tsx,strings.ts}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The label sits between the start and end fields, so the row is a bit wider; on narrow top bars the picker may wrap or crowd the other controls.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. Not verified visually.
+- **Risks or pending items:** The internal names (`end`, "Mission window") are unchanged.
+
+### 2026-11-15 — Sequential interface guide (tour) replacing the "Getting started" card
+
+- **Agent:** Claude Sonnet 5.5
+- **Requested task:** An English step-by-step guide made of message windows: mission start/end dates and hours, Apply, selecting a point on the Moon, pinning with Compare (guided sub-sequence, up to 3 points), the criteria "More information", Show landing site and Technical information. Every window has Continue and Skip all; it shows once, after the intro and before any interaction; the page is dimmed except the area being explained. Owner decisions (asked first): automatic demo (the tour selects sample sites itself), shown once per page load, replaces the old card. Plan approved before coding.
+- **Change description:** New `ui/tour/` module: `TourGuide` (state machine, runs once per load 800 ms after the intro ends), `TourOverlay` (four dark panels around the target so the highlighted area stays clickable), `TourCard` (dialog with step counter, Continue / Skip all, "Finish" on the last step; placed on the side of the target with room, centered otherwise), `useTargetRect` (per-frame measurement because the point card follows the 3D anchor), `steps.ts` (9 steps) and `strings.ts` (English copy). Targets are `data-tour` attributes added to `MissionWindowPicker` (form and Apply), `PointInfoCard` (Compare, Technical information), `PointSidebar`, `CriterionRow` ("More information"), `ShowLandingSiteButton`; step 3 uses a virtual rectangle around the globe. Demo steps use only existing store actions (`focusSite`, `addToCompare`, `removeFromCompare`, `clearSelection`, `closeSidebar`, `setHorizonPanelOpen`) with sample sites Malapert Massif, Haworth and Peak near Cabeus B (falling back to any located sites). Ending or skipping clears the demo state. Escape also skips (captured before the sidebar's own handler). Removed `StartGuide.tsx` and its strings/export; `App.tsx` mounts `TourGuide`.
+- **Files created/modified:** created `apps/frontend/src/components/ui/tour/{TourGuide,TourOverlay,TourCard}.tsx`, `useTargetRect.ts`, `steps.ts`, `strings.ts`, `index.ts`; modified `App.tsx`, `ui/mission/MissionWindowPicker.tsx`, `ui/pointInfo/{PointInfoCard,PointSidebar,CriterionRow}.tsx`, `ui/landing/ShowLandingSiteButton.tsx`, `ui/intro/{index.ts,strings.ts}`; deleted `ui/intro/StartGuide.tsx`; `AI_LOG.md`.
+- **Technical decisions / trade-offs:** No store, contract or API changes and no new dependencies. Once-per-load is plain component state (no localStorage). The last button reads "Finish" instead of the literal "Continue" because it ends the tour. A real user selection made during step 3 is also cleared at the end of the tour.
+- **Verification performed:** `npm run typecheck` and `npm run build` pass. The walkthrough in a browser was NOT run (placement, dimming, focus order and cleanup untested visually).
+- **Risks or pending items:** The compare/criteria steps need the backend; if the evaluation is slow the "More information" target appears late and the window shows centered meanwhile. Window placement is heuristic. `REQUIREMENTS.md` does not mention the tour.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]

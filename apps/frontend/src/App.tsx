@@ -8,6 +8,7 @@ import { MapViewSelect } from '@/components/ui/mapview'
 import { BlockedNotice } from '@/components/ui/notice'
 import { PointInfoCard, PointSidebar } from '@/components/ui/pointInfo'
 import { TopBar } from '@/components/ui/timeline'
+import { TourGuide } from '@/components/ui/tour'
 import { useMissionSeries } from '@/lib/api/useSiteSeries'
 import { useAppStore } from '@/store'
 
@@ -34,6 +35,7 @@ export default function App() {
         <div className="animate-reveal">
           <LandingView />
           <TopBar />
+          <TourGuide />
           {horizonPanelOpen && <HorizonPanel />}
           {/* Globe-only controls: the map texture and the anchored card have no meaning in the 2D view. */}
           {mode === '3d' && (

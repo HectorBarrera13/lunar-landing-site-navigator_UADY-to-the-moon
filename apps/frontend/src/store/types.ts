@@ -1,6 +1,6 @@
 export type ViewMode = '3d' | '2d'
 
-export type CameraView = 'moon' | 'perspective'
+export type CameraView = 'moon' | 'perspective' | 'south_pole'
 
 export type MoonMapView = 'albedo' | 'relief'
 

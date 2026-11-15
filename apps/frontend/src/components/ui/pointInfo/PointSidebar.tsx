@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FOCUS_RING, ICON_BUTTON, MONO_NUM, SECTION_TITLE } from '@/components/ui/common/styles'
 import { DAY_MS, MISSION_BOUNDS, shiftIsoByDays } from '@/lib/mission'
-import { formatUtc } from '@/lib/time'
 import { MAX_COMPARED, useAppStore } from '@/store'
 import CompareCard from './CompareCard'
 import { POINT_INFO_STRINGS as S } from './strings'
@@ -72,6 +71,7 @@ export default function PointSidebar() {
     <aside
       ref={ref}
       tabIndex={-1}
+      data-tour="compare-sidebar"
       aria-label={S.sidebarLabel}
       className={`pointer-events-auto absolute top-28 right-0 bottom-0 z-20 flex w-96 max-w-full flex-col border-l border-line bg-chassis text-ink focus:outline-none ${FOCUS_RING}`}
     >
@@ -89,24 +89,6 @@ export default function PointSidebar() {
 
       <div className="shrink-0 space-y-2 border-b border-line px-4 py-3">
         <WindowOffsetControl days={days} maxDays={maxOffset} onChange={setOffsetDays} />
-        {baseWindow !== null && (
-          <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-[11px]">
-            <dt className="text-ink-subtle">{S.base}</dt>
-            <dd className={`text-ink-muted ${MONO_NUM}`}>
-              {formatUtc(baseWindow.t0)} {'→'} {formatUtc(baseWindow.tf)}
-            </dd>
-            {shiftedWindow !== null && (
-              <>
-                <dt className="text-ink-subtle">
-                  {S.shifted} +{days} {S.days}
-                </dt>
-                <dd className={`text-ink-muted ${MONO_NUM}`}>
-                  {formatUtc(shiftedWindow.t0)} {'→'} {formatUtc(shiftedWindow.tf)}
-                </dd>
-              </>
-            )}
-          </dl>
-        )}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">

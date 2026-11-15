@@ -12,6 +12,9 @@ type Controls = ComponentRef<typeof OrbitControls>
 // Angle between the Moon->Sun direction and the Moon->camera-opposite axis in Perspective,
 // chosen so the Sun's disc edge sits about 20 deg off axis, so the whole disc fits a 16:9 frame (fov 45).
 const PERSPECTIVE_SUN_ANGLE = (22 * Math.PI) / 180
+// South Pole view: camera below the Moon, tilted this far off the -Y axis (south pole is -Y, see surface.ts)
+// so OrbitControls never sits exactly on its pole singularity.
+const SOUTH_POLE_TILT = (25 * Math.PI) / 180
 const COS_PSI = Math.cos(PERSPECTIVE_SUN_ANGLE)
 const SIN_PSI = Math.sin(PERSPECTIVE_SUN_ANGLE)
 const DAMPING = 4
@@ -65,7 +68,10 @@ export default function CameraRig() {
         targetDist.current = FOCUS_DISTANCE
         animating.current = true
       } else if (viewChanged || hadFocus || refocusForMap) {
-        if (cameraView === 'perspective') {
+        if (cameraView === 'south_pole') {
+          targetDir.current.set(0, -Math.cos(SOUTH_POLE_TILT), Math.sin(SOUTH_POLE_TILT))
+          targetDist.current = MOON_VIEW_DISTANCE
+        } else if (cameraView === 'perspective') {
           const [x, y, z] = state.bodies.sunDir
           const sun = sunV.current.set(x, y, z).normalize()
           const lat = lateral.current.crossVectors(sun, upAxis.current)

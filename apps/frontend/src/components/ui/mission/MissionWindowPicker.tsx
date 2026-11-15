@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import type { FormEvent } from 'react'
-import { BUTTON_PRIMARY, BUTTON_SECONDARY, INPUT, LABEL } from '@/components/ui/common/styles'
-import { MISSION_BOUNDS, SUNLIT_EXAMPLE_WINDOW, toIsoUtc } from '@/lib/mission'
+import { BUTTON_PRIMARY, INPUT, LABEL } from '@/components/ui/common/styles'
+import { MISSION_BOUNDS, toIsoUtc } from '@/lib/mission'
 import { useAppStore } from '@/store'
 import { MISSION_STRINGS as S } from './strings'
 
@@ -84,6 +84,7 @@ function MissionWindowForm({ t0, tf }: FormProps) {
       aria-label={S.groupLabel}
       onSubmit={onSubmit}
       noValidate
+      data-tour="mission-dates"
       className="pointer-events-auto flex min-w-0 flex-1 items-center gap-2"
     >
       <span className={LABEL}>{S.title}</span>
@@ -113,8 +114,8 @@ function MissionWindowForm({ t0, tf }: FormProps) {
           ))}
         </select>
       </fieldset>
-      <span aria-hidden="true" className="font-mono text-xs text-ink-subtle">
-        {'→'}
+      <span aria-hidden="true" className={LABEL}>
+        {S.returningTitle}
       </span>
       <fieldset className="flex items-center gap-1">
         <legend className="sr-only">{S.end}</legend>
@@ -143,24 +144,9 @@ function MissionWindowForm({ t0, tf }: FormProps) {
         </select>
       </fieldset>
       <span className="font-mono text-[10px] text-line-strong">{S.utc}</span>
-      <button type="submit" className={BUTTON_PRIMARY}>
+      <button type="submit" data-tour="mission-apply" className={BUTTON_PRIMARY}>
         {S.apply}
       </button>
-      <button
-        type="button"
-        title={S.sunlitExampleHint}
-        aria-describedby={`${id}-sunlit`}
-        onClick={() => setMissionWindow(SUNLIT_EXAMPLE_WINDOW.startUtc, SUNLIT_EXAMPLE_WINDOW.endUtc)}
-        className={BUTTON_SECONDARY}
-      >
-        <span aria-hidden="true" className="mr-1.5 text-sun">
-          {'☉'}
-        </span>
-        {S.sunlitExample}
-      </button>
-      <span id={`${id}-sunlit`} className="sr-only">
-        {S.sunlitExampleHint}
-      </span>
       {error !== null && (
         <p id={errorId} role="alert" className="line-clamp-2 min-w-0 flex-1 text-xs text-ink">
           <span aria-hidden="true" className="mr-1 text-ink-muted">

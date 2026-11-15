@@ -7,6 +7,7 @@ import { TIMELINE_STRINGS } from './strings'
 const OPTIONS: { value: CameraView; label: string }[] = [
   { value: 'moon', label: TIMELINE_STRINGS.viewMoon },
   { value: 'perspective', label: TIMELINE_STRINGS.viewPerspective },
+  { value: 'south_pole', label: TIMELINE_STRINGS.viewSouthPole },
 ]
 
 export default function ViewToggle() {
@@ -29,7 +30,7 @@ export default function ViewToggle() {
       role="radiogroup"
       aria-label={TIMELINE_STRINGS.viewGroupLabel}
       onKeyDown={onKeyDown}
-      className="pointer-events-auto flex shrink-0 border border-line-strong"
+      className="pointer-events-auto flex shrink-0 overflow-hidden rounded border border-line-strong"
     >
       {OPTIONS.map((o) => {
         const active = o.value === cameraView

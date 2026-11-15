@@ -4,7 +4,6 @@ import { BUTTON_PRIMARY, BUTTON_SECONDARY, ICON_BUTTON, LABEL, MONO_NUM, PANEL }
 import { pointColor, pointLabel } from '@/lib/pointColors'
 import { MAX_COMPARED, useAppStore } from '@/store'
 import { formatLat, formatLon } from './formatCoords'
-import NearestSiteNote from './NearestSiteNote'
 import { POINT_INFO_STRINGS as S } from './strings'
 import TrafficLightBadge from './TrafficLightBadge'
 import { useFocusEvaluation } from './useFocusEvaluation'
@@ -72,8 +71,7 @@ export default function PointInfoCard() {
           </button>
         </div>
         <div className="p-3">
-          {focusOrigin === 'nearest-site' && focus.name !== null && <NearestSiteNote name={focus.name} />}
-          <dl className={`grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs ${focusOrigin === 'nearest-site' ? 'mt-2' : ''}`}>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
             <dt className="text-ink-subtle">{S.latitude}</dt>
             <dd className={MONO_NUM}>{formatLat(focus.latDeg)}</dd>
             <dt className="text-ink-subtle">{S.longitude}</dt>
@@ -99,6 +97,7 @@ export default function PointInfoCard() {
           </div>
           <button
             type="button"
+            data-tour="point-compare"
             onClick={inCompare ? openSidebar : addToCompare}
             disabled={full}
             className={`mt-3 w-full ${inCompare ? BUTTON_SECONDARY : BUTTON_PRIMARY}`}
@@ -107,6 +106,7 @@ export default function PointInfoCard() {
           </button>
           <button
             type="button"
+            data-tour="point-technical"
             onClick={() => setHorizonPanelOpen(true)}
             disabled={horizonOpen}
             className={`mt-2 w-full ${BUTTON_SECONDARY}`}

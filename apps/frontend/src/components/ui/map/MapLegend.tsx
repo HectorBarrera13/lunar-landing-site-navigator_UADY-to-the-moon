@@ -38,7 +38,7 @@ export default function MapLegend({ pxPerM, light }: MapLegendProps) {
               cx="8"
               cy="8"
               r="6"
-              strokeWidth="2"
+              strokeWidth="3"
               className={light === null ? 'stroke-ink-muted' : ZONE_STROKE[light]}
             />
           </Glyph>

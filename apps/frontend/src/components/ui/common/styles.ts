@@ -19,11 +19,11 @@ export const LABEL = 'font-mono text-[10px] font-medium uppercase tracking-[0.06
 /** Every number, time, or coordinate. */
 export const MONO_NUM = 'font-mono tabular-nums'
 
-export const BUTTON_PRIMARY = `inline-flex h-8 items-center justify-center bg-primary px-3 font-display text-xs font-bold uppercase tracking-[0.08em] text-on-primary hover:bg-secondary active:bg-line-strong active:text-ink disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-subtle ${FOCUS_RING}`
+export const BUTTON_PRIMARY = `inline-flex h-8 rounded items-center justify-center bg-primary px-3 font-display text-xs font-bold uppercase tracking-[0.08em] text-on-primary hover:bg-secondary active:bg-line-strong active:text-ink disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-subtle ${FOCUS_RING}`
 
-export const BUTTON_SECONDARY = `inline-flex h-8 items-center justify-center border border-line-strong bg-chassis px-3 font-display text-xs font-semibold uppercase tracking-[0.08em] text-secondary hover:border-primary disabled:cursor-not-allowed disabled:border-line disabled:text-ink-subtle disabled:hover:border-line ${FOCUS_RING}`
+export const BUTTON_SECONDARY = `inline-flex h-8 rounded items-center justify-center border border-line-strong bg-chassis px-3 font-display text-xs font-semibold uppercase tracking-[0.08em] text-secondary hover:border-primary disabled:cursor-not-allowed disabled:border-line disabled:text-ink-subtle disabled:hover:border-line ${FOCUS_RING}`
 
-export const ICON_BUTTON = `inline-flex size-7 items-center justify-center border border-transparent text-ink-muted hover:border-line-strong hover:text-ink ${FOCUS_RING}`
+export const ICON_BUTTON = `inline-flex size-7 rounded items-center justify-center border border-transparent text-ink-muted hover:border-line-strong hover:text-ink ${FOCUS_RING}`
 
 /** Rectangular 20px status chip (DESIGN.md "Chips & Status Badges"). */
 export const CHIP =
