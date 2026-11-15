@@ -1,6 +1,8 @@
 # Data contracts
 
-**Status: APPROVED — project-owner approval recorded 2026-11-14; section 1.1 revised to version 1.1 on 2026-11-15 (see `AI_LOG.md`).**
+**Status: APPROVED — version 1.2, project-owner approval recorded 2026-11-15 (see `AI_LOG.md`).** History: 1.0 approved 2026-11-14; 1.1 (yearly columnar series, §1.1) approved 2026-11-15; 1.2 (optional angular-radius columns, transition metrics, 422 `detail` shapes, `resolved_site_id`) approved 2026-11-15.
+
+Section references use `§` (for example §1.1 = site time series, §1.2 = terrain evaluation); "version" always means the contract version above.
 
 Contracts are the only coupling between `pipeline/`, `apps/backend/`, and `apps/frontend/`. Change protocol: see "Contract changes" in the root `AGENTS.md`.
 
@@ -12,7 +14,7 @@ Conventions: `MOON_ME` frame · latitude/longitude in degrees (lon ∈ [-180, 18
 
 ### 1.1 Site time series — `sites/<site_id>/horizon.json` and `sites/<site_id>/<year>.json`
 
-**Version 1.1 — approved by the project owner 2026-11-15 (R3-1, R3-2, R3-4).** Supersedes the single-file `sites/<site_id>.json` of version 1.0. Produced by `pipeline/ephemeris` + `pipeline/terrain`. One directory per verified preset site; one yearly file per year 2025–2035. Files are compact JSON (no indentation), columnar, one value per time step.
+**Version 1.2 — approved 2026-11-15.** Supersedes version 1.1 (and the single-file `sites/<site_id>.json` of version 1.0). Produced by `pipeline/sites`. One directory per verified preset site; one yearly file per year 2025–2035. Files are compact JSON (no indentation), columnar, one value per time step.
 
 `horizon.json`:
 
@@ -56,12 +58,15 @@ Conventions: `MOON_ME` frame · latitude/longitude in degrees (lon ∈ [-180, 18
 ```
 
 - All columns in a year file have the same length as `time_utc`.
+- `sun_angular_radius_deg` and `earth_angular_radius_deg` are optional columns for legacy compatibility. While legacy artifacts exist, the backend may return each column as `null` or omit it. When present, each column is an array with the same length as `time_utc`.
 - `horizon_source`: `"lola"` (real terrain) or `"sphere"` (approximate, near side).
 - `horizon_profile_deg`: 360 values, index = azimuth in whole degrees (0 = local north, clockwise), value = horizon elevation angle including lunar curvature. `max_radius_m` = 150000 (PD-07), `near_field_m` = 100 and `observer_height_m` = 0 (PD-09).
 - `*_dir_me`: unit vector from the Moon center to the body in `MOON_ME`. `*_distance_km`: distance from the site to the body center.
 - `*_angular_radius_deg`: apparent angular radius derived from the SPICE kernel body radius and `*_distance_km`; no physical radius constants are stored in the artifact.
 - Visibility (R3-2): `sun_visible_fraction` = fraction (0–1) of the solar disc above the horizon, assuming the horizon is flat across the disc width (horizon interpolated linearly in azimuth). `earth_visible_fraction` uses the same computation, and Earth counts as visible when its center is above the horizon (margin 0°).
 - The `sun_visible` / `earth_visible` booleans of version 1.0 are removed: consumers derive them (Sun: fraction > 0; Earth: center elevation above the horizon, equivalently fraction >= 0.5).
+
+Evaluation transition metrics use the series resolution. `next_sunset_utc` and `next_earthset_utc` are the first visible-to-not-visible transitions; `next_sunrise_utc` and `next_earthrise_utc` are the first not-visible-to-visible transitions within the inclusive interval `[start_utc, end_utc]`, counted from `start_utc` at `time_step_minutes` resolution. They are `null` when no matching transition occurs in the interval.
 
 ### 1.2 Terrain evaluation — `terrain/<site_id>.json`
 
@@ -96,10 +101,17 @@ Shape kept from the team's original contract.
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/api/health` | Liveness and data directory check (implemented) |
-| GET | `/api/sites` | List of preset sites (id, name, lat, lon, group) |
+| GET | `/api/sites` | List of preset sites (id, name, group, region, lat, lon); see 2.2 |
 | GET | `/api/sites/{site_id}/series?start=&end=` | Series sliced to the window (columns of 1.1), plus `horizon.json` content. 404 if the site is not precomputed; 422 if the window is inverted or outside 2025–2035 |
 | POST | `/api/evaluate` | Suitability Index for a site/point and window |
 | GET | `/api/layers/{region_id}` | Layer metadata; images served as static files |
+
+### 2.2 `GET /api/sites`
+
+Response: list of `{ "id": str, "name": str, "group": str, "region": "south_pole" | "other", "lat": float | null, "lon": float | null }`.
+
+- `region` (added 2026-11-15, approved by the project owner): `south_pole` when `lat <= -80°` (R-11), otherwise `other`. While `lat` is null (PD-01), it falls back to `group` (`artemis-iii-region` → `south_pole`, `historical-landing` → `other`). Consumers color fixed markers with it (south pole pink `#ff46af`, other yellow `#ffec46`).
+- `lat` / `lon` stay null until QA verifies them; consumers skip such sites on the globe unless they use clearly marked mock data.
 
 ### 2.0 `GET /api/sites/{site_id}/series`
 
@@ -125,6 +137,7 @@ Response:
 
 ```json
 {
+  "resolved_site_id": "malapert-massif",
   "suitability_index": 0,
   "traffic_light": "green",
   "precision": "date_specific",
@@ -145,9 +158,11 @@ Response:
 }
 ```
 
+- `resolved_site_id`: preset site ID actually used for the successful evaluation. For a `site_id` request, it equals the requested site ID; for a free-point request, it identifies the nearest preset site with the required artifacts. It is absent from error responses.
 - `traffic_light`: `"green" | "orange" | "red"`.
 - `precision`: `"date_specific"` (preset sites) | `"average"` (reserved; not implemented until `pipeline/layers` exists).
-- Free points (`lat_deg`/`lon_deg`) are redirected silently to the nearest preset site that has a precomputed series; the response is the site's `date_specific` evaluation. There is no `average`-precision evaluation yet.
+- Free points (`lat_deg`/`lon_deg`) are redirected silently to the nearest preset site that has a precomputed series; `resolved_site_id` identifies that site and the response remains its `date_specific` evaluation. There is no `average`-precision evaluation yet.
 - Weights and veto thresholds come from configuration (REQUIREMENTS 5.2–5.5, Agreed 2026-11-14). Criteria without data are excluded and the remaining weights are renormalized; this is reported in `warnings`.
 - A valid window with no matching series samples returns `422` with the detail `No series points in the requested window.`
+- HTTP 422 responses use `detail` as text for service errors and as a list for Pydantic validation errors.
 - `GET /api/layers/{region_id}` is reserved by the contract and is not implemented until regional layer artifacts exist.

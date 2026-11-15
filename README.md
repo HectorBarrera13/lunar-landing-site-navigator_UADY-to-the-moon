@@ -2,7 +2,7 @@
 
 NASA Space Apps Challenge 2026. A desktop web tool to compare lunar south pole landing sites and dates by showing the Sun and the Earth relative to the local horizon, evaluating solar power and direct-to-Earth communication, and summarizing each option as a Suitability Index.
 
-> Status: repository scaffold. Features are being built during the hackathon.
+> Status: working end to end for all 13 preset sites. Every preset has precomputed Sun/Earth series (2025–2035, hourly, contract 1.2 with angular radii) and a horizon: LOLA for the 9 south-pole sites (PGDA 78 tile where QA-confirmed, otherwise the PGDA 90 20 m mosaic) and the idealized 0° sphere for the 4 historical sites (R-15); terrain slope files exist for the 9 polar sites. The FastAPI backend evaluates the Suitability Index over a mission window; the frontend shows the 3D globe and the 2D decision views. Coordinates were PO-approved in `data/catalog/sites.json` (PD-01 resolved 2026-11-15). Regional layers, ice proximity and roughness remain open (Round 4 items pending decisions).
 
 ## Repository layout
 
@@ -39,7 +39,7 @@ pip install -r requirements.txt
 python -m lunar_pipeline
 ```
 
-Copy `.env.example` to `.env` (root, `apps/backend/`, `apps/frontend/`) only if you need to change the defaults.
+Copy an `.env.example` to `.env` only if you need to change the defaults. Backend variables (`PORT`, `FRONTEND_URL`, `DEBUG_MODE`, `DATA_DIR`, `CATALOG_FILE`) are read from the root `.env` and then `apps/backend/.env`; the frontend variable `VITE_API_URL` is read by Vite only from `apps/frontend/.env`.
 
 ## Working with AI agents
 
@@ -49,7 +49,16 @@ Copy `.env.example` to `.env` (root, `apps/backend/`, `apps/frontend/`) only if 
 
 ## NASA data used
 
-To be completed: see `data/README.md`.
+Summary of the sources registered in `data/README.md` (URLs, versions, resolutions and notes live there).
+
+| Data | Provider | Used for | Citation |
+|---|---|---|---|
+| SPICE kernels: `naif0012.tls`, `pck00011.tpc`, `de421.bsp`, `moon_pa_de421_1900-2050.bpc`, `moon_080317.tf`, `moon_assoc_me.tf` | NASA NAIF (JPL) | Sun and Earth directions, distances and angular radii in `MOON_ME` (DE421), no refraction | NAIF generic kernels |
+| PGDA 78 — High-Resolution LOLA Topography for Lunar South Pole Sites (5 m/px) | NASA GSFC PGDA | Slope inside the landing circle and center elevation (Malapert Massif → `Site23`) | Barker et al. 2021, PSS 203, 105119, doi:10.1016/j.pss.2020.105119 |
+| PGDA 90 — A New View of the Lunar South Pole from LOLA (20 m/px and 240 m/px) | NASA GSFC PGDA | 360° horizon profile up to 150 km | Barker et al. 2023, PSJ 4, 183, doi:10.3847/PSJ/acf3e1; data doi:10.60903/gsfcpgda-lola-spole |
+| Deep Star Maps 2020 | NASA Scientific Visualization Studio (SVS 4851) | Background star field of the 3D scene | https://svs.gsfc.nasa.gov/4851 |
+
+Pending QA: the Deep Star Maps license is not verified yet, and the star map is in ICRF/J2000 coordinates, not rotated to `MOON_ME` (decorative only).
 
 ## Authorship
 

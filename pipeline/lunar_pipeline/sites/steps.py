@@ -1,6 +1,6 @@
 """Pipeline step `sites`: join ephemeris and horizon interim files into data/processed/sites/<site_id>/.
 
-Writes horizon.json and one <year>.json per available interim year (docs/contracts 1.1).
+Writes horizon.json and one <year>.json per available interim year (docs/contracts §1.1).
 Run the `terrain` and `ephemeris` steps first.
 """
 
@@ -55,7 +55,7 @@ def _print_size(path: Path) -> None:
 
 STEPS = {
     "sites": (
-        "Join ephemeris and horizon into data/processed/sites/<site_id>/ (contract 1.1)",
+        "Join ephemeris and horizon into data/processed/sites/<site_id>/ (contract §1.1)",
         run_sites,
     ),
 }

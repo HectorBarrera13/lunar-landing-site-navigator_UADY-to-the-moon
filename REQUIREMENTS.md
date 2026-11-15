@@ -69,11 +69,12 @@ Mission planners and engineers (primary), educators, general public.
 
 | ID | Rule | Status |
 |---|---|---|
-| R-10 | Near side only: lon ∈ [-90°, +90°]. Far side shown dimmed/blocked with an educational message (no direct communication without relays). | Agreed (SRS) |
+| R-10 | Near side only: lon ∈ [-90°, +90°]. Far side shown dimmed/blocked with an educational message (no direct communication without relays). **Update 2026-11-15 (project owner):** the blocked face is the one receiving no sunlight (point normal · Sun direction ≤ 0); a click on a selectable point redirects to the nearest preset site and zooms x1.6 on its coordinates. | Agreed (SRS), updated |
 | R-11 | South pole exception: any longitude is selectable for lat ≤ -80°. | Agreed (SRS) |
 | R-12 | Shadowed points are selectable; darkness triggers a veto/penalty with an explanation popup, not a click block. | Agreed (SRS) |
-| R-13 | Three selection modes: free click, manual lat/lon entry, 13 preset markers. Presets have date-precise data; free points are intended to use average layers when those artifacts are available. Until then, they resolve to the nearest preset with precomputed series under R3-6. | Agreed (SRS; interim behavior R3-6 agreed 2026-11-15) |
-| R-14 | 13 presets: 9 Artemis III regions (Peak near Cabeus B, Haworth, Malapert Massif, Mons Mouton Plateau, Mons Mouton, Nobile Rim 1, Nobile Rim 2, de Gerlache Rim 2, Slater Plain) + Apollo 11, Apollo 17, Chang'e 3, Chandrayaan-3. Coordinates verified by QA in `data/catalog/sites.json`. | Proposed (PD-01) |
+| R-13 | Three selection modes: free click, manual lat/lon entry, 13 preset markers. Presets have date-precise data; free points resolve to the nearest preset with a precomputed series; average layers remain future work in `pipeline/layers`. | Agreed (SRS) |
+| R-14 | 13 presets: 9 Artemis III regions (Peak near Cabeus B, Haworth, Malapert Massif, Mons Mouton Plateau, Mons Mouton, Nobile Rim 1, Nobile Rim 2, de Gerlache Rim 2, Slater Plain) + Apollo 11, Apollo 17, Chang'e 3, Chandrayaan-3. Coordinates approved by the PO in `data/catalog/sites.json` (PD-01 resolved 2026-11-15; Malapert Massif additionally QA-verified against two independent sources). | Agreed (PD-01, 2026-11-15) |
+| R-15 | Historical sites without terrain data use `horizon_source: "sphere"` with a constant 0° profile across 360 azimuth bins; omit terrain criteria from evaluation and renormalize the remaining applicable weights. | Agreed (2026-11-15) |
 
 ### 4.3 2D view geometry
 
@@ -81,7 +82,7 @@ Mission planners and engineers (primary), educators, general public.
 |---|---|---|
 | R-20 | Polar stereographic projection for lat ≤ -80°; equirectangular/orthographic for mid latitudes. | Agreed (SRS) |
 | R-21 | Fixed (non-editable) landing circle and error margin drawn on the 2D view. | Agreed (SRS) |
-| R-22 | Landing zone 200 m diameter + 100 m error margin, as a documented assumption. | Proposed (PD-02) |
+| R-22 | Landing zone 200 m diameter (radius 100 m). The 100 m error margin is spread across the diameter, so the dotted margin ring is 300 m in diameter (radius 150 m). Slope statistics, `is_slope_safe` and the slope veto are evaluated inside the 100 m radius. | Agreed (2026-11-15, PD-02) |
 | R-23 | Grid cell 60 m (85°S–90°S) and 120 m (80°S–85°S), matching NASA layers. | Proposed (PD-03) |
 
 ---
@@ -99,7 +100,7 @@ Baseline (SRS, agreed) vs. adjustment (master document, proposed). The proposal 
 
 | Criterion | SRS near side | SRS south pole | Proposed near side | Proposed south pole | Data source |
 |---|---:|---:|---:|---:|---|
-| Power / solar illumination | 25% | 25% | 30% | 30% | SpiceyPy series + horizon (presets); average map (free click) |
+| Power / solar illumination | 25% | 25% | 30% | 30% | SpiceyPy series + horizon for the resolved preset; regional average maps remain future work in `pipeline/layers` |
 | Direct-to-Earth communication | 15% | 15% | 20% | 20% | Same as power |
 | Terrain slope | 20% | 15% | 25% | 15% | LOLA LDSM slope |
 | Landing zone vs. error margin | 15% | 10% | 20% | 10% | Slope inside the circle |
@@ -108,7 +109,7 @@ Baseline (SRS, agreed) vs. adjustment (master document, proposed). The proposal 
 | Radiation | 5% | 5% | 0% (informative) | 0% (informative) | Future work |
 | Roughness / other | 5% | 0% | 5% | 5% | LOLA roughness (optional) |
 
-**Status:** Agreed (2026-11-14): proposed adjustment, south-pole column (30/20/15/10/20/0/0/5). Criteria at 0% are informative and not scored. Weights live in configuration, not in code.
+**Status:** Agreed (2026-11-14): proposed adjustment, south-pole column (30/20/15/10/20/0/0/5). Agreed (2026-11-15): use the SRS near-side baseline column (25/15/20/15/0/15/5) for historical near-side sites. Criteria at 0% are informative and not scored. Weights live in configuration, not in code.
 
 ### 5.3 Vetoes — Agreed (2026-11-14, PD-04)
 
@@ -180,7 +181,7 @@ Priority: **Must** / **Should** / **Could** (from the master document, Proposed 
 | FR-05 | Suitability Index over the whole window `[t0, tf]` (SRS RF-16). | Must |
 | FR-06 | Breakdown panel: global %, color, per-criterion contribution in plain language, plus % sunlight, solar elevation, % Earth visible, longest continuous darkness (SRS RF-17). | Must |
 | FR-07 | Veto explanation popup with the exact cause (SRS RF-10). | Must |
-| FR-08 | 2D view of the zone with the traffic-light grid and the fixed landing circle and margin (SRS RF-11, RF-13). | Must |
+| FR-08 | 2D view of the zone with the traffic-light grid and the fixed landing circle and margin (SRS RF-11, RF-13). It opens from a bottom-centered "Show landing site" button after a point is selected (2026-11-15); fixed markers are pink (`#ff46af`) in south-pole regions and yellow (`#ffec46`) elsewhere, per the `region` field of `/api/sites`. | Must |
 | FR-09 | Adaptive projection for the 2D view (SRS RF-12). | Must |
 | FR-10 | Non-color indicators: icons, text, or patterns (SRS RF-18). | Must |
 | FR-11 | Timeline within the window with light and contact bands; scrubbing moves the Sun, Earth, and shadows (SRS RF-05). | Should |
@@ -223,6 +224,8 @@ If the core is late at H12, build only SF-1 with fixed requirements.
 | NFR-07 | No live heavy computation during the demo; the app must work with precomputed data only. | Agreed (D3) |
 | NFR-08 | Public app and public repository, accessible without login. | Agreed (Space Apps rules) |
 
+**PD-08 artifact budget (2026-11-15):** retain the full 2025–2035 range for all 13 sites (estimated aggregate: ~190 MB), using yearly artifacts fetched on demand; do not reduce the year range or time step. This does not establish NFR-04 compliance: browser startup transfer still requires measurement, and hosting remains undecided.
+
 ---
 
 ## 8. Data sources
@@ -234,7 +237,7 @@ If the core is late at H12, build only SF-1 with fixed requirements.
 | JPL Horizons | Validation and plan B (refraction off) | QA |
 | LOLA DEM (PGDA, 20 m/px for 80°S–90°S) | Terrain height for horizons | `pipeline/terrain` |
 | LOLA LDSM slope | Slope and safe zone | `pipeline/terrain`, `layers` |
-| PGDA average illumination and Earth visibility maps (60–240 m/px) | Free-click evaluation and Site Finder | `pipeline/layers` |
+| PGDA average illumination and Earth visibility maps (60–240 m/px) | Future regional overview and Site Finder | `pipeline/layers` |
 | Rasterio · NumPy · SciPy | Windowed raster reads, vector math, distance transform | `pipeline/` |
 
 Exact URLs, versions, and licenses must be registered in `data/README.md` before use. Resolution of LOLA data per region and the horizon search radius (150 km Agreed 2026-11-15, SRS PD-07; resolution per region still open).
@@ -251,7 +254,7 @@ The approved contracts live in `docs/contracts/` (D6, Agreed 2026-11-15). Contra
 
 | Hour | Milestone |
 |---|---|
-| H0–H1.5 | Approve D1–D6, data contract, site list, vetoes |
+| H0–H1.5 | Approve D1–D5, data contract, site list, vetoes |
 | H7 | End-to-end app with mock data |
 | H12 | Checkpoint: real data for ≥ 3 sites, first deployment, Site Finder go/no-go |
 | H18 | Feature freeze |
@@ -275,4 +278,4 @@ Public app tested from another computer; public repository with an English READM
 
 ## 13. Open items summary
 
-PD-01 site list and coordinates · PD-02 landing zone and margin · PD-03 grid cell size · PD-04 vetoes and normalization · PD-05 palette · PD-06 modes and comparison table details · PD-07 LOLA resolution and horizon radius (radius 150 km Agreed 2026-11-15) · PD-08 load budget · PD-09 near field 100 m and observer height 0 m (Agreed 2026-11-15) · weights choice (5.2) · D1, D4, D5, D6 approval · hosting.
+PD-03 grid cell size · PD-05 palette · PD-06 modes and comparison table details · PD-07 LOLA resolution per region (horizon radius 150 km Agreed 2026-11-15) · PD-08 initial-load validation (artifact budget Agreed 2026-11-15) · D1, D4, D5 approval · hosting. Closed: PD-01 site coordinates (PO-approved 2026-11-15) · PD-02 landing zone and margin (Agreed 2026-11-15) · PD-04 vetoes (Agreed 2026-11-14) · weights 5.2 (Agreed 2026-11-14/15) · PD-09 near field and observer height (Agreed 2026-11-15) · D6 contracts (Agreed 2026-11-15).

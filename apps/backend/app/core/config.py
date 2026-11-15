@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data/processed")
     catalog_file: Path = Path("data/catalog/sites.json")
 
+    # South-pole region boundary (REQUIREMENTS R-11): sites at or below this latitude are `south_pole`.
+    south_pole_max_lat_deg: float = -80.0
+
     # Traffic-light thresholds on the Suitability Index (REQUIREMENTS 5.1, Agreed).
     traffic_light_green_min: int = 70
     traffic_light_orange_min: int = 40
@@ -36,6 +39,16 @@ class Settings(BaseSettings):
     weight_landing_zone: float = 0.10
     weight_resources: float = 0.20
     weight_roughness: float = 0.05
+
+    # REQUIREMENTS 5.2, agreed 2026-11-15, SRS near-side baseline for historical sites.
+    near_side_weight_power: float = 0.25
+    near_side_weight_communication: float = 0.15
+    near_side_weight_slope: float = 0.20
+    near_side_weight_landing_zone: float = 0.15
+    near_side_weight_resources: float = 0.0
+    near_side_weight_surface_temperature: float = 0.15
+    near_side_weight_radiation: float = 0.05
+    near_side_weight_roughness: float = 0.05
 
     # Vetoes and warnings (REQUIREMENTS 5.3, 5.4, 5.5, Agreed 2026-11-14).
     veto_earth_visible_min_percent: float = 25.0
@@ -54,6 +67,20 @@ class Settings(BaseSettings):
             "landing_zone": self.weight_landing_zone,
             "resources": self.weight_resources,
             "roughness": self.weight_roughness,
+        }
+
+    @property
+    def near_side_weights(self) -> dict[str, float]:
+        """SRS near-side baseline weights, before excluding unavailable criteria."""
+        return {
+            "power": self.near_side_weight_power,
+            "communication": self.near_side_weight_communication,
+            "slope": self.near_side_weight_slope,
+            "landing_zone": self.near_side_weight_landing_zone,
+            "resources": self.near_side_weight_resources,
+            "surface_temperature": self.near_side_weight_surface_temperature,
+            "radiation": self.near_side_weight_radiation,
+            "roughness": self.near_side_weight_roughness,
         }
 
     @property

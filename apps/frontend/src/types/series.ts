@@ -2,7 +2,7 @@ import type { DirectionMe, HorizonSource } from './contracts'
 
 /**
  * UI row model built once from the columnar `SiteSeriesResponse` (lib/api). Not a contract
- * type: the `*_visible` booleans are derived with the contract 1.1 rules (R3-2).
+ * type: the `*_visible` booleans are derived with the contract §1.1 rules (R3-2).
  */
 export interface SeriesPoint {
   time_utc: string

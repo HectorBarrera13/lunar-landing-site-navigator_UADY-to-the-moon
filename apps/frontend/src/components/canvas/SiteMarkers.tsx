@@ -2,13 +2,17 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import type { ThreeEvent } from '@react-three/fiber'
 import { Color, InstancedMesh, MeshBasicMaterial, Object3D, SphereGeometry } from 'three'
 import { useAppStore } from '@/store'
-import type { SiteListItem } from '@/types'
+import type { SiteListItem, SiteRegion } from '@/types'
 import { setSurfacePosition } from './surface'
 
 const MARKER_RADIUS = 0.015
 const DRAG_THRESHOLD_PX = 2
-const BASE_COLOR = new Color('#f5c542')
-const SELECTED_COLOR = new Color('#ffffff')
+/** Fixed markers by region (back-end `region` field): south pole pink, elsewhere yellow. */
+const REGION_COLORS: Record<SiteRegion, Color> = {
+  south_pole: new Color('#ff46af'),
+  other: new Color('#ffec46'),
+}
+const SELECTED_SCALE = 1.8
 
 type SiteWithCoordinates = SiteListItem & { lat: number; lon: number }
 
@@ -39,21 +43,22 @@ export default function SiteMarkers() {
     const dummy = new Object3D()
     located.forEach((site, i) => {
       setSurfacePosition(dummy, site.lat, site.lon)
+      dummy.scale.setScalar(site.id === selectedId ? SELECTED_SCALE : 1)
       dummy.updateMatrix()
       mesh.setMatrixAt(i, dummy.matrix)
     })
     mesh.instanceMatrix.needsUpdate = true
     mesh.computeBoundingSphere()
-  }, [located])
+  }, [located, selectedId])
 
   useLayoutEffect(() => {
     const mesh = meshRef.current
     if (!mesh) return
     located.forEach((site, i) => {
-      mesh.setColorAt(i, site.id === selectedId ? SELECTED_COLOR : BASE_COLOR)
+      mesh.setColorAt(i, REGION_COLORS[site.region])
     })
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
-  }, [located, selectedId])
+  }, [located])
 
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
     if (event.instanceId === undefined) return
@@ -71,6 +76,12 @@ export default function SiteMarkers() {
       ref={meshRef}
       args={[geometry, material, located.length]}
       onClick={handleClick}
+      onPointerOver={() => {
+        document.body.style.cursor = 'pointer'
+      }}
+      onPointerOut={() => {
+        document.body.style.cursor = ''
+      }}
     />
   )
 }
