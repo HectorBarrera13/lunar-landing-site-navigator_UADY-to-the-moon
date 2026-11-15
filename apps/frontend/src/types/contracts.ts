@@ -44,16 +44,16 @@ export interface SiteSeriesResponse {
   /** Fraction (0-1) of the solar disc above the horizon (R3-2). */
   sun_visible_fraction: number[]
   sun_distance_km: number[]
-  /** Optional while legacy processed artifacts are being regenerated. */
-  sun_angular_radius_deg?: number[]
+  /** Absent or null when the processed artifact predates the angular-radius column. */
+  sun_angular_radius_deg?: number[] | null
   sun_dir_me: DirectionMe[]
   earth_azimuth_deg: number[]
   earth_elevation_deg: number[]
   /** Fraction (0-1) of the Earth disc above the horizon (R3-2). */
   earth_visible_fraction: number[]
   earth_distance_km: number[]
-  /** Optional while legacy processed artifacts are being regenerated. */
-  earth_angular_radius_deg?: number[]
+  /** Absent or null when the processed artifact predates the angular-radius column. */
+  earth_angular_radius_deg?: number[] | null
   earth_dir_me: DirectionMe[]
 }
 
