@@ -4,7 +4,6 @@ import { OrbitControls } from '@react-three/drei'
 import MoonGlobe from './MoonGlobe'
 import SceneFallback from './SceneFallback'
 import SiteMarkers from './SiteMarkers'
-import PickedPointMarkers from './PickedPointMarkers'
 import CameraRig from './CameraRig'
 import AnchorProjector from './AnchorProjector'
 import SunLight from './SunLight'
@@ -30,7 +29,6 @@ export default function MoonScene() {
       <Suspense fallback={<SceneFallback />}>
         <MoonGlobe />
         <SiteMarkers />
-        <PickedPointMarkers />
         <EarthBody />
         <SunBody />
       </Suspense>
