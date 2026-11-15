@@ -51,6 +51,19 @@ Copy `.env.example` to `.env` (root, `apps/backend/`, `apps/frontend/`) only if 
 
 To be completed: see `data/README.md`.
 
-## Team
+## Authorship
 
-To be completed.
+This project was developed collaboratively by the team members and with the assistance of AI tooling. Roles are listed below.
+
+### Team
+
+- **Maricarmen Buenfil** – Organized the team's functions and assigned tasks and roles. Contributed to backend development, ensuring the integrity of the application's data and operations.
+- **Hector Barrera** – Designed the system and the frontend, contributing the 3D bodies in the application. Also worked on the backend, created the API, and handled the packaging of the system.
+- **Andrea Baeza** – Delegated work across the team and was responsible for both the development and the testing of backend and frontend commits.
+- **Daniela Villarino** – Designed the view layouts, mockups, interfaces, and user interface windows, and led the UX design.
+- **Deco Acierno** – Carried out the system requirements analysis and produced the project documents. Contributed to the design of the application and the system, and to backend development.
+- **Paulina Paredes** – Served as physics advisor to ensure a complete understanding of the problem. Contributed to the user interface design and to the storytelling, presentations, and graphic elements.
+
+### AI Assistance
+
+- **Claude Code (Anthropic)** – Took charge of dividing the work into separate activities and supported the processing and organization of images and data. It assisted in code generation, which was always reviewed, tested, and approved by the team members, and supported general design tasks. Its contributions are acknowledged as authorship in this repository, while the team members remain responsible for all final decisions and for the quality of the code.
