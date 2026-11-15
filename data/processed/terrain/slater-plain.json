@@ -1,0 +1,9 @@
+{
+  "site_id": "slater-plain",
+  "safety_radius_meters": 100,
+  "center_elevation_meters": -128.301,
+  "max_slope_degrees": 11.253,
+  "mean_slope_degrees": 8.517,
+  "p95_slope_degrees": 10.542,
+  "is_slope_safe": true
+}

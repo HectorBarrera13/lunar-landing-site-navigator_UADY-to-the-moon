@@ -1,0 +1,9 @@
+{
+  "site_id": "haworth",
+  "safety_radius_meters": 100,
+  "center_elevation_meters": -3301.115,
+  "max_slope_degrees": 13.468,
+  "mean_slope_degrees": 9.136,
+  "p95_slope_degrees": 12.855,
+  "is_slope_safe": true
+}

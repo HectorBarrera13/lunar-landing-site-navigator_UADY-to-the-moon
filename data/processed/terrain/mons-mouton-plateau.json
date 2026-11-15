@@ -1,0 +1,9 @@
+{
+  "site_id": "mons-mouton-plateau",
+  "safety_radius_meters": 100,
+  "center_elevation_meters": 5334.353,
+  "max_slope_degrees": 5.944,
+  "mean_slope_degrees": 3.542,
+  "p95_slope_degrees": 5.142,
+  "is_slope_safe": true
+}

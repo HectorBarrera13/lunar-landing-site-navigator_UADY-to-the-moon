@@ -1,0 +1,9 @@
+{
+  "site_id": "peak-near-cabeus-b",
+  "safety_radius_meters": 100,
+  "center_elevation_meters": -3358.619,
+  "max_slope_degrees": 18.695,
+  "mean_slope_degrees": 16.326,
+  "p95_slope_degrees": 17.804,
+  "is_slope_safe": false
+}
