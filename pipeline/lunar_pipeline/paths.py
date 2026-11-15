@@ -26,3 +26,9 @@ def write_json(path: Path, payload: Any) -> None:
     """Write deterministic, human-readable JSON (UTF-8, 2-space indent, trailing newline)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def write_json_compact(path: Path, payload: Any) -> None:
+    """Write deterministic compact JSON (UTF-8, no whitespace, trailing newline)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, separators=(",", ":"), ensure_ascii=False) + "\n", encoding="utf-8")

@@ -18,16 +18,19 @@ from app.models.evaluate import (
     TrafficLight,
     Veto,
 )
-from app.models.series import SeriesPoint, SiteTimeSeries
+from app.models.series import SiteTimeSeries
 from app.models.site import SiteSummary
 from app.models.terrain import TerrainEvaluation
-from app.services.series import get_site_series
+from app.services.series import get_site_series, has_series_artifacts
 from app.services.sites import get_site, list_sites
 from app.services.terrain import get_terrain
 
 # R-10/R-11: near side only, south pole exception.
 SOUTH_POLE_LAT_DEG = -80.0
 NEAR_SIDE_LON_LIMIT_DEG = 90.0
+
+# Contract 1.1: Earth visible equals center above horizon, i.e. visible fraction >= 0.5.
+EARTH_VISIBLE_MIN_FRACTION = 0.5
 
 CRITERION_LABELS = {
     "power": "Solar power",
@@ -64,34 +67,35 @@ def _parse_utc(value: str | None) -> datetime | None:
     return None if value is None else datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
-def _next_set(points: list[SeriesPoint], attribute: str) -> str | None:
+def _next_set(times: list[str], visible: list[bool]) -> str | None:
     """First visible -> hidden transition inside the window, if any."""
-    for current, following in zip(points, points[1:]):
-        if getattr(current, attribute) and not getattr(following, attribute):
-            return following.time_utc
+    for index in range(len(visible) - 1):
+        if visible[index] and not visible[index + 1]:
+            return times[index + 1]
     return None
 
 
 def _aggregate(series: SiteTimeSeries) -> WindowAggregates:
-    points = sorted(series.series, key=lambda point: point.time_utc)
-    if not points:
+    total = len(series.time_utc)
+    if total == 0:
         raise EvaluationUnavailableError("No series points in the requested window.")
-    total = len(points)
-    sun = [point.sun_visible for point in points]
-    earth = [point.earth_visible for point in points]
+    sun_fraction = series.sun_visible_fraction
+    # Contract 1.1: Earth counts as visible when its center is above the horizon (fraction >= 0.5).
+    earth = [fraction >= EARTH_VISIBLE_MIN_FRACTION for fraction in series.earth_visible_fraction]
+    sun_visible = [fraction > 0 for fraction in sun_fraction]
 
     longest_run = 0
     run = 0
-    for visible in sun:
-        run = 0 if visible else run + 1
+    for fraction in sun_fraction:
+        run = run + 1 if fraction == 0 else 0
         longest_run = max(longest_run, run)
 
     return WindowAggregates(
-        sunlight_percent=round(100 * sum(sun) / total, 2),
+        sunlight_percent=round(100 * sum(sun_fraction) / total, 2),
         earth_visible_percent=round(100 * sum(earth) / total, 2),
         longest_darkness_hours=round(longest_run * series.time_step_minutes / 60, 2),
-        next_sunset_utc=_next_set(points, "sun_visible"),
-        next_earthset_utc=_next_set(points, "earth_visible"),
+        next_sunset_utc=_next_set(series.time_utc, sun_visible),
+        next_earthset_utc=_next_set(series.time_utc, earth),
     )
 
 
@@ -105,9 +109,7 @@ def _central_angle_degrees(lat_a: float, lon_a: float, lat_b: float, lon_b: floa
 
 def _has_artifacts(site_id: str) -> bool:
     data_dir = get_settings().resolved_data_dir
-    return (data_dir / "sites" / f"{site_id}.json").is_file() and (
-        data_dir / "terrain" / f"{site_id}.json"
-    ).is_file()
+    return has_series_artifacts(site_id) and (data_dir / "terrain" / f"{site_id}.json").is_file()
 
 
 def _nearest_site_with_artifacts(lat_deg: float, lon_deg: float) -> SiteSummary:

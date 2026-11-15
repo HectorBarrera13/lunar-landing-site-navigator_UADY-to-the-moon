@@ -5,10 +5,9 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class EphemerisConfig:
-    # Test series start: the mock mission window start used by docs/contracts (2.1 example)
-    # and the frontend MOCK_WINDOW. Not a mission date; the full 2025-2035 range comes later.
-    start_utc: str = "2027-03-15T00:00:00Z"
-    days: int = 30
+    # Contract 1.1: one yearly file per year 2025-2035, hourly grid starting Jan 1 00:00 UTC.
+    # 2027 is listed first so it is produced first (demo year).
+    years: tuple[int, ...] = (2027, 2025, 2026, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035)
     step_minutes: int = 60
     # Observer on the reference ellipsoid; terrain height changes Sun/Earth directions by < 0.001 deg.
     observer_height_m: float = 0.0

@@ -145,6 +145,10 @@ Normalization functions (0–1), evaluated over `[t0, tf]`:
 - When a criterion has no data, it is excluded and the remaining weights are renormalized; the response says so in `warnings`.
 - Free points are redirected to the nearest preset site that has a precomputed series. The evaluation is `date_specific`; there is no average-precision evaluation until `pipeline/layers` exists.
 
+**Visibility rule (R3-2) — Agreed 2026-11-15.** Sun: `sun_visible_fraction` is the fraction (0–1) of the solar disc above the terrain horizon, assuming the horizon is flat across the width of the disc; `sunlight_percent` is the mean of that fraction over the window. Earth: the center of the disc must be above the terrain horizon, with a 0° margin. Azimuth is interpolated between whole-degree horizon bins.
+
+**Horizon parameters (R3-4) — Agreed 2026-11-15.** PD-07: horizon search radius 150 km. PD-09: near field 100 m and observer height 0 m.
+
 Open (not blocking the hackathon core): distance-to-ice function, roughness metric, zone-vs-margin formula beyond the binary `is_slope_safe`.
 
 ---
@@ -221,7 +225,7 @@ If the core is late at H12, build only SF-1 with fixed requirements.
 | PGDA average illumination and Earth visibility maps (60–240 m/px) | Free-click evaluation and Site Finder | `pipeline/layers` |
 | Rasterio · NumPy · SciPy | Windowed raster reads, vector math, distance transform | `pipeline/` |
 
-Exact URLs, versions, and licenses must be registered in `data/README.md` before use. Resolution of LOLA data per region and the horizon search radius are **Pending** (SRS PD-07).
+Exact URLs, versions, and licenses must be registered in `data/README.md` before use. Resolution of LOLA data per region and the horizon search radius (150 km Agreed 2026-11-15, SRS PD-07; resolution per region still open).
 
 ---
 
@@ -259,4 +263,4 @@ Public app tested from another computer; public repository with an English READM
 
 ## 13. Open items summary
 
-PD-01 site list and coordinates · PD-02 landing zone and margin · PD-03 grid cell size · PD-04 vetoes and normalization · PD-05 palette · PD-06 modes and comparison table details · PD-07 LOLA resolution and horizon radius · PD-08 load budget · weights choice (5.2) · D1, D4, D5, D6 approval · hosting.
+PD-01 site list and coordinates · PD-02 landing zone and margin · PD-03 grid cell size · PD-04 vetoes and normalization · PD-05 palette · PD-06 modes and comparison table details · PD-07 LOLA resolution and horizon radius (radius 150 km Agreed 2026-11-15) · PD-08 load budget · PD-09 near field 100 m and observer height 0 m (Agreed 2026-11-15) · weights choice (5.2) · D1, D4, D5, D6 approval · hosting.

@@ -1,6 +1,6 @@
 # Data contracts
 
-**Status: APPROVED — project-owner approval recorded 2026-11-14 (see `AI_LOG.md`).**
+**Status: APPROVED — project-owner approval recorded 2026-11-14; section 1.1 revised to version 1.1 on 2026-11-15 (see `AI_LOG.md`).**
 
 Contracts are the only coupling between `pipeline/`, `apps/backend/`, and `apps/frontend/`. Change protocol: see "Contract changes" in the root `AGENTS.md`.
 
@@ -10,9 +10,11 @@ Conventions: `MOON_ME` frame · latitude/longitude in degrees (lon ∈ [-180, 18
 
 ## 1. Pipeline artifacts (`data/processed/`)
 
-### 1.1 Site time series — `sites/<site_id>.json`
+### 1.1 Site time series — `sites/<site_id>/horizon.json` and `sites/<site_id>/<year>.json`
 
-Produced by `pipeline/ephemeris` + `pipeline/terrain`. One file per verified preset site.
+**Version 1.1 — approved by the project owner 2026-11-15 (R3-1, R3-2, R3-4).** Supersedes the single-file `sites/<site_id>.json` of version 1.0. Produced by `pipeline/ephemeris` + `pipeline/terrain`. One directory per verified preset site; one yearly file per year 2025–2035. Files are compact JSON (no indentation), columnar, one value per time step.
+
+`horizon.json`:
 
 ```json
 {
@@ -22,25 +24,42 @@ Produced by `pipeline/ephemeris` + `pipeline/terrain`. One file per verified pre
   "lon_deg": 0.0,
   "horizon_source": "lola",
   "horizon_profile_deg": [0.0],
-  "time_step_minutes": 60,
-  "series": [
-    {
-      "time_utc": "2027-03-15T12:00:00Z",
-      "sun_azimuth_deg": 0.0,
-      "sun_elevation_deg": 0.0,
-      "sun_visible": true,
-      "earth_azimuth_deg": 0.0,
-      "earth_elevation_deg": 0.0,
-      "earth_visible": true
-    }
-  ]
+  "max_radius_m": 150000,
+  "near_field_m": 100,
+  "observer_height_m": 0.0,
+  "assumptions": ["..."]
 }
 ```
 
+`<year>.json` (e.g. `2027.json`):
+
+```json
+{
+  "site_id": "malapert-massif",
+  "year": 2027,
+  "time_step_minutes": 60,
+  "start_utc": "2027-01-01T00:00:00Z",
+  "time_utc": ["2027-01-01T00:00:00Z"],
+  "sun_azimuth_deg": [0.0],
+  "sun_elevation_deg": [0.0],
+  "sun_visible_fraction": [0.0],
+  "sun_distance_km": [0.0],
+  "sun_dir_me": [[0.0, 0.0, 0.0]],
+  "earth_azimuth_deg": [0.0],
+  "earth_elevation_deg": [0.0],
+  "earth_visible_fraction": [0.0],
+  "earth_distance_km": [0.0],
+  "earth_dir_me": [[0.0, 0.0, 0.0]]
+}
+```
+
+- All columns in a year file have the same length as `time_utc`.
 - `horizon_source`: `"lola"` (real terrain) or `"sphere"` (approximate, near side).
-- `horizon_profile_deg`: 360 values, index = azimuth in whole degrees (0 = local north, clockwise), value = horizon elevation angle including lunar curvature.
-- `*_visible`: body center above `horizon_profile_deg` at its azimuth. (Pending: center vs. limb criterion.)
-- Pending: time step and file size for the full 2025–2035 range (may require one file per year).
+- `horizon_profile_deg`: 360 values, index = azimuth in whole degrees (0 = local north, clockwise), value = horizon elevation angle including lunar curvature. `max_radius_m` = 150000 (PD-07), `near_field_m` = 100 and `observer_height_m` = 0 (PD-09).
+- `*_dir_me`: unit vector from the Moon center to the body in `MOON_ME`. `*_distance_km`: distance from the site to the body center.
+- Angular radii of the Sun and Earth are derived from the SPICE kernel radii and `*_distance_km`; no constants are stored.
+- Visibility (R3-2): `sun_visible_fraction` = fraction (0–1) of the solar disc above the horizon, assuming the horizon is flat across the disc width (horizon interpolated linearly in azimuth). `earth_visible_fraction` uses the same computation, and Earth counts as visible when its center is above the horizon (margin 0°).
+- The `sun_visible` / `earth_visible` booleans of version 1.0 are removed: consumers derive them (Sun: fraction > 0; Earth: center elevation above the horizon, equivalently fraction >= 0.5).
 
 ### 1.2 Terrain evaluation — `terrain/<site_id>.json`
 
@@ -76,9 +95,13 @@ Shape kept from the team's original contract.
 |---|---|---|
 | GET | `/api/health` | Liveness and data directory check (implemented) |
 | GET | `/api/sites` | List of preset sites (id, name, lat, lon, group) |
-| GET | `/api/sites/{site_id}/series?start=&end=` | Series sliced to the window, plus horizon profile |
+| GET | `/api/sites/{site_id}/series?start=&end=` | Series sliced to the window (columns of 1.1), plus `horizon.json` content. 404 if the site is not precomputed; 422 if the window is inverted or outside 2025–2035 |
 | POST | `/api/evaluate` | Suitability Index for a site/point and window |
 | GET | `/api/layers/{region_id}` | Layer metadata; images served as static files |
+
+### 2.0 `GET /api/sites/{site_id}/series`
+
+Response = all fields of `horizon.json` + `time_step_minutes` + the columns of the year files (section 1.1) concatenated and sliced to `[start, end]` (inclusive). Year, `start_utc` and `site_id` of the year files are not repeated. The window may span several years.
 
 ### 2.1 `POST /api/evaluate`
 
