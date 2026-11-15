@@ -20,6 +20,33 @@ Every dataset used must be listed here before it is used in code. QA owns this t
 
 Notes:
 
+### Official landing site imagery (curated by the PO on 2026-11-15)
+
+Used by `apps/frontend` as the base image of the 2D landing view (`LandingCanvas`), committed at
+`apps/frontend/public/images/sites/<site_id>.png`. These are the official browse mosaics of the
+LROC NAC Region-of-Interest (ROI) controlled products: each product is centered on the site
+coordinates (product-id suffix `_E/PyyyN/Szzzz` = center lat/lon to 0.1°) and is **illustrative**
+for our purposes — the drawn zone and margin remain to scale, but the image itself is not
+re-registered to the site point. Credit: NASA/GSFC/Arizona State University. For the south-pole
+ROI mosaics, cite Henriksen et al. 2023, European Lunar Symposium, pg. 134-135 (product-page
+citation). Accessed 2026-11-15.
+
+| site_id | Product page (`https://data.lroc.im-ldi.com/lroc/view_rdr/…`) | Browse file downloaded | Pixel size |
+|---|---|---|---|
+| `peak-near-cabeus-b` | `NAC_ROI_CABEUSPKLO2` | `NAC_ROI_CABEUSPKLO2_P836S2912_20M.BROWSE.PNG` | 1000×1000 @ ~20 m/px |
+| `haworth` | `NAC_ROI_HAWORTH_LO1` | `NAC_ROI_HAWORTH_LO1_P867S3363_20M.BROWSE.PNG` | 1267×1261 @ ~20 m/px |
+| `malapert-massif` | `NAC_ROI_MALAPERTLO1` | `NAC_ROI_MALAPERTLO1_P860S0003_20M.BROWSE.PNG` | 1248×1078 @ ~20 m/px |
+| `mons-mouton-plateau` | `NAC_ROI_MOUTNPLTLO1` | `NAC_ROI_MOUTNPLTLO1_P843S0306_20M.BROWSE.PNG` | 1922×1447 @ ~20 m/px |
+| `mons-mouton` | `NAC_ROI_MTMOUTONLO1` | `NAC_ROI_MTMOUTONLO1_P854S0353_20M.BROWSE.PNG` | 1324×1320 @ ~20 m/px |
+| `nobile-rim-2` | `NAC_ROI_NOBILE02LO1` | `NAC_ROI_NOBILE02LO1_P839S0587_20M.BROWSE.PNG` | 1882×1882 @ ~20 m/px |
+| `de-gerlache-rim-2` | `NAC_ROI_DEGERRIMLO1` | `NAC_ROI_DEGERRIMLO1_P885S2933_20M.BROWSE.PNG` | 1175×1173 @ ~20 m/px |
+| `slater-plain` | `NAC_ROI_PSRSLATRLOA` | `NAC_ROI_PSRSLATRLOA_P875S1214.BROWSE.PNG` (no 20M variant exists) | 2051×948 |
+| `apollo-11` | `NAC_ROI_APOLLO11LOA` | `NAC_ROI_APOLLO11LOA_E004N0235_20M.BROWSE.PNG` (along-track strip; site centered) | 261×1434 @ ~20 m/px |
+| `apollo-17` | `NAC_ROI_APOLLO17LOA` | `NAC_ROI_APOLLO17LOA_E201N0308_20M.BROWSE.PNG` | 891×1708 @ ~20 m/px |
+| `chandrayaan-3` | `NAC_ROI_VIKRAM__LOA` | `NAC_ROI_VIKRAM__LOA_P705S0232_20M.BROWSE.PNG` | 941×1815 @ ~20 m/px |
+| `nobile-rim-1` | — no NAC ROI product exists for this region | placeholder tile kept | — |
+| `change-3` | — no `NAC_ROI_CHANGE3` product; the featured-site page only exposes 200×200 thumbnails | placeholder tile kept | — |
+
 - PGDA 90: the product page states "All TIF files are cloud-optimized GeoTiffs (COGs)", so they can be read by window over HTTPS.
 - PGDA 90: checked on `LDEM_80S_20MPP_ADJ.TIF` (2026-11-14): `LAYOUT=COG`, 512×512 tiles, DEFLATE, overviews 2–64, float32, nodata NaN, 30400×30400 px. CRS read from the file: `+proj=stere +lat_0=-90 +lat_ts=-90 +lon_0=0 +R=1737400 +units=m` ("Moon (2015) - Sphere / Ocentric / South Polar").
 - PGDA 78: COG status is not stated on the product page. Checked on `Site23/Site23_final_adj_5mpp_surf.tif` (2026-11-14): **not a COG** (1-row strips, no overviews, no compression; 4200×4200 px, 70.6 MB, float32, nodata NaN), same CRS as PGDA 90. Remote window reads work but need many range requests; download the site tile once to `data/raw/raster/<Site>/` and read it locally. (Malapert Massif → Site23 was QA-confirmed later on 2026-11-14: the verified site point projects inside this tile with valid data.)

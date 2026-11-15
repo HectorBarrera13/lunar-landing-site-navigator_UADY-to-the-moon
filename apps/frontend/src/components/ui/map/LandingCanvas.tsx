@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { siteImage } from '@/lib/siteImages'
 import type { TrafficLight } from '@/types'
 import { MARGIN_RADIUS_M, ZONE_RADIUS_M, createPlaceholderTile } from './landingZone'
 import type { ElementSize } from './useElementSize'
@@ -26,18 +27,53 @@ interface LandingCanvasProps {
   pxPerM: number
   /** Suitability Index traffic light for the zone stroke; null draws a neutral stroke. */
   light: TrafficLight | null
+  /** Catalog site id; picks the official base image when one is registered. */
+  siteId: string | null
   label: string
   describedBy: string
 }
 
+/** Decoded base images shared across mounts; resolves null when the file is unavailable. */
+const baseImageCache = new Map<string, Promise<HTMLImageElement | null>>()
+
+function loadBaseImage(src: string): Promise<HTMLImageElement | null> {
+  const cached = baseImageCache.get(src)
+  if (cached !== undefined) return cached
+  const loading = new Promise<HTMLImageElement | null>((resolve) => {
+    const image = new Image()
+    image.onload = () => resolve(image)
+    image.onerror = () => resolve(null)
+    image.src = src
+  })
+  baseImageCache.set(src, loading)
+  return loading
+}
+
 /**
- * Canvas 2D drawing of the landing zone, to scale: placeholder base, error margin ring (dotted,
- * neutral), zone circle (traffic-light stroke only, never a fill) and the proposed landing point.
- * Redraws only when the size, DPR, scale or light change.
+ * Canvas 2D drawing of the landing zone, to scale: official LROC base image centered on the
+ * site (placeholder pattern when none), error margin ring (dotted, neutral), zone circle
+ * (traffic-light stroke only, never a fill) and the proposed landing point.
+ * Redraws when the size, DPR, scale, light or base image change.
  */
-export default function LandingCanvas({ size, pxPerM, light, label, describedBy }: LandingCanvasProps) {
+export default function LandingCanvas({ size, pxPerM, light, siteId, label, describedBy }: LandingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const tile = useMemo(() => createPlaceholderTile(), [])
+  const [baseImage, setBaseImage] = useState<HTMLImageElement | null>(null)
+  const imageSrc = siteImage(siteId)?.src ?? null
+
+  useEffect(() => {
+    if (imageSrc === null) {
+      setBaseImage(null)
+      return
+    }
+    let active = true
+    void loadBaseImage(imageSrc).then((image) => {
+      if (active) setBaseImage(image)
+    })
+    return () => {
+      active = false
+    }
+  }, [imageSrc])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -56,10 +92,18 @@ export default function LandingCanvas({ size, pxPerM, light, label, describedBy 
 
     ctx.fillStyle = readToken(styles, 'base')
     ctx.fillRect(0, 0, width, height)
-    const pattern = tile === null ? null : ctx.createPattern(tile, 'repeat')
-    if (pattern !== null) {
-      ctx.fillStyle = pattern
-      ctx.fillRect(0, 0, width, height)
+    if (baseImage !== null) {
+      // Cover fit anchored on the image center, which the product metadata places on the site.
+      const scale = Math.max(width / baseImage.width, height / baseImage.height)
+      const srcW = width / scale
+      const srcH = height / scale
+      ctx.drawImage(baseImage, (baseImage.width - srcW) / 2, (baseImage.height - srcH) / 2, srcW, srcH, 0, 0, width, height)
+    } else {
+      const pattern = tile === null ? null : ctx.createPattern(tile, 'repeat')
+      if (pattern !== null) {
+        ctx.fillStyle = pattern
+        ctx.fillRect(0, 0, width, height)
+      }
     }
 
     const cx = width / 2
@@ -99,7 +143,7 @@ export default function LandingCanvas({ size, pxPerM, light, label, describedBy 
     ctx.lineTo(cx, cy + arm)
     ctx.stroke()
     ctx.strokeRect(cx - box + 0.5, cy - box + 0.5, box * 2 - 1, box * 2 - 1)
-  }, [size, pxPerM, light, tile])
+  }, [size, pxPerM, light, tile, baseImage])
 
   return (
     <canvas
