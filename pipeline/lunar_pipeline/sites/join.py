@@ -1,4 +1,4 @@
-"""Pure join of ephemeris columns with a 360-degree horizon profile (docs/contracts 1.1)."""
+"""Pure join of ephemeris columns with a 360-degree horizon profile (docs/contracts §1.1)."""
 
 from collections.abc import Sequence
 from typing import Any
@@ -67,7 +67,7 @@ def _round(array: np.ndarray, decimals: int) -> list[Any]:
 
 
 def build_year_series(ephemeris: dict[str, Any], profile_deg: np.ndarray) -> dict[str, Any]:
-    """Contract 1.1 `<year>.json` payload from an ephemeris interim payload and a horizon profile."""
+    """Contract §1.1 `<year>.json` payload from an ephemeris interim payload and a horizon profile."""
     out: dict[str, Any] = {
         "site_id": _required(ephemeris, "site_id"),
         "year": int(_required(ephemeris, "year")),
@@ -97,7 +97,7 @@ def build_year_series(ephemeris: dict[str, Any], profile_deg: np.ndarray) -> dic
 
 
 def build_horizon(horizon: dict[str, Any], name: str) -> dict[str, Any]:
-    """Contract 1.1 `horizon.json` payload from the terrain horizon interim payload."""
+    """Contract §1.1 `horizon.json` payload from the terrain horizon interim payload."""
     source = _required(horizon, "horizon_source")
     if source not in HORIZON_SOURCES:
         raise ValueError(f"horizon_source must be one of {HORIZON_SOURCES}, got {source!r}.")

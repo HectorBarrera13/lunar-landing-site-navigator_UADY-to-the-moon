@@ -1,4 +1,4 @@
-"""`GET /api/sites/{site_id}/series` models (docs/contracts 1.1 and 2.0, version 1.1)."""
+"""`GET /api/sites/{site_id}/series` models (docs/contracts §1.1 and §2.0, version 1.2)."""
 
 from typing import Literal
 

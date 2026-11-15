@@ -1,4 +1,4 @@
-"""Loads precomputed site time series from data/processed/sites/<id>/ (contract 1.1, version 1.1)."""
+"""Loads precomputed site time series from data/processed/sites/<id>/ (contract §1.1, version 1.2)."""
 
 import json
 import logging

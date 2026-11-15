@@ -1,4 +1,4 @@
-// Mirrors docs/contracts/README.md (approved 2026-11-14; section 1.1 version 1.1 and API 2.0, 2026-11-15). Do not diverge.
+// Mirrors docs/contracts/README.md (version 1.2, approved 2026-11-15). Do not diverge.
 
 export type HorizonSource = 'lola' | 'sphere'
 
@@ -21,7 +21,7 @@ export interface SiteListItem {
 export type DirectionMe = [number, number, number]
 
 /**
- * GET /api/sites/{site_id}/series (contract 2.0, version 1.1): `horizon.json` fields,
+ * GET /api/sites/{site_id}/series (contract §2.0, version 1.2): `horizon.json` fields,
  * `time_step_minutes`, and the year-file columns sliced to the window. Every column has
  * the same length as `time_utc`.
  */
@@ -106,6 +106,7 @@ export interface EvaluationMetrics {
 }
 
 export interface EvaluateResponse {
+  resolved_site_id: string
   suitability_index: number
   traffic_light: TrafficLight
   precision: Precision
