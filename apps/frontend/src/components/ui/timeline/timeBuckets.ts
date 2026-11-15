@@ -76,7 +76,8 @@ export function buildBuckets(
     while (p < points.length && Date.parse(points[p].time_utc) < startMs) p++
     while (p < points.length && Date.parse(points[p].time_utc) < endMs) {
       total += 1
-      if (points[p].sun_visible) sun += 1
+      // R3-2: sunlight share is the mean visible fraction of the solar disc.
+      sun += points[p].sun_visible_fraction
       if (points[p].earth_visible) earth += 1
       p++
     }

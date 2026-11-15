@@ -1,4 +1,4 @@
-// Mirrors docs/contracts/README.md (approved 2026-11-14). Do not diverge.
+// Mirrors docs/contracts/README.md (approved 2026-11-14; section 1.1 version 1.1, 2026-11-15). Do not diverge.
 
 export type HorizonSource = 'lola' | 'sphere'
 
@@ -17,27 +17,40 @@ export interface SiteListItem {
   lon: number | null
 }
 
-export interface SeriesPoint {
-  time_utc: string
-  sun_azimuth_deg: number
-  sun_elevation_deg: number
-  sun_visible: boolean
-  earth_azimuth_deg: number
-  earth_elevation_deg: number
-  earth_visible: boolean
-}
+/** Unit vector from the Moon center to the body, in `MOON_ME`. */
+export type DirectionMe = [number, number, number]
 
-/** sites/<site_id>.json and GET /api/sites/{site_id}/series */
-export interface SiteTimeSeries {
+/**
+ * GET /api/sites/{site_id}/series (contract 2.0, version 1.1): `horizon.json` fields,
+ * `time_step_minutes`, and the year-file columns sliced to the window. Every column has
+ * the same length as `time_utc`.
+ */
+export interface SiteSeriesResponse {
   site_id: string
   name: string
   lat_deg: number
   lon_deg: number
   horizon_source: HorizonSource
-  /** 360 values, index = azimuth in whole degrees (0 = north, clockwise). */
+  /** 360 values, index = azimuth in whole degrees (0 = north, clockwise), lunar curvature included. */
   horizon_profile_deg: number[]
+  max_radius_m: number
+  near_field_m: number
+  observer_height_m: number
+  assumptions: string[]
   time_step_minutes: number
-  series: SeriesPoint[]
+  time_utc: string[]
+  sun_azimuth_deg: number[]
+  sun_elevation_deg: number[]
+  /** Fraction (0-1) of the solar disc above the horizon (R3-2). */
+  sun_visible_fraction: number[]
+  sun_distance_km: number[]
+  sun_dir_me: DirectionMe[]
+  earth_azimuth_deg: number[]
+  earth_elevation_deg: number[]
+  /** Fraction (0-1) of the Earth disc above the horizon (R3-2). */
+  earth_visible_fraction: number[]
+  earth_distance_km: number[]
+  earth_dir_me: DirectionMe[]
 }
 
 /** terrain/<site_id>.json */

@@ -12,7 +12,7 @@ export interface BodyReading {
   azimuthDeg: number
   elevationDeg: number
   visible: boolean
-  /** 100 or 0 today; see the TODO in `readBody`. */
+  /** Share of the disc above the terrain (contract 1.1 `<body>_visible_fraction`). */
   visiblePercent: number
   marginDeg: number
 }
@@ -21,13 +21,13 @@ export function readBody(point: SeriesPoint, profile: readonly number[], body: B
   const azimuthDeg = body === 'sun' ? point.sun_azimuth_deg : point.earth_azimuth_deg
   const elevationDeg = body === 'sun' ? point.sun_elevation_deg : point.earth_elevation_deg
   const visible = body === 'sun' ? point.sun_visible : point.earth_visible
+  const fraction = body === 'sun' ? point.sun_visible_fraction : point.earth_visible_fraction
   return {
     azimuthDeg,
     elevationDeg,
     visible,
-    // TODO(R3-2): use `<body>_visible_fraction` once the contract adds it; the boolean only gives 100 or 0.
-    visiblePercent: visible ? 100 : 0,
-    // Display only: interpolated between whole-degree bins (the backend `*_visible` uses the nearest bin).
+    visiblePercent: Math.round(100 * fraction),
+    // Display only: interpolated between whole-degree bins (the pipeline fraction also interpolates linearly).
     marginDeg: elevationDeg - horizonAt(profile, azimuthDeg),
   }
 }
