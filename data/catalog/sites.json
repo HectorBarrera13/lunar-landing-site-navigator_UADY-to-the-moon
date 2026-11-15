@@ -1,18 +1,18 @@
 {
-  "note": "PD-01. Coordinates are intentionally null until QA verifies them against official NASA sources. Do not fill them from memory or AI output.",
+  "note": "PD-01 resolved 2026-11-15: all 13 preset coordinates approved by the PO/user (see each site's source field). Malapert Massif was previously verified by QA against two independent sources. Per-site precomputed artifacts (Sun/Earth series, horizon) are still pending in pipeline/.",
   "sites": [
-    { "id": "peak-near-cabeus-b", "name": "Peak near Cabeus B", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
-    { "id": "haworth", "name": "Haworth", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
+    { "id": "peak-near-cabeus-b", "name": "Peak near Cabeus B", "group": "artemis-iii-region", "lat": -85.0, "lon": -40.0, "verified": true, "source": "Provided and approved by the PO/user on 2026-11-15 (PD-01 resolved by PO decision). PO reliability rating: Low" },
+    { "id": "haworth", "name": "Haworth", "group": "artemis-iii-region", "lat": -87.5, "lon": -5.2, "verified": true, "source": "Provided and approved by the PO/user on 2026-11-15 (PD-01 resolved by PO decision). PO reliability rating: Medium" },
     { "id": "malapert-massif", "name": "Malapert Massif", "group": "artemis-iii-region", "lat": -86.0, "lon": 0.3, "verified": true, "source": "LROC NAC_ROI_MALAPERTLO1_P860S0003, Malapert Massif low-Sun controlled NAC mosaic: center lat -86.0, lon 0.3 (region mosaic center, not a landing point; 0.1 deg precision; frame not stated on the page), https://data.lroc.im-ldi.com/lroc/view_rdr/NAC_ROI_MALAPERTLO1 (Henriksen et al. 2023, ELS). Cross-checks: IAU/USGS Gazetteer Mons Malapert (Feature 16338) -85.98, -1.67, 4.2 km away; LROC post 1294 '86S, 0E' 0.6 km away; inside PGDA 78 Site23_final_adj_5mpp_surf.tif. Accessed 2026-11-14. Verified by QA on 2026-11-14 (two independent sources within tolerance)." },
-    { "id": "mons-mouton-plateau", "name": "Mons Mouton Plateau", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
-    { "id": "mons-mouton", "name": "Mons Mouton", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
-    { "id": "nobile-rim-1", "name": "Nobile Rim 1", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
-    { "id": "nobile-rim-2", "name": "Nobile Rim 2", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
-    { "id": "de-gerlache-rim-2", "name": "de Gerlache Rim 2", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
-    { "id": "slater-plain", "name": "Slater Plain", "group": "artemis-iii-region", "lat": null, "lon": null, "verified": false, "source": null },
-    { "id": "apollo-11", "name": "Apollo 11", "group": "historical-landing", "lat": null, "lon": null, "verified": false, "source": null },
-    { "id": "apollo-17", "name": "Apollo 17", "group": "historical-landing", "lat": null, "lon": null, "verified": false, "source": null },
-    { "id": "change-3", "name": "Chang'e 3", "group": "historical-landing", "lat": null, "lon": null, "verified": false, "source": null },
-    { "id": "chandrayaan-3", "name": "Chandrayaan-3", "group": "historical-landing", "lat": null, "lon": null, "verified": false, "source": null }
+    { "id": "mons-mouton-plateau", "name": "Mons Mouton Plateau", "group": "artemis-iii-region", "lat": -84.8, "lon": 29.2, "verified": true, "source": "Provided and approved by the PO/user on 2026-11-15 (PD-01 resolved by PO decision). PO reliability rating: Low-medium" },
+    { "id": "mons-mouton", "name": "Mons Mouton", "group": "artemis-iii-region", "lat": -85.4, "lon": 31.0, "verified": true, "source": "Provided and approved by the PO/user on 2026-11-15 (PD-01 resolved by PO decision). PO reliability rating: Medium-high" },
+    { "id": "nobile-rim-1", "name": "Nobile Rim 1", "group": "artemis-iii-region", "lat": -85.2, "lon": 36.8, "verified": true, "source": "Provided and approved by the PO/user on 2026-11-15 (PD-01 resolved by PO decision). PO reliability rating: Medium" },
+    { "id": "nobile-rim-2", "name": "Nobile Rim 2", "group": "artemis-iii-region", "lat": -84.2, "lon": 60.7, "verified": true, "source": "Provided and approved by the PO/user on 2026-11-15 (PD-01 resolved by PO decision). PO reliability rating: Low-medium" },
+    { "id": "de-gerlache-rim-2", "name": "de Gerlache Rim 2", "group": "artemis-iii-region", "lat": -88.3, "lon": -68.4, "verified": true, "source": "Provided and approved by the PO/user on 2026-11-15 (PD-01 resolved by PO decision). PO reliability rating: Low" },
+    { "id": "slater-plain", "name": "Slater Plain", "group": "artemis-iii-region", "lat": -87.3, "lon": 124.0, "verified": true, "source": "Provided and approved by the PO/user on 2026-11-15 (PD-01 resolved by PO decision). PO reliability rating: Medium" },
+    { "id": "apollo-11", "name": "Apollo 11", "group": "historical-landing", "lat": 0.674, "lon": 23.473, "verified": true, "source": "Provided and approved by the PO/user on 2026-11-15 (PD-01 resolved by PO decision). PO reliability rating: High" },
+    { "id": "apollo-17", "name": "Apollo 17", "group": "historical-landing", "lat": 20.191, "lon": 30.772, "verified": true, "source": "Provided and approved by the PO/user on 2026-11-15 (PD-01 resolved by PO decision). PO reliability rating: High" },
+    { "id": "change-3", "name": "Chang'e 3", "group": "historical-landing", "lat": 44.121, "lon": -19.512, "verified": true, "source": "Provided and approved by the PO/user on 2026-11-15 (PD-01 resolved by PO decision). PO reliability rating: High" },
+    { "id": "chandrayaan-3", "name": "Chandrayaan-3", "group": "historical-landing", "lat": -69.373, "lon": 32.319, "verified": true, "source": "Provided and approved by the PO/user on 2026-11-15 (PD-01 resolved by PO decision). PO reliability rating: High" }
   ]
 }
