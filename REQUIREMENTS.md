@@ -153,6 +153,7 @@ Normalization functions (0–1), evaluated over `[t0, tf]`:
 
 - **R3-5:** The landing zone is filled with the Suitability Index traffic-light color. The error margin is a neutral dotted ring. Icons and text accompany the color; color is never the only status indicator.
 - **R3-6:** Comparison supports up to three site/window scenarios, including the `+N days` shift. A free-point selection continues to resolve silently to the nearest precomputed preset site; the UI may identify that preset without changing the evaluation precision.
+- **Demo defaults:** The initial Malapert mission window is `2027-03-15T00:00:00Z` to `2027-03-29T00:00:00Z`. The **"Sunlit example"** shortcut selects `2027-03-31T00:00:00Z` to `2027-04-03T00:00:00Z` to demonstrate a window with sunlight.
 - **Horizons validation tolerance:** the maximum absolute difference accepted for the current QA comparison is `0.000045°` for azimuth or elevation, with refraction disabled.
 
 Open (not blocking the hackathon core): distance-to-ice function, roughness metric, zone-vs-margin formula beyond the binary `is_slope_safe`.
