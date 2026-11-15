@@ -1,12 +1,15 @@
-import { ICON_BUTTON, LABEL, MONO_NUM } from '@/components/ui/common/styles'
+import { FOCUS_RING, ICON_BUTTON, LABEL, MONO_NUM } from '@/components/ui/common/styles'
 import { pointColor, pointLabel } from '@/lib/pointColors'
+import { siteImage } from '@/lib/siteImages'
 import { useAppStore } from '@/store'
 import type { ComparedLocation } from '@/types'
 import { formatLat, formatLon } from './formatCoords'
+import CriterionRow from './CriterionRow'
 import IndexDelta from './IndexDelta'
 import NearestSiteNote from './NearestSiteNote'
 import ScoreCell from './ScoreCell'
 import { POINT_INFO_STRINGS as S } from './strings'
+import TrafficLightBadge from './TrafficLightBadge'
 import type { CompareResult } from './useCompareResults'
 
 interface CompareCardProps {
@@ -16,24 +19,56 @@ interface CompareCardProps {
   shift: { days: number; result: CompareResult | undefined } | null
   /** 1-based position by base Suitability Index; null while loading or failed. */
   rank: number | null
+  /** Opens the 2D landing view focused on this location. */
+  onOpenLanding: (location: ComparedLocation) => void
 }
 
-export default function CompareCard({ location, result, shift, rank }: CompareCardProps) {
+export default function CompareCard({ location, result, shift, rank, onOpenLanding }: CompareCardProps) {
   const removeFromCompare = useAppStore((s) => s.removeFromCompare)
   const color = pointColor(location.colorIndex)
   const title = location.name ?? pointLabel(location.colorIndex)
   const headingId = `cc-${location.id}`
   const data = result?.data ?? null
   const shiftedData = shift?.result?.data ?? null
+  const imagery = siteImage(location.id)
+  const gradientId = `cc-grad-${location.id}`
 
   return (
     <article aria-labelledby={headingId} className="border border-line bg-panel text-sm">
+      <button
+        type="button"
+        onClick={() => onOpenLanding(location)}
+        aria-label={`${S.openLanding}: ${title}`}
+        className={`relative block h-16 w-full overflow-hidden border-b border-line text-left focus:outline-none ${FOCUS_RING}`}
+      >
+        {imagery !== null ? (
+          <img src={imagery.src} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <svg aria-hidden="true" viewBox="0 0 120 32" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#3a4046" />
+                <stop offset="0.5" stopColor="#1a1e22" />
+                <stop offset="1" stopColor="#4a5158" />
+              </linearGradient>
+            </defs>
+            <rect width="120" height="32" fill={`url(#${gradientId})`} />
+            <path d="M0 22 Q 14 12 30 20 T 62 18 T 94 22 T 120 16 V32 H0 Z" fill="#0d1013" opacity="0.55" />
+            <path d="M0 27 Q 20 20 40 26 T 80 24 T 120 28 V32 H0 Z" fill="#0d1013" opacity="0.75" />
+          </svg>
+        )}
+        <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-base/85 via-base/10 to-transparent" />
+        <span className="absolute bottom-1 left-2 flex items-center gap-2">
+          {rank !== null && <span className={`font-display text-xs font-semibold text-primary ${MONO_NUM}`}>#{rank}</span>}
+          {data !== null && <TrafficLightBadge light={data.traffic_light} />}
+        </span>
+      </button>
+
       <div className="flex h-8 items-center justify-between gap-2 border-b border-line pr-1 pl-3">
         <h3
           id={headingId}
           className="flex min-w-0 items-center gap-2 font-display text-xs font-semibold uppercase tracking-[0.14em]"
         >
-          {rank !== null && <span className={`text-primary ${MONO_NUM}`}>#{rank}</span>}
           {color !== null && (
             <span aria-hidden="true" style={{ backgroundColor: color }} className="inline-block size-2 shrink-0" />
           )}
@@ -76,13 +111,7 @@ export default function CompareCard({ location, result, shift, rank }: CompareCa
               <ul className="mt-1 space-y-1.5">
                 {data.criteria.map((c) => (
                   <li key={c.code}>
-                    <div className="flex justify-between gap-2 text-xs">
-                      <span>{c.label}</span>
-                      <span className={MONO_NUM}>{c.contribution}</span>
-                    </div>
-                    <div className="text-[11px] text-ink-subtle">
-                      {S.weight} <span className={MONO_NUM}>{c.weight}</span> · {c.detail}
-                    </div>
+                    <CriterionRow criterion={c} />
                   </li>
                 ))}
               </ul>
