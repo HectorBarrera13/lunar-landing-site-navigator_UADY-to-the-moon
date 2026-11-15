@@ -13,7 +13,7 @@ export default function MoonGlobe() {
   const view = useAppStore((s) => s.moonMapView)
   const texture = useTexture(MOON_MAP_TEXTURES[view])
   const geometry = useMemo(() => new SphereGeometry(MOON_RADIUS, 64, 64), [])
-  const pickPoint = useAppStore((s) => s.pickPoint)
+  const focusNearestSite = useAppStore((s) => s.focusNearestSite)
 
   useMemo(() => {
     texture.colorSpace = SRGBColorSpace
@@ -25,7 +25,7 @@ export default function MoonGlobe() {
     event.stopPropagation()
     if (event.delta > DRAG_THRESHOLD_PX) return
     const { latDeg, lonDeg } = pointToLatLon(event.point)
-    pickPoint(latDeg, lonDeg)
+    focusNearestSite(latDeg, lonDeg)
   }
 
   return (

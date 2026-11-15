@@ -1,9 +1,10 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { getMockSuitabilityIndex } from '@/lib/api'
 import { pointColor, pointLabel } from '@/lib/pointColors'
 import { MAX_COMPARED, useAppStore } from '@/store'
 import { formatLat, formatLon } from './formatCoords'
 import { POINT_INFO_STRINGS as S } from './strings'
+import { LIGHT_ICON } from './trafficLight'
+import { useFocusEvaluation } from './useFocusEvaluation'
 
 const OFFSET = 14
 const MARGIN = 8
@@ -15,6 +16,7 @@ export default function PointInfoCard() {
   const compared = useAppStore((s) => s.compared)
   const addToCompare = useAppStore((s) => s.addToCompare)
   const clearSelection = useAppStore((s) => s.clearSelection)
+  const { data, failed } = useFocusEvaluation(focus)
   const cardRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 256, h: 160 })
 
@@ -75,11 +77,19 @@ export default function PointInfoCard() {
         </dl>
         <p className="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <span className="text-star-100/70">{S.suitabilityIndex}</span>
-          <span className="text-lg font-semibold">{getMockSuitabilityIndex(focus.latDeg, focus.lonDeg)}</span>
-          <span className="inline-flex items-center gap-1 rounded border border-star-100/40 px-1.5 py-0.5 text-[10px] uppercase">
-            <span aria-hidden="true">&#x26A0;</span>
-            {S.mockBadge}
-          </span>
+          {data !== null ? (
+            <>
+              <span className="text-lg font-semibold">{data.suitability_index}</span>
+              <span className="inline-flex items-center gap-1 rounded border border-star-100/40 px-1.5 py-0.5 text-xs">
+                <span aria-hidden="true">{LIGHT_ICON[data.traffic_light]}</span>
+                {S.trafficLight[data.traffic_light]}
+              </span>
+            </>
+          ) : failed ? (
+            <span role="alert">{S.error}</span>
+          ) : (
+            <span role="status">{S.loading}</span>
+          )}
         </p>
         <button
           type="button"

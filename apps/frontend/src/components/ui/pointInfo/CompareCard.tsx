@@ -3,9 +3,8 @@ import { useAppStore } from '@/store'
 import type { FocusedLocation } from '@/types'
 import { formatLat, formatLon } from './formatCoords'
 import { POINT_INFO_STRINGS as S } from './strings'
+import { LIGHT_ICON } from './trafficLight'
 import type { CompareResult } from './useCompareResults'
-
-const LIGHT_ICON = { green: '✔', orange: '⚠', red: '✖' } as const
 
 interface CompareCardProps {
   location: FocusedLocation
@@ -56,10 +55,6 @@ export default function CompareCard({ location, result, rank }: CompareCardProps
           <p className="flex flex-wrap items-center gap-2">
             <span className="text-star-100/70">{S.suitabilityIndex}</span>
             <span className="text-2xl font-semibold">{data.suitability_index}</span>
-            <span className="inline-flex items-center gap-1 rounded border border-star-100/40 px-1.5 py-0.5 text-[10px] uppercase">
-              <span aria-hidden="true">&#x26A0;</span>
-              {S.mockBadge}
-            </span>
             <span className="inline-flex items-center gap-1 rounded border border-star-100/40 px-1.5 py-0.5 text-xs">
               <span aria-hidden="true">{LIGHT_ICON[data.traffic_light]}</span>
               {S.trafficLight[data.traffic_light]}
@@ -98,7 +93,18 @@ export default function CompareCard({ location, result, rank }: CompareCardProps
               </ul>
             )}
           </section>
-          <p className="text-xs text-star-100/70">{S.mockWarning}</p>
+          <p className="text-xs text-star-100/70">{S.precision[data.precision]}</p>
+
+          {data.warnings.length > 0 && (
+            <section aria-label={S.warnings} className="text-xs text-star-100/70">
+              <h4 className="font-semibold">{S.warnings}</h4>
+              <ul className="mt-1 space-y-1">
+                {data.warnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
       )}
     </article>

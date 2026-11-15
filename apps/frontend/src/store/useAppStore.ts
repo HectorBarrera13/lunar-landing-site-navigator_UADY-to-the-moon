@@ -1,12 +1,14 @@
 import { create } from 'zustand'
 import type { ActiveLayer, CameraView, MoonMapView, Selection, ViewMode } from '@/store/types'
-import { PREVIEW_COLOR_INDEX } from '@/lib/pointColors'
-import type { FocusedLocation, ScreenAnchor, SiteListItem } from '@/types'
+import { getSites } from '@/lib/api'
+import { centralAngleDegrees } from '@/lib/geo'
+import { DEFAULT_MISSION_WINDOW } from '@/lib/mission'
+import { bodiesForSeries } from '@/lib/orientation'
+import type { FocusedLocation, ScreenAnchor, SiteListItem, SiteTimeSeries } from '@/types'
+
+export type LoadStatus = 'idle' | 'loading' | 'ready' | 'error'
 
 export const MAX_COMPARED = 4
-/** Compared points plus one temporary preview. */
-export const MAX_PICKED_POINTS = MAX_COMPARED + 1
-let pointCounter = 0
 
 export interface MissionState {
   t0: string | null
@@ -26,14 +28,19 @@ export interface BodyDirections {
 export interface AppState {
   mission: MissionState
   bodies: BodyDirections
+  /** Preset site catalog from `GET /api/sites`. */
+  sites: SiteListItem[]
+  sitesStatus: LoadStatus
+  /** Precomputed series for the focused site (or a default site); null until loaded. */
+  siteSeries: SiteTimeSeries | null
+  seriesStatus: LoadStatus
   selection: Selection
   mode: ViewMode
   /** Camera framing: Moon close-up or wide Perspective (Sun, Earth and Moon). */
   cameraView: CameraView
   activeLayer: ActiveLayer
+  /** Texture displayed on the Moon globe. */
   moonMapView: MoonMapView
-  /** Compared points plus at most one temporary preview (the latest pick if not compared). */
-  pickedPoints: FocusedLocation[]
   /** Location shown in the info card/sidebar. Written by 2D and 3D, read by both. */
   focus: FocusedLocation | null
   /** Screen position of `focus`, written by the 3D layer every frame it changes. */
@@ -43,12 +50,14 @@ export interface AppState {
   compared: FocusedLocation[]
   setMissionWindow: (t0: string, tf: string) => void
   setTimeCursor: (timeUtc: string) => void
+  loadSites: () => Promise<void>
+  focusNearestSite: (latDeg: number, lonDeg: number) => void
+  setSiteSeries: (series: SiteTimeSeries | null) => void
+  setSeriesStatus: (status: LoadStatus) => void
   selectSite: (siteId: string) => void
   selectPoint: (latDeg: number, lonDeg: number) => void
   clearSelection: () => void
-  pickPoint: (latDeg: number, lonDeg: number) => void
   focusSite: (site: SiteListItem) => void
-  focusPoint: (id: string) => void
   setAnchor: (anchor: ScreenAnchor | null) => void
   addToCompare: () => void
   removeFromCompare: (id: string) => void
@@ -67,81 +76,86 @@ function clampCursor(cursor: string | null, t0: string, tf: string): string {
   return cursor as string
 }
 
-/** Lowest free palette slot among the 4 real colors; the neutral preview slot when all are used. */
-function lowestFreeColor(points: FocusedLocation[]): number {
-  const used = new Set(points.map((p) => p.colorIndex))
-  let i = 0
-  while (used.has(i) && i < PREVIEW_COLOR_INDEX) i += 1
-  return i
+type LocatedSite = SiteListItem & { lat: number; lon: number }
+
+function hasCoordinates(site: SiteListItem): site is LocatedSite {
+  return site.lat !== null && site.lon !== null
 }
 
-/** pickedPoints without the previously focused point when it is not compared. */
-function dropUncompared(s: AppState, prev: FocusedLocation | null): FocusedLocation[] {
-  if (prev === null || s.compared.some((c) => c.id === prev.id)) return s.pickedPoints
-  return s.pickedPoints.filter((p) => p.id !== prev.id)
-}
-
-export const useAppStore = create<AppState>()((set) => ({
-  mission: { t0: null, tf: null, timeCursor: null },
-  // MOCK defaults: not computed from ephemerides.
+export const useAppStore = create<AppState>()((set, get) => ({
+  // Demo window until the FR-03 calendar exists; it matches the precomputed artifacts.
+  mission: {
+    t0: DEFAULT_MISSION_WINDOW.startUtc,
+    tf: DEFAULT_MISSION_WINDOW.endUtc,
+    timeCursor: DEFAULT_MISSION_WINDOW.startUtc,
+  },
+  // Placeholder directions until the site series loads; not computed from ephemerides.
   bodies: { sunDir: [-0.88, 0.28, 0.38], earthDir: [0.9, -0.12, -0.42] },
+  sites: [],
+  sitesStatus: 'idle',
+  siteSeries: null,
+  seriesStatus: 'idle',
   selection: { kind: 'none' },
   mode: '3d',
   cameraView: 'moon',
   activeLayer: 'illumination',
   moonMapView: 'albedo',
-  pickedPoints: [],
   focus: null,
   anchor: null,
   sidebarOpen: false,
   compared: [],
   setMissionWindow: (t0, tf) =>
     set((s) => ({ mission: { t0, tf, timeCursor: clampCursor(s.mission.timeCursor, t0, tf) } })),
-  setTimeCursor: (timeUtc) => set((s) => ({ mission: { ...s.mission, timeCursor: timeUtc } })),
+  setTimeCursor: (timeUtc) =>
+    set((s) => ({
+      mission: { ...s.mission, timeCursor: timeUtc },
+      bodies: s.siteSeries === null ? s.bodies : (bodiesForSeries(s.siteSeries, timeUtc) ?? s.bodies),
+    })),
+  loadSites: async () => {
+    if (get().sitesStatus !== 'idle') return
+    set({ sitesStatus: 'loading' })
+    try {
+      const sites = await getSites()
+      set({ sites, sitesStatus: 'ready' })
+    } catch {
+      set({ sitesStatus: 'error' })
+    }
+  },
+  focusNearestSite: (latDeg, lonDeg) => {
+    // R-10/R-11: the far side has no direct-to-Earth communication.
+    if (latDeg > -80 && Math.abs(lonDeg) > 90) return
+    const candidates = get().sites.filter(hasCoordinates)
+    let nearest: LocatedSite | null = null
+    let nearestAngle = Number.POSITIVE_INFINITY
+    for (const site of candidates) {
+      const angle = centralAngleDegrees(latDeg, lonDeg, site.lat, site.lon)
+      if (angle < nearestAngle) {
+        nearest = site
+        nearestAngle = angle
+      }
+    }
+    if (nearest !== null) get().focusSite(nearest)
+  },
+  setSiteSeries: (series) =>
+    set((s) => ({
+      siteSeries: series,
+      seriesStatus: series === null ? 'idle' : 'ready',
+      bodies:
+        series === null ? s.bodies : (bodiesForSeries(series, s.mission.timeCursor) ?? s.bodies),
+    })),
+  setSeriesStatus: (seriesStatus) => set({ seriesStatus }),
   selectSite: (siteId) => set({ selection: { kind: 'site', siteId } }),
   selectPoint: (latDeg, lonDeg) => set({ selection: { kind: 'point', latDeg, lonDeg } }),
   clearSelection: () =>
     set({ selection: { kind: 'none' }, focus: null, anchor: null, sidebarOpen: false }),
-  pickPoint: (latDeg, lonDeg) =>
-    set((s) => {
-      pointCounter += 1
-      const comparedIds = new Set(s.compared.map((c) => c.id))
-      const kept = s.pickedPoints.filter((p) => comparedIds.has(p.id))
-      const focus: FocusedLocation = {
-        kind: 'point',
-        id: `point-${pointCounter}`,
-        name: null,
-        latDeg,
-        lonDeg,
-        colorIndex: lowestFreeColor(kept),
-      }
-      return {
-        pickedPoints: [...kept, focus],
-        focus,
-        anchor: null,
-        cameraView: 'moon',
-        selection: { kind: 'point', latDeg, lonDeg },
-      }
-    }),
   focusSite: (site) =>
-    set((s) => ({
-      focus: { kind: 'site', id: site.id, name: site.name, latDeg: site.lat, lonDeg: site.lon },
-      pickedPoints: s.focus?.id === site.id ? s.pickedPoints : dropUncompared(s, s.focus),
-      anchor: null,
-      cameraView: 'moon',
-      selection: { kind: 'site', siteId: site.id },
-    })),
-  focusPoint: (id) =>
-    set((s) => {
-      const p = s.pickedPoints.find((q) => q.id === id)
-      if (!p) return {}
-      const pickedPoints = s.focus?.id === id ? s.pickedPoints : dropUncompared(s, s.focus)
+    set(() => {
+      if (site.lat === null || site.lon === null) return {}
       return {
-        focus: p,
-        pickedPoints,
+        focus: { kind: 'site', id: site.id, name: site.name, latDeg: site.lat, lonDeg: site.lon },
         anchor: null,
         cameraView: 'moon',
-        selection: { kind: 'point', latDeg: p.latDeg, lonDeg: p.lonDeg },
+        selection: { kind: 'site', siteId: site.id },
       }
     }),
   setAnchor: (anchor) => set({ anchor }),
@@ -150,20 +164,10 @@ export const useAppStore = create<AppState>()((set) => ({
       if (s.focus === null) return {}
       const id = s.focus.id
       if (s.compared.length >= MAX_COMPARED || s.compared.some((c) => c.id === id)) return {}
-      let pinned: FocusedLocation = { ...s.focus }
-      let pickedPoints = s.pickedPoints
-      if (pinned.kind === 'point' && pinned.colorIndex === PREVIEW_COLOR_INDEX) {
-        const others = s.pickedPoints.filter((p) => p.id !== id)
-        pinned = { ...pinned, colorIndex: lowestFreeColor(others) }
-        pickedPoints = s.pickedPoints.map((p) => (p.id === id ? pinned : p))
-      }
-      return { compared: [...s.compared, pinned], pickedPoints, focus: pinned, sidebarOpen: true }
+      return { compared: [...s.compared, { ...s.focus }], focus: s.focus, sidebarOpen: true }
     }),
   removeFromCompare: (id) =>
-    set((s) => ({
-      compared: s.compared.filter((c) => c.id !== id),
-      pickedPoints: s.focus?.id === id ? s.pickedPoints : s.pickedPoints.filter((p) => p.id !== id),
-    })),
+    set((s) => ({ compared: s.compared.filter((c) => c.id !== id) })),
   openSidebar: () => set({ sidebarOpen: true }),
   closeSidebar: () => set({ sidebarOpen: false }),
   setBodyDirections: (sunDir, earthDir) => set({ bodies: { sunDir, earthDir } }),

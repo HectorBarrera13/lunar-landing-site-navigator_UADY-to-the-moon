@@ -1,4 +1,4 @@
-// Mirrors docs/contracts/README.md (DRAFT, approved for mock use). Do not diverge.
+// Mirrors docs/contracts/README.md (approved 2026-11-14). Do not diverge.
 
 export type HorizonSource = 'lola' | 'sphere'
 
@@ -11,8 +11,10 @@ export interface SiteListItem {
   id: string
   name: string
   group: string
-  lat: number
-  lon: number
+  /** Null until QA verifies the coordinate (PD-01); consumers must skip such sites on the globe. */
+  lat: number | null
+  /** Null until QA verifies the coordinate (PD-01); consumers must skip such sites on the globe. */
+  lon: number | null
 }
 
 export interface SeriesPoint {
@@ -47,8 +49,10 @@ export interface TerrainEvaluation {
   mean_slope_degrees: number
   p95_slope_degrees: number
   is_slope_safe: boolean
-  terrain_roughness_index: number
-  nearest_ice_deposit_meters: number
+  /** Optional until the product exists (REQUIREMENTS 5.5). */
+  terrain_roughness_index?: number | null
+  /** Optional until the product exists (REQUIREMENTS 5.5). */
+  nearest_ice_deposit_meters?: number | null
 }
 
 /** POST /api/evaluate request. Either site_id or both lat_deg/lon_deg. */

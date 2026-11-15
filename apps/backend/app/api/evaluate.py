@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException
 
 from app.models.evaluate import EvaluateRequest, EvaluateResponse
-from app.services.evaluate import evaluate_mock
+from app.services.evaluate import EvaluationUnavailableError, evaluate as evaluate_target
+from app.services.series import SeriesNotFoundError
 from app.services.sites import SiteNotFoundError
+from app.services.terrain import TerrainNotFoundError
 
 router = APIRouter(tags=["evaluate"])
 
@@ -10,12 +12,20 @@ router = APIRouter(tags=["evaluate"])
 @router.post(
     "/evaluate",
     response_model=EvaluateResponse,
-    summary="Evaluate a site or point (MOCK)",
-    description="MOCK: validates the request and returns placeholder values with the contract shape. Not a real Suitability Index.",
-    responses={404: {"description": "Unknown site_id"}},
+    summary="Suitability Index for a site and mission window",
+    description=(
+        "Aggregates the precomputed series and terrain over [start_utc, end_utc]. "
+        "Free points are redirected to the nearest preset site with artifacts."
+    ),
+    responses={
+        404: {"description": "Unknown site_id or missing series/terrain artifact"},
+        422: {"description": "Far-side point, empty window, or no evaluatable preset site"},
+    },
 )
 def evaluate(request: EvaluateRequest) -> EvaluateResponse:
     try:
-        return evaluate_mock(request)
-    except SiteNotFoundError as exc:
+        return evaluate_target(request)
+    except (SiteNotFoundError, SeriesNotFoundError, TerrainNotFoundError) as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except EvaluationUnavailableError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

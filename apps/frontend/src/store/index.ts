@@ -1,4 +1,4 @@
-export { useAppStore, MAX_PICKED_POINTS, MAX_COMPARED } from './useAppStore'
+export { useAppStore, MAX_COMPARED } from './useAppStore'
 export type { AppState, BodyDirections, MissionState, Vec3 } from './useAppStore'
 export type { ActiveLayer, CameraView, MoonMapView, Selection, ViewMode } from './types'
 export type { FocusedLocation, ScreenAnchor } from '@/types'

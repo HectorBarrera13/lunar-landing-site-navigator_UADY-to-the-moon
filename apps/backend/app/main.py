@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.evaluate import router as evaluate_router
 from app.api.health import router as health_router
+from app.api.series import router as series_router
 from app.api.sites import router as sites_router
 from app.core.config import get_settings
 
@@ -20,7 +21,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url],
+    allow_origins=settings.frontend_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
@@ -28,6 +29,7 @@ app.add_middleware(
 
 app.include_router(health_router, prefix="/api")
 app.include_router(sites_router, prefix="/api")
+app.include_router(series_router, prefix="/api")
 app.include_router(evaluate_router, prefix="/api")
 
 

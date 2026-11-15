@@ -1,6 +1,6 @@
 # Data contracts
 
-**Status: DRAFT — pending team approval (decision D6).** Do not implement producers or consumers against these shapes until this status reads `Approved`.
+**Status: APPROVED — project-owner approval recorded 2026-11-14 (see `AI_LOG.md`).**
 
 Contracts are the only coupling between `pipeline/`, `apps/backend/`, and `apps/frontend/`. Change protocol: see "Contract changes" in the root `AGENTS.md`.
 
@@ -60,7 +60,8 @@ Shape kept from the team's original contract.
 }
 ```
 
-`p95_slope_degrees` is added to support the proposed slope veto (REQUIREMENTS 5.3).
+`p95_slope_degrees` is added to support the slope warning (REQUIREMENTS 5.4).
+`terrain_roughness_index` and `nearest_ice_deposit_meters` are omitted until those products exist (REQUIREMENTS 5.5); consumers must treat them as optional.
 
 ### 1.3 Regional layers — `layers/<region_id>/`
 
@@ -118,5 +119,6 @@ Response:
 ```
 
 - `traffic_light`: `"green" | "orange" | "red"`.
-- `precision`: `"date_specific"` (preset sites) | `"average"` (free points).
-- Weights and veto thresholds come from configuration (REQUIREMENTS 5.2–5.3, pending).
+- `precision`: `"date_specific"` (preset sites) | `"average"` (reserved; not implemented until `pipeline/layers` exists).
+- Free points (`lat_deg`/`lon_deg`) are redirected to the nearest preset site that has a precomputed series; the response is the site's `date_specific` evaluation. There is no `average`-precision evaluation yet.
+- Weights and veto thresholds come from configuration (REQUIREMENTS 5.2–5.5, Agreed 2026-11-14). Criteria without data are excluded and the remaining weights are renormalized; this is reported in `warnings`.
