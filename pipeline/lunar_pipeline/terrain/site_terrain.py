@@ -11,7 +11,7 @@ from pyproj import CRS, Geod, Transformer
 from scipy.ndimage import map_coordinates
 
 from lunar_pipeline.terrain.config import TerrainConfig
-from lunar_pipeline.terrain.horizon import elevation_angle_deg, profiles_by_radius, ray_lonlat
+from lunar_pipeline.terrain.horizon import elevation_angle_deg, horizon_summary, profiles_by_radius, ray_lonlat
 from lunar_pipeline.terrain.remote_window import DemWindow, read_window
 from lunar_pipeline.terrain.slope import SlopeStats, slope_stats
 from lunar_pipeline.terrain.sources import LDEM_60S_240MPP_ADJ_URL, LDEM_80S_20MPP_ADJ_URL, pgda78_url
@@ -23,6 +23,7 @@ class SiteTerrain:
     slope: SlopeStats
     is_slope_safe: bool
     profiles_deg: dict[float, np.ndarray]
+    sensitivity: dict[tuple[float, float], tuple[float, float]]
     missing_horizon_samples: int
     """DEM samples along the rays with no data (ignored by the horizon max)."""
     sources: dict[str, str]
@@ -101,13 +102,26 @@ def evaluate_site_terrain(lat_deg: float, lon_deg: float, pgda78_tile: str, conf
     angles = elevation_angle_deg(h_obs, heights, distances[np.newaxis, :], body_radius)
 
     radii = tuple(sorted(set(config.test_radii_m) | {config.horizon_max_radius_m}))
-    profiles = profiles_by_radius(angles, distances, radii)
+    profiles = profiles_by_radius(angles, distances, radii, config.min_distance_m)
+    sensitivity = {
+        (observer_height_m, min_distance_m): horizon_summary(
+            heights,
+            distances,
+            h_obs - config.observer_height_m + observer_height_m,
+            body_radius,
+            min_distance_m,
+            config.horizon_max_radius_m,
+        )
+        for observer_height_m in config.sensitivity_observer_heights_m
+        for min_distance_m in config.sensitivity_min_distances_m
+    }
 
     return SiteTerrain(
         center_elevation_m=center_elevation,
         slope=stats,
         is_slope_safe=stats.mean_deg < config.mean_slope_safe_max_deg,
         profiles_deg=profiles,
+        sensitivity=sensitivity,
         missing_horizon_samples=int(np.isnan(heights).sum()),
         sources={
             "slope": slope_url,

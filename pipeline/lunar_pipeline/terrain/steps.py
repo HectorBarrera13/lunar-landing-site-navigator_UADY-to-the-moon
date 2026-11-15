@@ -32,6 +32,17 @@ def _print_radius_comparison(terrain: SiteTerrain, config: TerrainConfig) -> Non
         )
 
 
+def _print_sensitivity(terrain: SiteTerrain, config: TerrainConfig) -> None:
+    print("  Horizon sensitivity (max / mean elevation at 150 km):")
+    for observer_height_m in config.sensitivity_observer_heights_m:
+        for min_distance_m in config.sensitivity_min_distances_m:
+            maximum, mean = terrain.sensitivity[(observer_height_m, min_distance_m)]
+            print(
+                f"    observer {observer_height_m:.0f} m, min distance {min_distance_m:.0f} m: "
+                f"max {maximum:.3f} deg, mean {mean:.3f} deg"
+            )
+
+
 def run_terrain(config: TerrainConfig = TerrainConfig()) -> None:
     sites = [s for s in load_verified_sites() if s["id"] in PGDA78_SITE_TILES]
     if not sites:
@@ -42,6 +53,7 @@ def run_terrain(config: TerrainConfig = TerrainConfig()) -> None:
         print(f"  {site_id}: lat {site['lat']}, lon {site['lon']} (tile {PGDA78_SITE_TILES[site_id]})")
         terrain = evaluate_site_terrain(site["lat"], site["lon"], PGDA78_SITE_TILES[site_id], config)
         _print_radius_comparison(terrain, config)
+        _print_sensitivity(terrain, config)
 
         radius = config.landing_radius_m
         write_json(
@@ -68,6 +80,7 @@ def run_terrain(config: TerrainConfig = TerrainConfig()) -> None:
                 "max_radius_meters": config.horizon_max_radius_m,
                 "near_radius_meters": config.near_radius_m,
                 "observer_height_meters": config.observer_height_m,
+                "min_distance_meters": config.min_distance_m,
                 "sources": terrain.sources,
                 "horizon_profile_deg": [_r(v) for v in profile],
             },

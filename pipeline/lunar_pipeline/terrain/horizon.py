@@ -36,7 +36,10 @@ def ray_lonlat(geod: Geod, lat_deg: float, lon_deg: float, distances_m: np.ndarr
 
 
 def profiles_by_radius(
-    angles_deg: np.ndarray, distances_m: np.ndarray, max_radii_m: tuple[float, ...]
+    angles_deg: np.ndarray,
+    distances_m: np.ndarray,
+    max_radii_m: tuple[float, ...],
+    min_distance_m: float = 0.0,
 ) -> dict[float, np.ndarray]:
     """Horizon profile (max elevation angle per azimuth) for each maximum search radius.
 
@@ -45,7 +48,7 @@ def profiles_by_radius(
     """
     profiles: dict[float, np.ndarray] = {}
     for radius in max_radii_m:
-        subset = angles_deg[:, distances_m <= radius]
+        subset = angles_deg[:, (distances_m >= min_distance_m) & (distances_m <= radius)]
         if subset.size == 0 or np.any(np.all(np.isnan(subset), axis=1)):
             raise ValueError(f"Horizon has azimuths without valid terrain samples within {radius:.0f} m.")
         profile = np.nanmax(subset, axis=1)
@@ -53,3 +56,28 @@ def profiles_by_radius(
             raise ValueError("Horizon elevation outside [-90, 90] degrees.")
         profiles[radius] = profile
     return profiles
+
+
+def horizon_summary(
+    heights_m: np.ndarray,
+    distances_m: np.ndarray,
+    observer_height_m: float,
+    body_radius_m: float,
+    min_distance_m: float,
+    max_radius_m: float,
+) -> tuple[float, float]:
+    """Return maximum and mean horizon elevation for one observer/range setting."""
+    angles = elevation_angle_deg(
+        observer_height_m,
+        heights_m,
+        distances_m[np.newaxis, :],
+        body_radius_m,
+    )
+    mask = (distances_m >= min_distance_m) & (distances_m <= max_radius_m)
+    subset = angles[:, mask]
+    if subset.size == 0 or np.any(np.all(np.isnan(subset), axis=1)):
+        raise ValueError("Horizon has azimuths without valid terrain samples for the sensitivity setting.")
+    profile = np.nanmax(subset, axis=1)
+    if np.any(profile < -90) or np.any(profile > 90):
+        raise ValueError("Horizon elevation outside [-90, 90] degrees.")
+    return float(profile.max()), float(profile.mean())

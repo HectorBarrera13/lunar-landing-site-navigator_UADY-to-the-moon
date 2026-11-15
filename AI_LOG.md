@@ -237,6 +237,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
   - Determinism: two runs give byte-identical outputs. `data/interim/` is ignored; terrain file is 232 bytes.
 - **Risks or pending items:** PD-07 (radius) and the near-field setting (observer height / minimum distance) strongly affect sunlight results and need a team decision; roughness and ice distance pending (5.5); contract 1.2 still DRAFT; only Malapert has a QA-confirmed tile.
 
+### 2026-11-14 — Provisional horizon near-field configuration and sensitivity
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Use configurable provisional values for horizon evaluation and run the requested near-field sensitivity test.
+- **Change description:** Added `min_distance_m` to the terrain configuration, set provisionally to `100 m`, retained `observer_height_m=0`, and applied the minimum distance when building the written horizon profile. Added sensitivity output for observer heights `0 m` and `2 m` with minimum distances `0 m`, `60 m`, and `100 m`, using the 150 km horizon.
+- **Files created/modified:** `pipeline/lunar_pipeline/terrain/config.py`, `terrain/horizon.py`, `terrain/site_terrain.py`, `terrain/steps.py`, `AI_LOG.md`; regenerated ignored `data/interim/horizon/malapert-massif.json`.
+- **Technical decisions / trade-offs:** The 100 m exclusion matches the provisional landing-zone radius; slope evaluation remains responsible for terrain inside that zone. The 150 km maximum radius remains provisional and configurable. `REQUIREMENTS.md` was intentionally not changed.
+- **Verification performed:** `python -m compileall lunar_pipeline` passed; `python -m lunar_pipeline terrain` passed. Sensitivity results (maximum / mean elevation at 150 km): observer 0 m and min distance 0/60/100 m → `8.552° / 2.091°`, `8.024° / 1.801°`, `7.458° / 1.701°`; observer 2 m and min distance 0/60/100 m → `6.414° / 1.342°`, `6.414° / 1.342°`, `6.414° / 1.333°`.
+- **Risks or pending items:** These values remain provisional pending Leader confirmation; contract 1.2 and the formal REQUIREMENTS decisions remain unchanged.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]
