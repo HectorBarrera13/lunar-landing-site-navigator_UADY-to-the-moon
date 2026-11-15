@@ -675,6 +675,16 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** Manual review of the README diff against `data/README.md` and `config.py` (lookup order root `.env` then `apps/backend/.env`); `git diff --check`.
 - **Risks or pending items:** Deep Star Maps license (QA).
 
+### 2026-11-15 — PD-02 landing zone and margin agreed
+
+- **Agent:** Claude Code (Opus 5.5)
+- **Requested task:** Record the team decision on PD-02 (300 m), confirmed with the user as: landing zone 200 m diameter (radius 100 m); the 100 m error margin is spread across the diameter, so the margin ring is 300 m in diameter (radius 150 m); slope keeps being evaluated inside the 100 m radius.
+- **Change description:** `REQUIREMENTS.md` R-22 rewritten with that geometry and marked Agreed (2026-11-15, PD-02); PD-02 removed from the open items. `terrain/config.py` comment updated (value 100 m unchanged). Frontend 2D map: `MARGIN_M` is now the 50 m radial width, so the margin ring sits at 150 m; the "provisional" chip text and the screen-reader summary now say the values are agreed.
+- **Files created/modified:** `REQUIREMENTS.md`, `pipeline/lunar_pipeline/terrain/config.py`, `apps/frontend/src/components/ui/map/{landingZone.ts,strings.ts}`, `AI_LOG.md`.
+- **Technical decisions / trade-offs:** No terrain regeneration: `safety_radius_meters`, slope statistics, `is_slope_safe` and the slope veto already use 100 m. The `provisional` string key is kept to avoid touching `LandingView.tsx` markup; only its text changed. The legend and scale derive from the constants (now "+50 m" and 150 m).
+- **Verification performed:** `npm run typecheck` and `npm run build` pass (existing >500 kB chunk warning only). No browser check was done.
+- **Risks or pending items:** SF-2/SF-8 (margin-aware slope) are not implemented; if the margin should also be slope-checked, that is a new decision.
+
 ## Template for future entries
 
 ### YYYY-MM-DD — [Short task title]

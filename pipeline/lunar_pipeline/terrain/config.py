@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class TerrainConfig:
-    # PD-02 (Proposed): landing zone 200 m diameter -> 100 m radius.
+    # PD-02 (Agreed 2026-11-15): landing zone 200 m diameter -> 100 m radius; slope is evaluated here.
     landing_radius_m: float = 100.0
     # REQUIREMENTS 5.4 (Agreed): mean slope inside the landing circle < 10 deg.
     mean_slope_safe_max_deg: float = 10.0
