@@ -9,6 +9,11 @@ from pyproj import Geod
 AZIMUTHS_DEG = np.arange(360, dtype=np.float64)
 
 
+def spherical_horizon_profile() -> np.ndarray:
+    """Return the approved idealized spherical horizon with no local relief."""
+    return np.zeros(AZIMUTHS_DEG.shape, dtype=np.float64)
+
+
 def elevation_angle_deg(h_obs_m: float, h_target_m: np.ndarray, distance_m: np.ndarray, radius_m: float) -> np.ndarray:
     """Elevation angle of terrain points seen from the observer, including lunar curvature.
 

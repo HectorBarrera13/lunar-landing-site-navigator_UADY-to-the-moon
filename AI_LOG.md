@@ -577,6 +577,17 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** From `apps/frontend`, `npm run typecheck` passed and `npm run build` passed. Vite reported the existing warning for a JavaScript chunk larger than 500 kB.
 - **Risks or pending items:** Existing processed artifacts may still provide `null` angular radii until the pipeline is rerun; no visual consumer has been added in this non-design phase.
 
+<<<<<<< HEAD
+### 2026-11-15 - Backend round 4: multi-site terrain and historical evaluations
+
+- **Agent:** Copilot SDK in VS Code
+- **Requested task:** Execute round 4 for the backend only; do not modify the frontend.
+- **Change description:** Recorded the approved terrain footprint and resolution, the 2025-2035 artifact budget, and historical-site evaluation decisions. The terrain pipeline now selects PGDA 78 terrain when available, falls back to registered PGDA 90 products for verified polar sites, writes an idealized 0-degree spherical horizon for verified historical sites without terrain, and propagates processing errors. Historical evaluations without terrain are accepted only when their series declares `horizon_source: "sphere"`; slope and landing-zone criteria are omitted, available criteria are renormalized with the approved SRS near-side weights, and unavailable criteria are reported. Missing terrain for other sites remains an error.
+- **Files created/modified:** `REQUIREMENTS.md`; `pipeline/lunar_pipeline/terrain/{config.py,horizon.py,site_terrain.py,sources.py,steps.py}`; `apps/backend/app/core/config.py`; `apps/backend/app/services/evaluate.py`; `AI_LOG.md`.
+- **Technical decisions / trade-offs:** The user's approved historical horizon is a constant 0 degrees; the 10-degree value applies only to the slope veto. The approved near-side baseline weights (25% power, 15% communication) are configured separately and renormalized over available criteria. Regional layers and their endpoint are deferred. No coordinates or processed series were invented for the 12 unverified catalog sites.
+- **Verification performed:** `apps/backend/.venv/Scripts/python.exe -m compileall -q app` passed; a temporary Uvicorn run returned HTTP 200 from `GET /api/health`; focused evaluator assertions passed for historical sphere-only evaluation, 25:15 weight renormalization, and continued failure on missing terrain for a LOLA site. `pipeline/.venv/Scripts/python.exe -m compileall -q lunar_pipeline` and `python -m lunar_pipeline --list` passed. `git diff --check` passed. FastAPI `TestClient` could not run because the environment lacks `httpx2`; the live Uvicorn health check was used instead.
+- **Risks or pending items:** The other 12 catalog sites still lack verified coordinates, so their artifacts cannot be generated. No processed artifacts were generated in this task. PD-08 hosting and initial-load validation remain open. Regional layers remain deferred by user decision.
+=======
 ### 2026-11-15 — Round 3 backend integration and QA closure
 
 - **Agent:** Copilot SDK in VS Code
@@ -694,6 +705,7 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Technical decisions / trade-offs:** Only the `sites` step was rerun; terrain and ephemeris inputs are unchanged.
 - **Verification performed:** `horizon.json` differs from the committed one only in that assumption string (all other keys equal); the 11 year files were rewritten byte-identical (no git diff); `python -m compileall` passes for the pipeline and backend; uvicorn: `/series` returns the new assumption text and the demo window is still Index 21 red with `earth_visibility_low`, `sunlight_low`, `darkness_exceeded`.
 - **Risks or pending items:** None.
+>>>>>>> 72a0baff068b05d61b547101bdd8f182e15bbb0e
 
 ## Template for future entries
 

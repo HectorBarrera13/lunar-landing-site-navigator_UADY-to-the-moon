@@ -23,7 +23,7 @@ from app.models.site import SiteSummary
 from app.models.terrain import TerrainEvaluation
 from app.services.series import get_site_series, has_series_artifacts
 from app.services.sites import get_site, list_sites
-from app.services.terrain import get_terrain
+from app.services.terrain import TerrainNotFoundError, get_terrain
 
 # R-10/R-11: near side only, south pole exception.
 SOUTH_POLE_LAT_DEG = -80.0
@@ -158,7 +158,7 @@ def _resolve_site(request: EvaluateRequest) -> SiteSummary:
     return _nearest_site_with_artifacts(request.lat_deg, request.lon_deg)
 
 
-def _vetoes(aggregates: WindowAggregates, terrain: TerrainEvaluation) -> list[Veto]:
+def _vetoes(aggregates: WindowAggregates, terrain: TerrainEvaluation | None) -> list[Veto]:
     settings = get_settings()
     vetoes: list[Veto] = []
     if aggregates.earth_visible_percent < settings.veto_earth_visible_min_percent:
@@ -191,7 +191,7 @@ def _vetoes(aggregates: WindowAggregates, terrain: TerrainEvaluation) -> list[Ve
                 ),
             )
         )
-    if terrain.mean_slope_degrees > settings.veto_mean_slope_max_degrees:
+    if terrain is not None and terrain.mean_slope_degrees > settings.veto_mean_slope_max_degrees:
         vetoes.append(
             Veto(
                 code="slope_too_steep",
@@ -205,13 +205,12 @@ def _vetoes(aggregates: WindowAggregates, terrain: TerrainEvaluation) -> list[Ve
 
 
 def _criteria(
-    aggregates: WindowAggregates, terrain: TerrainEvaluation
+    aggregates: WindowAggregates,
+    terrain: TerrainEvaluation | None,
+    site: SiteSummary,
 ) -> tuple[list[Criterion], list[str]]:
     """Criteria with renormalized weights; criteria without data are excluded and warned."""
     settings = get_settings()
-    thresholds = settings.veto_mean_slope_max_degrees
-    slope_denominator = thresholds if thresholds > 0 else 1.0
-    slope_normalized = max(0.0, min(1.0, 1.0 - terrain.mean_slope_degrees / slope_denominator))
 
     raw = {
         "power": (
@@ -223,20 +222,29 @@ def _criteria(
             aggregates.earth_visible_percent / 100,
             f"Earth visible {aggregates.earth_visible_percent:.1f}% of the window.",
         ),
-        "slope": (
-            slope_normalized,
-            f"Mean slope {terrain.mean_slope_degrees:.2f}° (veto above {thresholds:.0f}°); "
-            f"95th percentile {terrain.p95_slope_degrees:.2f}°.",
-        ),
-        "landing_zone": (
-            1.0 if terrain.is_slope_safe else 0.0,
-            f"Slope inside the {terrain.safety_radius_meters:.0f} m landing circle is "
-            f"{'within' if terrain.is_slope_safe else 'outside'} the safe threshold.",
-        ),
     }
+    if terrain is not None:
+        thresholds = settings.veto_mean_slope_max_degrees
+        slope_denominator = thresholds if thresholds > 0 else 1.0
+        slope_normalized = max(0.0, min(1.0, 1.0 - terrain.mean_slope_degrees / slope_denominator))
+        raw.update(
+            {
+                "slope": (
+                    slope_normalized,
+                    f"Mean slope {terrain.mean_slope_degrees:.2f}° (veto above {thresholds:.0f}°); "
+                    f"95th percentile {terrain.p95_slope_degrees:.2f}°.",
+                ),
+                "landing_zone": (
+                    1.0 if terrain.is_slope_safe else 0.0,
+                    f"Slope inside the {terrain.safety_radius_meters:.0f} m landing circle is "
+                    f"{'within' if terrain.is_slope_safe else 'outside'} the safe threshold.",
+                ),
+            }
+        )
 
     # Resources and roughness have no product yet and no agreed normalization (5.5).
-    total_weight = sum(settings.weights[code] for code in raw)
+    weights = settings.near_side_weights if site.group == "historical-landing" else settings.weights
+    total_weight = sum(weights[code] for code in raw)
     if total_weight <= 0:
         raise EvaluationUnavailableError("Configured weights are all zero.")
 
@@ -245,8 +253,8 @@ def _criteria(
             code=code,
             label=CRITERION_LABELS[code],
             normalized=round(normalized, 4),
-            weight=round(settings.weights[code] / total_weight, 4),
-            contribution=round(normalized * settings.weights[code] / total_weight, 4),
+            weight=round(weights[code] / total_weight, 4),
+            contribution=round(normalized * weights[code] / total_weight, 4),
             detail=detail,
         )
         for code, (normalized, detail) in raw.items()
@@ -255,7 +263,17 @@ def _criteria(
         "Resources (ice proximity) and roughness are excluded until those products exist; "
         "the remaining weights are renormalized."
     ]
-    if terrain.p95_slope_degrees > settings.warning_p95_slope_degrees:
+    if site.group == "historical-landing":
+        warnings.append(
+            "Surface-temperature and radiation criteria are excluded because their products are "
+            "unavailable; the remaining weights are renormalized."
+        )
+    if terrain is None:
+        warnings.append(
+            "Terrain slope and landing-zone criteria are excluded because no terrain product exists; "
+            "the remaining weights are renormalized."
+        )
+    elif terrain.p95_slope_degrees > settings.warning_p95_slope_degrees:
         warnings.append(
             f"95th-percentile slope {terrain.p95_slope_degrees:.2f}° exceeds "
             f"{settings.warning_p95_slope_degrees:.0f}°; the landing circle contains steep "
@@ -267,10 +285,15 @@ def _criteria(
 def evaluate(request: EvaluateRequest) -> EvaluateResponse:
     site = _resolve_site(request)
     series = get_site_series(site.id, request.start_utc, request.end_utc)
-    terrain = get_terrain(site.id)
+    try:
+        terrain = get_terrain(site.id)
+    except TerrainNotFoundError:
+        if site.group != "historical-landing" or series.horizon_source != "sphere":
+            raise
+        terrain = None
     aggregates = _aggregate(series)
     vetoes = _vetoes(aggregates, terrain)
-    criteria, warnings = _criteria(aggregates, terrain)
+    criteria, warnings = _criteria(aggregates, terrain, site)
     suitability_index = int(round(100 * sum(criterion.contribution for criterion in criteria)))
 
     return EvaluateResponse(

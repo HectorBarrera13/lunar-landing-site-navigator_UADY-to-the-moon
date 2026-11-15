@@ -17,9 +17,32 @@ from lunar_pipeline.terrain.slope import SlopeStats, slope_stats
 from lunar_pipeline.terrain.sources import (
     LDEM_60S_240MPP_ADJ_URL,
     LDEM_80S_20MPP_ADJ_URL,
+<<<<<<< HEAD
+    LDSM_80S_20MPP_ADJ_URL,
+    pgda78_url,
+)
+
+
+def terrain_source_urls(pgda78_tile: str | None) -> dict[str, str]:
+    """Source URLs for terrain products, preferring a QA-confirmed PGDA 78 tile."""
+    if pgda78_tile is not None:
+        return {
+            "slope": pgda78_url(pgda78_tile, "slp"),
+            "center_elevation": pgda78_url(pgda78_tile, "surf"),
+            "horizon_near": LDEM_80S_20MPP_ADJ_URL,
+            "horizon_far": LDEM_60S_240MPP_ADJ_URL,
+        }
+    return {
+        "slope": LDSM_80S_20MPP_ADJ_URL,
+        "center_elevation": LDEM_80S_20MPP_ADJ_URL,
+        "horizon_near": LDEM_80S_20MPP_ADJ_URL,
+        "horizon_far": LDEM_60S_240MPP_ADJ_URL,
+    }
+=======
     pgda78_local_path,
     pgda78_url,
 )
+>>>>>>> 72a0baff068b05d61b547101bdd8f182e15bbb0e
 
 
 @dataclass(frozen=True)
@@ -74,15 +97,27 @@ def _sample_lonlat(win: DemWindow, lons: np.ndarray, lats: np.ndarray) -> np.nda
     return _sample(win, np.asarray(xs), np.asarray(ys))
 
 
-def evaluate_site_terrain(lat_deg: float, lon_deg: float, pgda78_tile: str, config: TerrainConfig) -> SiteTerrain:
+def evaluate_site_terrain(
+    lat_deg: float,
+    lon_deg: float,
+    pgda78_tile: str | None,
+    config: TerrainConfig,
+) -> SiteTerrain:
     radius = config.landing_radius_m
+<<<<<<< HEAD
+    sources = terrain_source_urls(pgda78_tile)
+    slope_url = sources["slope"]
+    surf_url = sources["center_elevation"]
+=======
     slope_url = _pgda78_source(pgda78_tile, "slp")
     surf_url = _pgda78_source(pgda78_tile, "surf")
+>>>>>>> 72a0baff068b05d61b547101bdd8f182e15bbb0e
 
-    # Slope and center elevation from the 5 m site tile.
+    # Use the QA-confirmed 5 m tile when available; otherwise use the registered
+    # PGDA 90 20 m products for verified polar sites.
     slope_win = read_window(slope_url, lat_deg, lon_deg, half_size_m=radius + 20)
     stats = slope_stats(slope_win.values, _pixel_center_distances(slope_win, lat_deg, lon_deg), radius)
-    surf_win = read_window(surf_url, lat_deg, lon_deg, half_size_m=20)
+    surf_win = read_window(surf_url, lat_deg, lon_deg, half_size_m=40 if pgda78_tile is None else 20)
     center_elevation = float(_sample_lonlat(surf_win, np.array([lon_deg]), np.array([lat_deg]))[0])
     if not np.isfinite(center_elevation):
         raise ValueError("Missing center elevation in the site tile.")
@@ -134,10 +169,5 @@ def evaluate_site_terrain(lat_deg: float, lon_deg: float, pgda78_tile: str, conf
         profiles_deg=profiles,
         sensitivity=sensitivity,
         missing_horizon_samples=int(np.isnan(heights).sum()),
-        sources={
-            "slope": slope_url,
-            "center_elevation": surf_url,
-            "horizon_near": LDEM_80S_20MPP_ADJ_URL,
-            "horizon_far": LDEM_60S_240MPP_ADJ_URL,
-        },
+        sources=sources,
     )
