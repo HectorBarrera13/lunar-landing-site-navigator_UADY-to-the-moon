@@ -209,6 +209,7 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Verification performed:** WebFetch of the LROC page (values above). With the pipeline reader: the point projects to x=635.3 m, y=121341.0 m in the PGDA 78 Site23 CRS and is inside `Site23_final_adj_5mpp_surf.tif` (9.4 km from the edge); 100 m window around it has no NaN (elevation 4810–4848 m). Haversine distances (R = 1737.4 km): 4.22 km to the Gazetteer center, 1.14 km to the Site23 tile center, 0.63 km to LROC post 1294. `sites.json` parses as valid JSON.
 - **Risks or pending items:** The LROC page does not state the reference frame or longitude convention for the mosaic center (negative bounds imply -180..180 east). Marked verified, so round 2 (terrain and ephemeris for Malapert) is unblocked; the value is a region center, so round 2 results describe that point, not an official landing site. Better landing points may come from Wueller et al. 2026 (Table A1, MMA01), not yet extracted.
 
+<<<<<<< HEAD
 ### 2026-11-14 — Malapert slope stats and horizon profile
 
 - **Agent:** Claude Code (Opus 5.5), following `.claude/agents/terrain-engineer.md` rules inline
@@ -246,6 +247,32 @@ Chronological log of changes made by AI agents in this repository (Lunar Landing
 - **Technical decisions / trade-offs:** The 100 m exclusion matches the provisional landing-zone radius; slope evaluation remains responsible for terrain inside that zone. The 150 km maximum radius remains provisional and configurable. `REQUIREMENTS.md` was intentionally not changed.
 - **Verification performed:** `python -m compileall lunar_pipeline` passed; `python -m lunar_pipeline terrain` passed. Sensitivity results (maximum / mean elevation at 150 km): observer 0 m and min distance 0/60/100 m → `8.552° / 2.091°`, `8.024° / 1.801°`, `7.458° / 1.701°`; observer 2 m and min distance 0/60/100 m → `6.414° / 1.342°`, `6.414° / 1.342°`, `6.414° / 1.333°`.
 - **Risks or pending items:** These values remain provisional pending Leader confirmation; contract 1.2 and the formal REQUIREMENTS decisions remain unchanged.
+=======
+### 2026-11-14 — SPICE Sun and Earth series for Malapert
+
+- **Agent:** Claude Code (Opus 5.5), following `.claude/agents/ephemeris-engineer.md` rules inline
+- **Requested task:** Runbook Compu 1 · Round 2 · Session B: (1) propose NAIF SPICE kernels consistent with MOON_ME of DE421, show official URLs, wait for confirmation, download to `pipeline/kernels/`, register in `data/README.md`; (2) pure function: Sun and Earth azimuth (0 = local north, clockwise) and elevation for a MOON_ME lat/lon and UTC times, no refraction, documented light-time correction; (3) 30-day hourly test series for Malapert Massif saved to `data/interim/ephemeris/malapert-massif.json`; (4) print 3 instants for QA to compare with JPL Horizons. No AstroPy.
+- **Change description:**
+  - `ephemeris/kernels.py`: kernel list + idempotent download (stdlib `urllib`) + ordered `furnsh`. Kernel list confirmed by the user (plan approval): `naif0012.tls`, `pck00011.tpc`, `de421.bsp`, `moon_pa_de421_1900-2050.bpc`, `moon_080317.tf`, `moon_assoc_me.tf`.
+  - `ephemeris/spice_geometry.py`: `body_az_el()` with SPICE `azlcpo` (method `ELLIPSOID`, azimuth clockwise from north, elevation positive up, observer fixed in `MOON_ME` on the Moon reference surface from `pck00011.tpc`).
+  - `ephemeris/config.py`, `ephemeris/steps.py` (step `ephemeris`). Shared `lunar_pipeline/paths.py`, `__main__.py` (step discovery) and the `.gitignore` `data/interim/` lines are byte-identical to the terrain branch, so both merge cleanly.
+- **Files created/modified:** `pipeline/lunar_pipeline/paths.py`, `ephemeris/config.py`, `ephemeris/kernels.py`, `ephemeris/spice_geometry.py`, `ephemeris/steps.py` (created); `pipeline/lunar_pipeline/__main__.py`, `.gitignore`, `data/README.md` (SPICE kernels section), `AI_LOG.md` (modified).
+- **Technical decisions / trade-offs:**
+  - **Light-time correction: `LT+S`** (one-way light time + stellar aberration), i.e. the apparent direction, the same quantity JPL Horizons reports as apparent azimuth/elevation. SPICE applies no refraction.
+  - DE421 (not DE440) because the LOLA products are in MOON_ME of DE421; `de421.bsp` covers 1899-07-29 to 2053-10-09 (NAIF `aa_summaries.txt`).
+  - Observer on the 1737.4 km reference sphere (height 0 m, configurable). The site's ~4.8 km terrain height changes Sun/Earth directions by < 0.001° (parallax); terrain blocking is handled by the horizon profile.
+  - Test window start `2027-03-15T00:00:00Z` = mock mission window start used by the contract (2.1) and the frontend `MOCK_WINDOW` (user decision); 30 days, 60 min step. The full 2025–2035 series and `*_visible` come in round 3.
+- **Verification performed:**
+  - `python -m lunar_pipeline ephemeris`: kernels downloaded once (18.7 MB), run takes ~7 s; second run reuses kernels and gives a byte-identical file. `compileall` OK; `python -m lunar_pipeline --list` shows the `ephemeris` step.
+  - 720 points, hourly, 2027-03-15T00:00:00Z .. 2027-04-13T23:00:00Z. Moon body-fixed frame reported by SPICE: `MOON_ME`.
+  - Sanity: Sun elevation -5.298° .. 2.918° (stays near the horizon at 86°S), Sun azimuth sweeps 365° over the period; Earth azimuth 354.25°–5.11° over the 30 days (near local north), Earth elevation -2.972° .. 10.326° (libration).
+  - Independent cross-check (`spkcpo` + hand-built east/north/up axes) matches `azlcpo` within 0.00005° at the 3 instants.
+  - **Instants for the JPL Horizons check** (observer lat -86.0, lon 0.3 on the Moon, refraction off, apparent az/el):
+    - 2027-03-15T00:00:00Z — Sun az 94.3800, el -1.1598; Earth az 355.7250, el 9.8064
+    - 2027-03-30T00:00:00Z — Sun az 272.0712, el -1.0841; Earth az 1.5165, el -0.6040
+    - 2027-04-13T23:00:00Z — Sun az 89.2339, el -1.3351; Earth az 359.5640, el 6.4419
+- **Risks or pending items:** **JPL Horizons comparison pending (QA, human)**; record the result here and in the PR. Contract 1.1 is DRAFT (Leader allowed working against it); visibility criterion (center vs. limb) still Pending. Only Malapert has verified coordinates.
+>>>>>>> origin/main
 
 ## Template for future entries
 
