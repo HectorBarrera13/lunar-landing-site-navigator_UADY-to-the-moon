@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { CHIP, PANEL, SECTION_TITLE } from '@/components/ui/common/styles'
+import { CHIP, ICON_BUTTON, PANEL, SECTION_TITLE } from '@/components/ui/common/styles'
 import { formatUtc } from '@/lib/time'
 import { useAppStore } from '@/store'
 import BodyReadout, { readBody } from './BodyReadout'
@@ -18,6 +18,7 @@ export default function HorizonPanel() {
   const series = useAppStore((s) => s.siteSeries)
   const seriesStatus = useAppStore((s) => s.seriesStatus)
   const timeCursor = useAppStore((s) => s.mission.timeCursor)
+  const setHorizonPanelOpen = useAppStore((s) => s.setHorizonPanelOpen)
 
   const geometry = useMemo(
     () => (series === null || series.series.length === 0 ? null : chartGeometry(series)),
@@ -47,7 +48,12 @@ export default function HorizonPanel() {
           : S.unavailable
     return (
       <aside aria-label={S.title} className={`${PANEL} ${PANEL_POSITION}`}>
-        <h2 className={SECTION_TITLE}>{S.title}</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className={SECTION_TITLE}>{S.title}</h2>
+          <button type="button" onClick={() => setHorizonPanelOpen(false)} aria-label={S.close} className={ICON_BUTTON}>
+            <span aria-hidden="true">{'✕'}</span>
+          </button>
+        </div>
         <p className="mt-2 text-xs text-ink-muted" role="status">
           <span aria-hidden="true">{'ⓘ'} </span>
           {message}
@@ -67,11 +73,16 @@ export default function HorizonPanel() {
 
   return (
     <figure aria-label={S.title} className={`${PANEL} ${PANEL_POSITION} m-0`}>
-      <figcaption className="flex items-baseline justify-between gap-2 border-b border-line pb-1.5">
+      <figcaption className="flex items-center justify-between gap-2 border-b border-line pb-1.5">
         <h2 className={SECTION_TITLE}>
           {S.title} <span className="text-primary">· {series.name}</span>
         </h2>
-        <span className="font-mono text-[11px] tabular-nums text-secondary">{formatUtc(point.time_utc)}</span>
+        <div className="flex items-center gap-1">
+          <span className="font-mono text-[11px] tabular-nums text-secondary">{formatUtc(point.time_utc)}</span>
+          <button type="button" onClick={() => setHorizonPanelOpen(false)} aria-label={S.close} className={ICON_BUTTON}>
+            <span aria-hidden="true">{'✕'}</span>
+          </button>
+        </div>
       </figcaption>
       <p className="sr-only">{summary}</p>
 

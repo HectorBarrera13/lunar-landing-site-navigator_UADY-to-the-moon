@@ -13,6 +13,8 @@ export default function PointSidebar() {
   const open = useAppStore((s) => s.sidebarOpen)
   const compared = useAppStore((s) => s.compared)
   const closeSidebar = useAppStore((s) => s.closeSidebar)
+  const focusLocation = useAppStore((s) => s.focusLocation)
+  const setMode = useAppStore((s) => s.setMode)
   const t0 = useAppStore((s) => s.mission.t0)
   const tf = useAppStore((s) => s.mission.tf)
   // Local UI state: only this sidebar reads the delay, so it does not belong in the store.
@@ -119,6 +121,10 @@ export default function PointSidebar() {
                 result={results[loc.id]}
                 shift={shiftedWindow === null ? null : { days, result: shiftedResults[loc.id] }}
                 rank={score === null ? null : i + 1}
+                onOpenLanding={(loc) => {
+                  focusLocation(loc)
+                  setMode('2d')
+                }}
               />
             ))}
           </div>

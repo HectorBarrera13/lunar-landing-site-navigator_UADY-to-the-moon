@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     veto_sunlight_min_percent: float = 5.0
     veto_darkness_max_hours: float = 48.0
     veto_mean_slope_max_degrees: float = 10.0
+    # REQUIREMENTS 5.3 (PO decision 2026-11-15): landing at t0 requires the Sun center above
+    # the local horizon; a visible solar fraction below this threshold vetoes the window.
+    veto_landing_sun_min_fraction: float = 0.5
     warning_p95_slope_degrees: float = 10.0
 
     @property

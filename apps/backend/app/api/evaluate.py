@@ -15,7 +15,8 @@ router = APIRouter(tags=["evaluate"])
     summary="Suitability Index for a site and mission window",
     description=(
         "Aggregates the precomputed series and terrain over [start_utc, end_utc]. "
-        "Free points are redirected to the nearest preset site with artifacts."
+        "Free points are redirected to the nearest preset site usable for a date-specific "
+        "evaluation (series plus terrain product, or the historical sphere-horizon stand-in)."
     ),
     responses={
         404: {"description": "Unknown site_id or missing series/terrain artifact"},

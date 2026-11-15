@@ -38,8 +38,8 @@ function signed(value: number, digits = 1): string {
   return `${value > 0 ? '+' : '−'}${text}`
 }
 
-function EventValue({ isoUtc, cursorMs }: { isoUtc: string | null; cursorMs: number }) {
-  if (isoUtc === null) return <span className="text-ink-subtle">{S.noneInWindow}</span>
+function EventValue({ isoUtc, cursorMs, missingLabel }: { isoUtc: string | null; cursorMs: number; missingLabel: string }) {
+  if (isoUtc === null) return <span className="text-ink-subtle">{missingLabel}</span>
   return (
     <span className={MONO_NUM}>
       {formatUtc(isoUtc)}{' '}
@@ -60,6 +60,9 @@ interface BodyReadoutProps {
 export default function BodyReadout({ body, reading, events, cursorMs }: BodyReadoutProps) {
   const name = body === 'sun' ? S.sun : S.earth
   const above = reading.marginDeg >= 0
+  // With no transition at all after the cursor, the body keeps its current state until tf.
+  const noEvents = events.nextRiseUtc === null && events.nextSetUtc === null
+  const missingLabel = noEvents ? '—' : S.afterWindowEnd
   return (
     <section aria-label={name} className="border border-line bg-chassis p-2">
       <div className="flex items-center justify-between gap-2">
@@ -87,13 +90,19 @@ export default function BodyReadout({ body, reading, events, cursorMs }: BodyRea
       <dl className="mt-1.5 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-[11px]">
         <dt className="text-ink-subtle">{S.nextRise}</dt>
         <dd>
-          <EventValue isoUtc={events.nextRiseUtc} cursorMs={cursorMs} />
+          <EventValue isoUtc={events.nextRiseUtc} cursorMs={cursorMs} missingLabel={missingLabel} />
         </dd>
         <dt className="text-ink-subtle">{S.nextSet}</dt>
         <dd>
-          <EventValue isoUtc={events.nextSetUtc} cursorMs={cursorMs} />
+          <EventValue isoUtc={events.nextSetUtc} cursorMs={cursorMs} missingLabel={missingLabel} />
         </dd>
       </dl>
+      {noEvents && (
+        <p className="mt-1 text-[10px] text-ink-subtle">
+          <span aria-hidden="true">{'ⓘ'} </span>
+          {name} {reading.visible ? S.staysAbove : S.staysBelow}.
+        </p>
+      )}
     </section>
   )
 }

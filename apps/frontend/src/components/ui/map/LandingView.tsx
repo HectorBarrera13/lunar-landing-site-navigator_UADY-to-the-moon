@@ -14,6 +14,7 @@ import { POINT_INFO_STRINGS as P } from '@/components/ui/pointInfo/strings'
 import TrafficLightBadge from '@/components/ui/pointInfo/TrafficLightBadge'
 import { useFocusEvaluation } from '@/components/ui/pointInfo/useFocusEvaluation'
 import { pointLabel } from '@/lib/pointColors'
+import { siteImage } from '@/lib/siteImages'
 import { MAX_COMPARED, useAppStore } from '@/store'
 import LandingCanvas from './LandingCanvas'
 import { MARGIN_M, MARGIN_RADIUS_M, ZONE_RADIUS_M, pixelsPerMeter } from './landingZone'
@@ -66,6 +67,7 @@ function LandingViewContent() {
   const name = focus === null ? '' : (focus.name ?? pointLabel(focus.colorIndex))
   const inCompare = focus !== null && compared.some((c) => c.id === focus.id)
   const full = !inCompare && compared.length >= MAX_COMPARED
+  const imagery = focus === null ? null : siteImage(focus.id)
 
   const strokeNote =
     data !== null ? S.zoneColored : failed ? (noData ? S.neutralNoData : S.neutralFailed) : S.neutralLoading
@@ -157,6 +159,7 @@ function LandingViewContent() {
                 size={size}
                 pxPerM={pxPerM}
                 light={light}
+                siteId={focus.id}
                 label={`${S.canvasLabel}: ${name}`}
                 describedBy={summaryId}
               />
@@ -170,12 +173,13 @@ function LandingViewContent() {
                   marginM: MARGIN_M,
                   marginRadiusM: MARGIN_RADIUS_M,
                   index: indexText,
+                  baseNote: imagery !== null ? S.baseNoteOfficial : S.baseNotePlaceholder,
                 })}
               </p>
               <ul className="pointer-events-none absolute top-2 left-2 flex flex-col items-start gap-1">
                 <li className={CHIP}>
                   <span aria-hidden="true" className="size-1 bg-ink-subtle" />
-                  {S.placeholder}
+                  {imagery !== null ? S.officialImagery : S.placeholder}
                 </li>
                 <li className={CHIP}>{S.notGeoreferenced}</li>
                 <li className={CHIP}>{S.provisional}</li>
@@ -191,6 +195,18 @@ function LandingViewContent() {
               <span aria-hidden="true">{data !== null ? '◉ ' : 'ⓘ '}</span>
               {strokeNote}
             </p>
+            {imagery !== null && (
+              <p className="text-[11px] text-ink-subtle">
+                <a
+                  href={imagery.productUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-secondary underline underline-offset-2 hover:text-primary"
+                >
+                  {imagery.credit}
+                </a>
+              </p>
+            )}
           </footer>
         )}
       </div>

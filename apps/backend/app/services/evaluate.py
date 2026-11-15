@@ -2,7 +2,9 @@
 
 Aggregates the precomputed series and terrain for one site over `[start, end]`,
 applies the configured weights and vetoes, and returns the explained index.
-Free points are redirected to the nearest preset site with both artifacts.
+Free points are redirected to the nearest preset site that can produce a date-specific
+evaluation (precomputed series and terrain product, or the historical sphere-horizon
+stand-in).
 """
 
 import math
@@ -21,7 +23,7 @@ from app.models.evaluate import (
 from app.models.series import SiteTimeSeries
 from app.models.site import SiteSummary
 from app.models.terrain import TerrainEvaluation
-from app.services.series import get_site_series, has_series_artifacts
+from app.services.series import get_horizon_source, get_site_series, has_series_artifacts
 from app.services.sites import get_site, list_sites
 from app.services.terrain import TerrainNotFoundError, get_terrain
 
@@ -53,6 +55,11 @@ class WindowAggregates:
     next_sunrise_utc: str | None
     next_earthset_utc: str | None
     next_earthrise_utc: str | None
+    # Landing-time state, read at the first sample of the sliced window (grid step may shift
+    # it up to one time step after the requested t0).
+    landing_time_utc: str
+    landing_sun_fraction: float
+    landing_sun_elevation_deg: float
 
 
 def traffic_light_for(suitability_index: int, vetoes: list[Veto]) -> TrafficLight:
@@ -108,6 +115,9 @@ def _aggregate(series: SiteTimeSeries) -> WindowAggregates:
         next_sunrise_utc=_next_rise(series.time_utc, sun_visible),
         next_earthset_utc=_next_set(series.time_utc, earth),
         next_earthrise_utc=_next_rise(series.time_utc, earth),
+        landing_time_utc=series.time_utc[0],
+        landing_sun_fraction=sun_fraction[0],
+        landing_sun_elevation_deg=series.sun_elevation_deg[0],
     )
 
 
@@ -119,9 +129,16 @@ def _central_angle_degrees(lat_a: float, lon_a: float, lat_b: float, lon_b: floa
     return math.degrees(math.acos(max(-1.0, min(1.0, cosine))))
 
 
-def _has_artifacts(site_id: str) -> bool:
+def _is_evaluable_site(site: SiteSummary) -> bool:
+    """True when a date-specific evaluation can be produced: a precomputed series plus a
+    terrain product, or the accepted sphere-horizon stand-in for historical landings
+    (mirrors the terrain fallback in `evaluate`)."""
+    if not has_series_artifacts(site.id):
+        return False
     data_dir = get_settings().resolved_data_dir
-    return has_series_artifacts(site_id) and (data_dir / "terrain" / f"{site_id}.json").is_file()
+    if (data_dir / "terrain" / f"{site.id}.json").is_file():
+        return True
+    return site.group == "historical-landing" and get_horizon_source(site.id) == "sphere"
 
 
 def _nearest_site_with_artifacts(lat_deg: float, lon_deg: float) -> SiteSummary:
@@ -130,11 +147,11 @@ def _nearest_site_with_artifacts(lat_deg: float, lon_deg: float) -> SiteSummary:
         for site in list_sites()
         if site.lat is not None
         and site.lon is not None
-        and _has_artifacts(site.id)
+        and _is_evaluable_site(site)
     ]
     if not candidates:
         raise EvaluationUnavailableError(
-            "No preset site has both a precomputed series and terrain evaluation."
+            "No preset site has a precomputed series usable for a date-specific evaluation."
         )
     return min(
         candidates,
@@ -161,6 +178,18 @@ def _resolve_site(request: EvaluateRequest) -> SiteSummary:
 def _vetoes(aggregates: WindowAggregates, terrain: TerrainEvaluation | None) -> list[Veto]:
     settings = get_settings()
     vetoes: list[Veto] = []
+    # REQUIREMENTS 5.3 (PO decision 2026-11-15): landing must happen in sunlight.
+    if aggregates.landing_sun_fraction < settings.veto_landing_sun_min_fraction:
+        vetoes.append(
+            Veto(
+                code="landing_in_darkness",
+                message=(
+                    f"No sunlight at landing time {aggregates.landing_time_utc}: Sun center "
+                    f"{aggregates.landing_sun_elevation_deg:.1f}° below the local horizon; the "
+                    f"mission window must start while the Sun is up."
+                ),
+            )
+        )
     if aggregates.earth_visible_percent < settings.veto_earth_visible_min_percent:
         vetoes.append(
             Veto(

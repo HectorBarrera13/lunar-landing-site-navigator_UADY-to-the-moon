@@ -57,6 +57,8 @@ export interface AppState {
   /** Screen position of `focus`, written by the 3D layer every frame it changes. */
   anchor: ScreenAnchor | null
   sidebarOpen: boolean
+  /** Local horizon panel visibility; opened only from the info card button, closed with its ✕. */
+  horizonPanelOpen: boolean
   /** Pinned locations shown in the compare sidebar (max `MAX_COMPARED`, stored as copies). */
   compared: ComparedLocation[]
   /** Educational message for a blocked selection (e.g. far side, R-10); null when none. */
@@ -73,6 +75,8 @@ export interface AppState {
   selectPoint: (latDeg: number, lonDeg: number) => void
   clearSelection: () => void
   focusSite: (site: SiteListItem) => void
+  /** Focus a pinned compare-sidebar location (e.g. opening its landing view). */
+  focusLocation: (loc: ComparedLocation) => void
   setAnchor: (anchor: ScreenAnchor | null) => void
   addToCompare: () => void
   removeFromCompare: (id: string) => void
@@ -84,6 +88,7 @@ export interface AppState {
   setActiveLayer: (layer: ActiveLayer) => void
   setMoonMapView: (view: MoonMapView) => void
   setBlockedNotice: (notice: string | null) => void
+  setHorizonPanelOpen: (open: boolean) => void
   startSimulation: () => void
 }
 
@@ -131,6 +136,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   focusOrigin: null,
   anchor: null,
   sidebarOpen: false,
+  horizonPanelOpen: false,
   compared: [],
   blockedNotice: null,
   introActive: true,
@@ -201,6 +207,14 @@ export const useAppStore = create<AppState>()((set, get) => ({
     }),
   focusSite: (site) =>
     set(() => (hasCoordinates(site) ? focusStateFor(site, 'marker') : {})),
+  focusLocation: (loc) =>
+    set({
+      focus: { kind: loc.kind, id: loc.id, name: loc.name, latDeg: loc.latDeg, lonDeg: loc.lonDeg, colorIndex: loc.colorIndex },
+      focusOrigin: loc.origin,
+      anchor: null,
+      cameraView: 'moon',
+      selection: { kind: 'site', siteId: loc.id },
+    }),
   setAnchor: (anchor) => set({ anchor }),
   addToCompare: () =>
     set((s) => {
@@ -220,5 +234,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
   setActiveLayer: (activeLayer) => set({ activeLayer }),
   setMoonMapView: (moonMapView) => set({ moonMapView }),
   setBlockedNotice: (blockedNotice) => set({ blockedNotice }),
+  setHorizonPanelOpen: (horizonPanelOpen) => set({ horizonPanelOpen }),
   startSimulation: () => set({ introActive: false }),
 }))

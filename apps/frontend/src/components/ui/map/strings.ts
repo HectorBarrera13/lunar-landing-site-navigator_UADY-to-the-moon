@@ -4,6 +4,9 @@ export const MAP_STRINGS = {
   backToGlobe: 'Back to globe',
   backHint: 'Esc',
   placeholder: 'Placeholder base image — PGDA 90 relief pending',
+  officialImagery: 'Official LROC NAC mosaic (site-centered, illustrative)',
+  baseNoteOfficial: 'The base image is the official LROC NAC mosaic centered on this site; it is not re-registered.',
+  baseNotePlaceholder: 'The base image is a placeholder until the PGDA 90 relief is available.',
   notGeoreferenced: 'Not georeferenced: image up is not north',
   provisional: 'Zone and margin agreed (PD-02 / R-22)',
   canvasLabel: 'Landing zone drawing',
@@ -29,11 +32,12 @@ export const MAP_STRINGS = {
     marginM: number
     marginRadiusM: number
     index: string
+    baseNote: string
   }): string =>
     `Landing zone for ${args.name} at ${args.lat}, ${args.lon}. ` +
     `Circle of ${args.zoneDiameterM} m diameter (${args.zoneRadiusM} m radius) centered on the proposed landing point. ` +
     `Dotted error margin of ${args.marginM} m around it, out to ${args.marginRadiusM} m from the center. ` +
     `Zone and margin follow the agreed PD-02 values. ${args.index} ` +
-    'The base image is a placeholder until the PGDA 90 relief is available.',
+    args.baseNote,
   indexText: (value: number, label: string): string => `Suitability Index ${value} of 100, ${label}.`,
 } as const
